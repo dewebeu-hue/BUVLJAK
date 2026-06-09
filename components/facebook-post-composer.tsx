@@ -126,7 +126,7 @@ export function FacebookPostComposer({
         <div>
           <h2 className="text-xl font-black text-ink">Tekst za Facebook grupu</h2>
           <p className="mt-1 text-sm font-semibold leading-relaxed text-ink/62">
-            Podijeli oglas u lokalnu grupu bez dodatnog uređivanja.
+            Kopiraj tekst za svoju lokalnu grupu. Buvljak ne objavljuje automatski i ne čita Facebook grupe.
           </p>
         </div>
 

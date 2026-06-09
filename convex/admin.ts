@@ -503,7 +503,7 @@ export const getBetaReadiness = query({
       { label: "Feed aktivnih oglasa radi", status: "pass" as const },
       { label: "Kontakt resolver radi", status: "manual" as const },
       { label: "Rate limit kontakt upita aktivan", status: "pass" as const },
-      { label: "Privatni kontakt podaci nisu u public queryjima", status: "pass" as const },
+      { label: "Public queries ne vraćaju privatne kontakt podatke", status: "pass" as const },
       { label: "Spremljene potrage rade", status: "pass" as const },
       {
         label: emailConfigured
@@ -525,6 +525,7 @@ export const getBetaReadiness = query({
       { label: "Nema Stripe/plaćanja u MVP-u", status: "pass" as const },
       { label: "Nema Facebook scrapinga", status: "pass" as const },
       { label: "OG preview route radi", status: "pass" as const },
+      { label: "Pravila i privatnost postoje", status: "pass" as const },
       { label: "Mobile-first UI provjeren", status: "manual" as const }
     ];
     const hasFail = checks.some((check) => check.status === "fail");

@@ -1,10 +1,16 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Pravila korištenja | Buvljak",
+  description: "Kratka beta pravila za objavu i korištenje lokalnih oglasa na Buvljaku."
+};
 
 const rules = [
   "Objavljuj samo svoje oglase ili oglase za koje imaš dopuštenje.",
   "Zabranjeni su lažni, opasni, ilegalni i uvredljivi oglasi.",
-  "Buvljak ne sudjeluje u plaćanju, dostavi, jamstvu ili dogovoru.",
-  "Korisnici se dogovaraju direktno izvan aplikacije.",
+  "Buvljak je alat za objavu i povezivanje korisnika. Plaćanje, preuzimanje, zamjena i dogovor odvijaju se direktno između korisnika izvan aplikacije.",
+  "Buvljak ne sudjeluje u plaćanju, dostavi, jamstvu, poreznim obvezama ili dogovoru korisnika.",
   "Prijavi sumnjiv oglas kako bi ga admin mogao provjeriti."
 ];
 

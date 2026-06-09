@@ -8,14 +8,17 @@ import { getAppBaseUrl, getDefaultOgImageUrl } from "@/lib/public-urls";
 
 const appBaseUrl = getAppBaseUrl();
 const defaultOgImageUrl = getDefaultOgImageUrl(appBaseUrl);
+const siteTitle = "Buvljak — lokalni feed za prodaju, poklanjanje, razmjenu i potragu";
+const siteDescription =
+  "Prodajem, poklanjam, mijenjam i tražim u svojoj blizini. Buvljak je lokalni alat za oglase i potrage, prvo za Novu Gradišku i okolicu.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(appBaseUrl),
-  title: "Buvljak",
-  description: "Lokalni feed za prodaju, poklanjanje, razmjenu i potragu stvari u blizini.",
+  title: siteTitle,
+  description: siteDescription,
   openGraph: {
-    title: "Buvljak",
-    description: "Prodajem, poklanjam, mijenjam i tražim u svojoj blizini.",
+    title: siteTitle,
+    description: siteDescription,
     url: appBaseUrl,
     siteName: "Buvljak",
     type: "website",
@@ -23,8 +26,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Buvljak",
-    description: "Prodajem, poklanjam, mijenjam i tražim u svojoj blizini.",
+    title: siteTitle,
+    description: siteDescription,
     images: [defaultOgImageUrl]
   }
 };

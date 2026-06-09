@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Privatnost | Buvljak",
+  description: "Kratka beta napomena o privatnosti, kontakt podacima i email obavijestima na Buvljaku."
+};
 
 const privacyItems = [
   "Buvljak prikuplja osnovne podatke potrebne za objavu oglasa i kontakt.",

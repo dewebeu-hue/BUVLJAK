@@ -3,7 +3,7 @@ import { ProPlansPage } from "@/components/pro-plans-page";
 
 export const metadata: Metadata = {
   title: "Paketi | Buvljak",
-  description: "Buvljak pro paketi za aktivnije lokalno oglašavanje."
+  description: "Buvljak paketi trenutno nisu dostupni u zatvorenoj beti."
 };
 
 export default function PaketiPage() {

@@ -22,8 +22,15 @@ function cleanLine(value: string) {
   return value.replace(/\s+/g, " ").trim();
 }
 
+function scrubPrivateContactText(value: string) {
+  return value
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[email skriven]")
+    .replace(/(?:\+?\d[\s().-]?){7,}\d/g, "[telefon skriven]")
+    .replace(/https?:\/\/(?:www\.)?facebook\.com\/\S+/gi, "[Facebook link skriven]");
+}
+
 function clippedDescription(description: string, tone: FacebookPostTone) {
-  const cleaned = cleanLine(description);
+  const cleaned = cleanLine(scrubPrivateContactText(description));
   const maxLength = tone === "short" ? 150 : 320;
 
   if (cleaned.length <= maxLength) {
