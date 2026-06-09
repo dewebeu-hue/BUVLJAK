@@ -1,3 +1,6 @@
+"use client";
+
+import { Show, SignInButton } from "@clerk/nextjs";
 import { Camera, ChevronDown, FileText, ImagePlus, Send } from "lucide-react";
 import { contactMethodLabels, listingTypeLabels } from "@/lib/listings";
 
@@ -25,7 +28,25 @@ export default function NewListingPage() {
           </span>
           <h1 className="mt-3 text-4xl font-black leading-tight text-ink">Objavi nešto za susjedstvo</h1>
 
-          <form className="mt-6 space-y-6 rounded-lg border border-ink/10 bg-white p-4 shadow-sm sm:p-6">
+          <Show when="signed-out">
+            <div className="mt-6 rounded-lg border border-honey/30 bg-honey/16 p-5">
+              <h2 className="text-xl font-black text-ink">Prijava je potrebna za objavu</h2>
+              <p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/68">
+                Prijavi se da možeš objaviti i kasnije urediti svoj oglas.
+              </p>
+              <SignInButton mode="modal">
+                <button
+                  type="button"
+                  className="focus-ring mt-4 inline-flex h-11 items-center justify-center rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
+                >
+                  Prijava za objavu
+                </button>
+              </SignInButton>
+            </div>
+          </Show>
+
+          <Show when="signed-in">
+            <form className="mt-6 space-y-6 rounded-lg border border-ink/10 bg-white p-4 shadow-sm sm:p-6">
             <fieldset>
               <legend className="text-sm font-black text-ink">Tip oglasa</legend>
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -144,7 +165,8 @@ export default function NewListingPage() {
               Nastavi
               <Send aria-hidden="true" size={18} />
             </button>
-          </form>
+            </form>
+          </Show>
         </section>
 
         <aside className="space-y-4 lg:sticky lg:top-24">

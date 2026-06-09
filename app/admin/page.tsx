@@ -31,6 +31,7 @@ const statusTone: Record<ListingStatus, string> = {
 };
 
 export default function AdminPage() {
+  // TODO: Protect this route with Clerk auth and the Convex admin role before using real admin data.
   return (
     <main className="px-4 py-8 sm:px-6">
       <div className="mx-auto max-w-6xl">

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { ConvexClientProvider } from "@/components/convex-client-provider";
 import { SiteHeader } from "@/components/site-header";
@@ -17,10 +18,12 @@ export default function RootLayout({
   return (
     <html lang="hr">
       <body>
-        <ConvexClientProvider>
-          <SiteHeader />
-          {children}
-        </ConvexClientProvider>
+        <ClerkProvider>
+          <ConvexClientProvider>
+            <SiteHeader />
+            {children}
+          </ConvexClientProvider>
+        </ClerkProvider>
       </body>
     </html>
   );
