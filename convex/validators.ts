@@ -53,6 +53,14 @@ export const contactSourceValidator = v.union(
   v.literal("facebook_link")
 );
 
+export const notificationChannelValidator = v.literal("email");
+
+export const notificationStatusValidator = v.union(
+  v.literal("sent"),
+  v.literal("skipped"),
+  v.literal("failed")
+);
+
 export const offerStatusValidator = v.union(
   v.literal("sent"),
   v.literal("accepted"),

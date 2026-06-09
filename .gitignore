@@ -22,6 +22,7 @@ pnpm-debug.log*
 
 # local npm cache
 .npm-cache
+.codex-tmp/
 
 # local env files
 .env*.local

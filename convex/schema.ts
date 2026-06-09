@@ -7,6 +7,8 @@ import {
   featuredLabelValidator,
   listingStatusValidator,
   listingTypeValidator,
+  notificationChannelValidator,
+  notificationStatusValidator,
   offerStatusValidator,
   priceTypeValidator,
   reportStatusValidator,
@@ -142,8 +144,24 @@ export default defineSchema({
     type: v.optional(listingTypeValidator),
     maxPrice: v.optional(v.number()),
     isActive: v.boolean(),
+    notifyByEmail: v.optional(v.boolean()),
     createdAt: v.number(),
     updatedAt: v.number(),
     lastNotifiedAt: v.optional(v.number())
-  }).index("by_userId", ["userId"])
+  })
+    .index("by_userId", ["userId"])
+    .index("by_isActive", ["isActive"]),
+
+  notificationEvents: defineTable({
+    userId: v.optional(v.id("users")),
+    savedSearchId: v.id("savedSearches"),
+    listingId: v.id("listings"),
+    channel: notificationChannelValidator,
+    status: notificationStatusValidator,
+    reason: v.optional(v.string()),
+    createdAt: v.number()
+  })
+    .index("by_savedSearch_listing", ["savedSearchId", "listingId"])
+    .index("by_status", ["status"])
+    .index("by_createdAt", ["createdAt"])
 });

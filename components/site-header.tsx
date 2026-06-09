@@ -8,15 +8,16 @@ import {
   UserButton,
   useUser
 } from "@clerk/nextjs";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LogIn,
   LogOut,
+  SearchCheck,
   PlusCircle,
   ScrollText,
   ShieldCheck,
-  Store,
   UserRound
 } from "lucide-react";
 import { FacebookAuthButton } from "@/components/facebook-auth-button";
@@ -33,11 +34,15 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 border-b border-ink/10 bg-[#fbfcf7]/92 backdrop-blur">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <Link href="/" className="focus-ring flex min-w-0 items-center gap-2 rounded-lg">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-moss text-white shadow-soft">
-            <Store aria-hidden="true" size={21} strokeWidth={2.3} />
-          </span>
           <span className="min-w-0">
-            <span className="block text-lg font-black leading-tight text-ink">Buvljak</span>
+            <Image
+              src="/buvljak-logo.svg"
+              alt="Buvljak"
+              width={190}
+              height={56}
+              priority
+              className="block h-10 w-auto max-w-[150px] sm:h-11 sm:max-w-[190px]"
+            />
             <span className="hidden text-xs font-semibold text-ink/62 sm:block">
               Beta · Nova Gradiška i okolica
             </span>
@@ -124,6 +129,19 @@ function HeaderAuth({ pathname }: { pathname: string }) {
       </Show>
 
       <Show when="signed-in">
+        <Link
+          href="/moje-potrage"
+          aria-current={pathname === "/moje-potrage" ? "page" : undefined}
+          className={`focus-ring inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-black transition ${
+            pathname === "/moje-potrage"
+              ? "bg-moss/10 text-mossDark"
+              : "border border-ink/12 bg-white text-ink hover:bg-field"
+          }`}
+        >
+          <SearchCheck aria-hidden="true" size={16} />
+          <span className="hidden md:inline">Moje potrage</span>
+          <span className="sr-only md:hidden">Moje potrage</span>
+        </Link>
         <Link
           href="/moji-oglasi"
           aria-current={pathname === "/moji-oglasi" ? "page" : undefined}

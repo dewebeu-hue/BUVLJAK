@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -6,7 +7,6 @@ import {
   CheckCircle2,
   CircleDollarSign,
   Gift,
-  MapPin,
   Megaphone,
   Repeat2,
   Search
@@ -56,16 +56,24 @@ export default function HomePage() {
   return (
     <main>
       <section className="hero-image">
-        <div className="mx-auto flex min-h-[520px] max-w-6xl items-center px-4 py-16 sm:min-h-[560px] sm:px-6 lg:min-h-[620px]">
-          <div className="max-w-3xl text-white">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/14 px-4 py-2 text-sm font-black backdrop-blur">
-              <MapPin aria-hidden="true" size={16} />
-              Beta · Nova Gradiška i okolica
-            </span>
-            <h1 className="mt-6 max-w-2xl text-4xl font-black leading-[1.05] sm:text-6xl">
+        <div className="hero-visual" aria-hidden="true">
+          <Image
+            src="/buvljak-hero-landing.png"
+            alt=""
+            fill
+            priority
+            quality={100}
+            unoptimized
+            sizes="(max-width: 767px) 118vw, 72vw"
+          />
+        </div>
+
+        <div className="relative z-10 mx-auto flex min-h-[520px] max-w-6xl items-start px-4 pb-44 pt-8 sm:px-6 md:min-h-[620px] md:items-center md:py-12 lg:min-h-[660px]">
+          <div className="hero-copy max-w-xl text-ink">
+            <h1 className="max-w-xl text-4xl font-black leading-[1.05] text-mossDark sm:text-5xl">
               Lokalni buvljak bez beskonačnog skrolanja
             </h1>
-            <p className="mt-5 max-w-2xl text-lg font-medium leading-relaxed text-white/88 sm:text-xl">
+            <p className="mt-5 max-w-xl text-lg font-bold leading-relaxed text-ink/72 sm:text-xl">
               Prodajem, poklanjam, mijenjam i tražim - složi oglas, podijeli ga u grupu
               ili pronađi nešto zanimljivo u blizini.
             </p>
@@ -79,7 +87,7 @@ export default function HomePage() {
               </Link>
               <Link
                 href="/novi-oglas"
-                className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-white/34 bg-white/12 px-5 text-base font-black text-white backdrop-blur transition hover:bg-white/20"
+                className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-moss/18 bg-white/82 px-5 text-base font-black text-mossDark shadow-sm transition hover:bg-white"
               >
                 <Megaphone aria-hidden="true" size={19} />
                 Objavi oglas

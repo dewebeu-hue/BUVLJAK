@@ -1,9 +1,10 @@
 "use client";
 
+import { Show, SignInButton } from "@clerk/nextjs";
 import Link from "next/link";
-import { Fragment, useMemo, useState } from "react";
-import { useQuery } from "convex/react";
-import { Filter, Plus, Search } from "lucide-react";
+import { Fragment, type FormEvent, useMemo, useState } from "react";
+import { useMutation, useQuery } from "convex/react";
+import { Bell, BookmarkPlus, CheckCircle2, Filter, Plus, Search, X } from "lucide-react";
 import { ListingCard } from "@/components/listing-card";
 import { LocalSponsorStrip, type PublicLocalSponsor } from "@/components/local-sponsor-card";
 import { useClientMounted } from "@/components/use-client-mounted";
@@ -27,12 +28,43 @@ type FeedFilters = {
   maxPrice: string;
 };
 
+function readInitialFeedFilters(): FeedFilters {
+  if (typeof window === "undefined") {
+    return {
+      search: "",
+      type: "all",
+      city: "",
+      category: "",
+      maxPrice: ""
+    };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const typeParam = params.get("type");
+  const type =
+    typeParam === "sell" ||
+    typeParam === "give" ||
+    typeParam === "swap" ||
+    typeParam === "want"
+      ? typeParam
+      : "all";
+
+  return {
+    search: params.get("q") ?? "",
+    type,
+    city: params.get("city") ?? "",
+    category: params.get("category") ?? "",
+    maxPrice: params.get("maxPrice") ?? ""
+  };
+}
+
 export function ListingsExplorer() {
-  const [search, setSearch] = useState("");
-  const [type, setType] = useState<ListingType | "all">("all");
-  const [city, setCity] = useState("");
-  const [category, setCategory] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
+  const [initialFilters] = useState<FeedFilters>(() => readInitialFeedFilters());
+  const [search, setSearch] = useState(initialFilters.search);
+  const [type, setType] = useState<ListingType | "all">(initialFilters.type);
+  const [city, setCity] = useState(initialFilters.city);
+  const [category, setCategory] = useState(initialFilters.category);
+  const [maxPrice, setMaxPrice] = useState(initialFilters.maxPrice);
   const [limit, setLimit] = useState(PAGE_SIZE);
   const isMounted = useClientMounted();
 
@@ -119,6 +151,8 @@ export function ListingsExplorer() {
               type="number"
             />
           </div>
+
+          <SavedSearchPrompt filters={filters} />
         </div>
       </section>
 
@@ -151,6 +185,222 @@ export function ListingsExplorer() {
       </Link>
     </main>
   );
+}
+
+function hasSearchIntent(filters: FeedFilters) {
+  return Boolean(
+    filters.search.trim() ||
+      filters.type !== "all" ||
+      filters.city.trim() ||
+      filters.category.trim() ||
+      filters.maxPrice.trim()
+  );
+}
+
+function SavedSearchPrompt({ filters }: { filters: FeedFilters }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (!hasSearchIntent(filters)) {
+    return null;
+  }
+
+  return (
+    <div className="mt-5 rounded-lg border border-moss/14 bg-white p-4 shadow-sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex gap-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-moss/10 text-mossDark">
+            <Bell aria-hidden="true" size={19} />
+          </span>
+          <div>
+            <p className="text-base font-black text-ink">Spremi ovu potragu</p>
+            <p className="mt-1 text-sm font-semibold leading-relaxed text-ink/62">
+              Spremi što tražiš, Buvljak ti javi kad se pojavi nešto slično.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsOpen((current) => !current)}
+          className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
+        >
+          {isOpen ? <X aria-hidden="true" size={17} /> : <BookmarkPlus aria-hidden="true" size={17} />}
+          Spremi potragu
+        </button>
+      </div>
+
+      {isOpen ? (
+        <div className="mt-4 border-t border-ink/8 pt-4">
+          <Show when="signed-out">
+            <div className="rounded-lg bg-honey/16 p-4">
+              <p className="text-sm font-black text-ink">
+                Prijavi se da možeš spremiti potragu i dobiti obavijest.
+              </p>
+              <SignInButton mode="modal">
+                <button
+                  type="button"
+                  className="focus-ring mt-3 inline-flex h-10 items-center justify-center rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
+                >
+                  Prijava
+                </button>
+              </SignInButton>
+            </div>
+          </Show>
+
+          <Show when="signed-in">
+            {hasConvexUrl ? (
+              <ConnectedSavedSearchForm key={filtersKey(filters)} filters={filters} />
+            ) : (
+              <div className="rounded-lg bg-honey/16 p-4 text-sm font-semibold text-ink/68">
+                Convex još nije povezan, pa spremanje potrage trenutno radi samo u pravoj bazi.
+              </div>
+            )}
+          </Show>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ConnectedSavedSearchForm({ filters }: { filters: FeedFilters }) {
+  const createSavedSearch = useMutation(api.savedSearches.createSavedSearch);
+  const [query, setQuery] = useState(filters.search);
+  const [city, setCity] = useState(filters.city || "Nova Gradiška");
+  const [category, setCategory] = useState(filters.category);
+  const [type, setType] = useState<ListingType | "all">(filters.type);
+  const [maxPrice, setMaxPrice] = useState(filters.maxPrice);
+  const [notifyByEmail, setNotifyByEmail] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsSaving(true);
+    setStatusMessage("");
+
+    const parsedMaxPrice = Number(maxPrice);
+
+    try {
+      await createSavedSearch({
+        ...(query.trim() ? { query: query.trim() } : {}),
+        ...(city.trim() ? { city: city.trim() } : {}),
+        ...(category.trim() ? { category: category.trim() } : {}),
+        ...(type !== "all" ? { type } : {}),
+        ...(maxPrice.trim() && Number.isFinite(parsedMaxPrice) ? { maxPrice: parsedMaxPrice } : {}),
+        notifyByEmail,
+        isActive: true
+      });
+      setStatusMessage("Potraga je spremljena. Javit ćemo ti kad se pojavi nešto slično.");
+    } catch (error) {
+      setStatusMessage(
+        error instanceof Error ? error.message : "Potragu trenutno nije moguće spremiti."
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="grid gap-4">
+      <div className="grid gap-3 md:grid-cols-2">
+        <SavedSearchField label="Naziv/upit potrage" value={query} onChange={setQuery} placeholder="npr. perilica" />
+        <SavedSearchField label="Grad" value={city} onChange={setCity} placeholder="Nova Gradiška" />
+        <SavedSearchField label="Kategorija" value={category} onChange={setCategory} placeholder="npr. Namještaj" />
+        <label className="block">
+          <span className="mb-2 block text-sm font-black text-ink">Tip</span>
+          <select
+            value={type}
+            onChange={(event) => setType(event.target.value as ListingType | "all")}
+            className="focus-ring h-11 w-full rounded-lg border border-ink/12 bg-white px-3 text-sm font-bold text-ink"
+          >
+            {listingTypeFilterOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.value === "all" ? "Svi tipovi" : option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <SavedSearchField
+          label="Cijena do"
+          value={maxPrice}
+          onChange={setMaxPrice}
+          placeholder="npr. 100"
+          type="number"
+        />
+      </div>
+
+      <label className="flex items-start gap-3 rounded-lg bg-field p-3">
+        <input
+          type="checkbox"
+          checked={notifyByEmail}
+          onChange={(event) => setNotifyByEmail(event.target.checked)}
+          className="mt-1 h-4 w-4 rounded border-ink/20 accent-moss"
+        />
+        <span>
+          <span className="block text-sm font-black text-ink">
+            Pošalji mi email kad se pojavi nešto slično
+          </span>
+          <span className="mt-1 block text-xs font-semibold leading-relaxed text-ink/58">
+            Email ne sadrži privatne kontakt podatke oglašivača.
+          </span>
+        </span>
+      </label>
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <button
+          type="submit"
+          disabled={isSaving}
+          className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark disabled:cursor-not-allowed disabled:bg-ink/30"
+        >
+          <BookmarkPlus aria-hidden="true" size={17} />
+          {isSaving ? "Spremanje..." : "Spremi potragu"}
+        </button>
+        {statusMessage ? (
+          <p className="inline-flex items-center gap-2 text-sm font-black text-mossDark" aria-live="polite">
+            <CheckCircle2 aria-hidden="true" size={17} />
+            {statusMessage}
+          </p>
+        ) : null}
+      </div>
+    </form>
+  );
+}
+
+function SavedSearchField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text"
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  type?: "text" | "number";
+}) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-sm font-black text-ink">{label}</span>
+      <input
+        type={type}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        min={type === "number" ? 0 : undefined}
+        className="focus-ring h-11 w-full rounded-lg border border-ink/12 bg-white px-3 text-sm font-bold text-ink placeholder:text-ink/38"
+      />
+    </label>
+  );
+}
+
+function filtersKey(filters: FeedFilters) {
+  return [
+    filters.search,
+    filters.type,
+    filters.city,
+    filters.category,
+    filters.maxPrice
+  ].join("|");
 }
 
 function ConnectedListingsResults({
