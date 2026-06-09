@@ -1,7 +1,9 @@
 "use client";
 
+import { Fragment } from "react";
 import { useQuery } from "convex/react";
 import { ListingCard } from "@/components/listing-card";
+import { LocalSponsorStrip, type PublicLocalSponsor } from "@/components/local-sponsor-card";
 import { api } from "@/convex/_generated/api";
 import { demoListings, fromConvexListing, type Listing } from "@/lib/listings";
 
@@ -19,6 +21,10 @@ function ConvexListingsFeed() {
   const listings = useQuery(api.listings.listActiveListings, {
     limit: 20
   });
+  const monetizationSettings = useQuery(api.monetization.getMonetizationSettings);
+  const feedSponsors = useQuery(api.monetization.listVisibleLocalSponsors, {
+    placement: "feed"
+  }) as PublicLocalSponsor[] | undefined;
 
   if (listings === undefined) {
     return (
@@ -57,15 +63,38 @@ function ConvexListingsFeed() {
     );
   }
 
-  return <ListingsGrid listings={listings.map(fromConvexListing)} />;
+  return (
+    <ListingsGrid
+      listings={listings.map(fromConvexListing)}
+      showFeatured={Boolean(monetizationSettings?.featuredListingsEnabled)}
+      feedSponsors={feedSponsors ?? []}
+    />
+  );
 }
 
-function ListingsGrid({ listings }: { listings: Listing[] }) {
+function ListingsGrid({
+  listings,
+  showFeatured = false,
+  feedSponsors = []
+}: {
+  listings: Listing[];
+  showFeatured?: boolean;
+  feedSponsors?: PublicLocalSponsor[];
+}) {
   return (
     <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {listings.map((listing) => (
-        <ListingCard key={listing.id} listing={listing} />
-      ))}
+      {listings.map((listing, index) => {
+        const sponsorInsertIndex = listings.length >= 4 ? 2 : listings.length - 1;
+
+        return (
+          <Fragment key={listing.id}>
+            <ListingCard listing={listing} showFeatured={showFeatured} />
+            {feedSponsors.length > 0 && index === sponsorInsertIndex ? (
+              <LocalSponsorStrip sponsors={feedSponsors} className="sm:col-span-2 lg:col-span-3" />
+            ) : null}
+          </Fragment>
+        );
+      })}
     </div>
   );
 }

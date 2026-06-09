@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdminMonetizationPanel } from "@/components/admin-monetization-panel";
 import {
   Activity,
   BarChart3,
@@ -66,6 +67,8 @@ export default function AdminPage() {
             );
           })}
         </section>
+
+        <AdminMonetizationPanel />
 
         <section className="mt-7 overflow-hidden rounded-lg border border-ink/10 bg-white shadow-sm">
           <div className="border-b border-ink/8 p-4 sm:p-5">

@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useQuery } from "convex/react";
 import { Filter, Plus, Search } from "lucide-react";
 import { ListingCard } from "@/components/listing-card";
+import { LocalSponsorStrip, type PublicLocalSponsor } from "@/components/local-sponsor-card";
 import { useClientMounted } from "@/components/use-client-mounted";
 import { api } from "@/convex/_generated/api";
 import {
@@ -130,6 +131,8 @@ export function ListingsExplorer() {
               canLoadMore={false}
               isLoading={false}
               onLoadMore={() => undefined}
+              showFeatured={false}
+              feedSponsors={[]}
             />
           ) : null}
           {hasConvexUrl && !isMounted ? <ListingsSkeleton /> : null}
@@ -170,6 +173,10 @@ function ConnectedListingsResults({
       : {})
   };
   const convexListings = useQuery(api.listings.listActiveListings, queryArgs);
+  const monetizationSettings = useQuery(api.monetization.getMonetizationSettings);
+  const feedSponsors = useQuery(api.monetization.listVisibleLocalSponsors, {
+    placement: "feed"
+  }) as PublicLocalSponsor[] | undefined;
   const rawListings = useMemo<Listing[]>(
     () => convexListings?.map(fromConvexListing) ?? [],
     [convexListings]
@@ -182,6 +189,8 @@ function ConnectedListingsResults({
       isLoading={convexListings === undefined}
       canLoadMore={convexListings !== undefined && rawListings.length >= limit}
       onLoadMore={() => setLimit((current) => current + PAGE_SIZE)}
+      showFeatured={Boolean(monetizationSettings?.featuredListingsEnabled)}
+      feedSponsors={feedSponsors ?? []}
     />
   );
 }
@@ -191,13 +200,17 @@ function ListingsResults({
   filters,
   isLoading,
   canLoadMore,
-  onLoadMore
+  onLoadMore,
+  showFeatured,
+  feedSponsors
 }: {
   listings: Listing[];
   filters: FeedFilters;
   isLoading: boolean;
   canLoadMore: boolean;
   onLoadMore: () => void;
+  showFeatured: boolean;
+  feedSponsors: PublicLocalSponsor[];
 }) {
   const filteredListings = useMemo(() => {
     const normalizedSearch = filters.search.trim().toLowerCase();
@@ -230,9 +243,21 @@ function ListingsResults({
       {isLoading ? <ListingsSkeleton /> : null}
       {!isLoading && filteredListings.length > 0 ? (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredListings.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
-          ))}
+          {filteredListings.map((listing, index) => {
+            const sponsorInsertIndex = filteredListings.length >= 4 ? 2 : filteredListings.length - 1;
+
+            return (
+              <Fragment key={listing.id}>
+                <ListingCard listing={listing} showFeatured={showFeatured} />
+                {feedSponsors.length > 0 && index === sponsorInsertIndex ? (
+                  <LocalSponsorStrip
+                    sponsors={feedSponsors}
+                    className="sm:col-span-2 lg:col-span-3"
+                  />
+                ) : null}
+              </Fragment>
+            );
+          })}
         </div>
       ) : null}
       {!isLoading && filteredListings.length === 0 ? <EmptyListingsState /> : null}

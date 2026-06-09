@@ -11,6 +11,7 @@ import {
   Pause,
   PlusCircle,
   RotateCcw,
+  Sparkles,
   Trash2,
   UserRound
 } from "lucide-react";
@@ -81,12 +82,15 @@ function ConnectedMyListings() {
   const listings = useQuery(api.listings.listMyListings, {
     limit: 50
   });
+  const monetizationSettings = useQuery(api.monetization.getMonetizationSettings);
   const updateListingStatus = useMutation(api.listings.updateListingStatus);
   const listingModels = useMemo<Listing[]>(
     () => ((listings ?? []) as ConvexListingResult[]).map((listing) => fromConvexListing(listing)),
     [listings]
   );
   const filteredListings = listingModels.filter((listing) => listing.status === statusFilter);
+  const showFeaturedCta = Boolean(monetizationSettings?.featuredListingsEnabled);
+  const paymentsEnabled = Boolean(monetizationSettings?.paymentsEnabled);
 
   async function updateStatus(id: string, status: ListingStatus) {
     await updateListingStatus({
@@ -123,6 +127,8 @@ function ConnectedMyListings() {
               onResolve={() => updateStatus(listing.id, "resolved")}
               onActivate={() => updateStatus(listing.id, "active")}
               onRemove={() => updateStatus(listing.id, "removed")}
+              showFeaturedCta={showFeaturedCta}
+              paymentsEnabled={paymentsEnabled}
             />
           ))}
         </section>
@@ -227,13 +233,17 @@ function MyListingCard({
   onPause,
   onResolve,
   onActivate,
-  onRemove
+  onRemove,
+  showFeaturedCta = false,
+  paymentsEnabled = false
 }: {
   listing: Listing;
   onPause?: () => Promise<void> | void;
   onResolve?: () => Promise<void> | void;
   onActivate?: () => Promise<void> | void;
   onRemove?: () => Promise<void> | void;
+  showFeaturedCta?: boolean;
+  paymentsEnabled?: boolean;
 }) {
   return (
     <article className="rounded-lg border border-ink/10 bg-white p-4 shadow-sm">
@@ -252,6 +262,21 @@ function MyListingCard({
       <div className="mt-4 rounded-lg bg-field px-3 py-2 text-sm font-black text-ink">
         {listing.city} · {formatListingPrice(listing)}
       </div>
+      {showFeaturedCta && listing.status === "active" ? (
+        <div className="mt-4 rounded-lg border border-honey/32 bg-honey/14 p-3">
+          <div className="flex items-start gap-2">
+            <Sparkles aria-hidden="true" size={18} className="mt-0.5 shrink-0 text-[#72520d]" />
+            <div>
+              <p className="text-sm font-black text-ink">Istakni oglas</p>
+              <p className="mt-1 text-xs font-bold leading-relaxed text-ink/62">
+                {paymentsEnabled
+                  ? "Plaćanje još nije spojeno."
+                  : "Kontaktiraj admina za beta isticanje."}
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
         <Link
           href={`/oglasi/${listing.id}`}
