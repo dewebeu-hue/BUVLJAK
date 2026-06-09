@@ -182,6 +182,14 @@ export const prepareContactRequest = internalMutation({
       currentUser = await ctx.db.get(userId);
     }
 
+    if (currentUser?.isBlocked) {
+      return {
+        ok: false,
+        method: "none" as const,
+        displayMessage: "Tvoj korisnički račun je blokiran za kontaktiranje oglasa."
+      };
+    }
+
     const listing = await ctx.db.get(args.listingId);
 
     if (!listing) {

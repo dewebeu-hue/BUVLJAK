@@ -138,6 +138,10 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
     return <MissingListingState />;
   }
 
+  if (listing.status === "removed") {
+    return <UnavailableListingState />;
+  }
+
   async function handleMetricAction(kind: "save" | "share") {
     if (!listing) {
       return;
@@ -883,6 +887,25 @@ function MissingListingState() {
     <main className="px-4 py-12 sm:px-6">
       <section className="mx-auto max-w-2xl rounded-lg border border-dashed border-ink/18 bg-white p-6 text-center">
         <h1 className="text-2xl font-black text-ink">Oglas nije pronađen ili više nije dostupan.</h1>
+        <Link
+          href="/oglasi"
+          className="focus-ring mt-5 inline-flex h-11 items-center justify-center rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
+        >
+          Natrag na oglase
+        </Link>
+      </section>
+    </main>
+  );
+}
+
+function UnavailableListingState() {
+  return (
+    <main className="px-4 py-12 sm:px-6">
+      <section className="mx-auto max-w-2xl rounded-lg border border-dashed border-ink/18 bg-white p-6 text-center">
+        <h1 className="text-2xl font-black text-ink">Oglas više nije dostupan.</h1>
+        <p className="mt-2 text-sm font-semibold leading-relaxed text-ink/64">
+          Oglas je uklonjen ili više nije aktivan, pa kontakt nije moguć.
+        </p>
         <Link
           href="/oglasi"
           className="focus-ring mt-5 inline-flex h-11 items-center justify-center rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"

@@ -3,6 +3,7 @@ import type { GenericMutationCtx, GenericQueryCtx } from "convex/server";
 import { mutation, query } from "./_generated/server";
 import type { DataModel, Doc } from "./_generated/dataModel";
 import { sponsorPlacementValidator } from "./validators";
+import { requireAdmin as requireAdminAccess } from "./adminAuth";
 
 const DEFAULT_MONETIZATION_SETTINGS = {
   localSponsorsEnabled: false,
@@ -54,23 +55,8 @@ function withDefaults(settings: Doc<"monetizationSettings"> | null) {
 }
 
 async function requireAdmin(ctx: ConvexCtx) {
-  const identity = await ctx.auth.getUserIdentity();
-
-  if (!identity) {
-    throw new ConvexError("Admin sign-in is required.");
-  }
-
-  const user = await ctx.db
-    .query("users")
-    .withIndex("by_clerkUserId", (q) => q.eq("clerkUserId", identity.subject))
-    .first();
-
-  // TODO: Replace this minimal role check with a route-level admin guard before live operations.
-  if (!user || user.role !== "admin") {
-    throw new ConvexError("Admin access is required.");
-  }
-
-  return user;
+  const status = await requireAdminAccess(ctx);
+  return status.user;
 }
 
 function isVisibleNow(sponsor: Doc<"localSponsors">, now: number) {
@@ -134,13 +120,13 @@ export const updateMonetizationSettings = mutation({
     if (settings) {
       await ctx.db.patch(settings._id, {
         ...next,
-        updatedBy: admin._id
+        ...(admin ? { updatedBy: admin._id } : {})
       });
     } else {
       await ctx.db.insert("monetizationSettings", {
         ...next,
         createdAt: now,
-        updatedBy: admin._id
+        ...(admin ? { updatedBy: admin._id } : {})
       });
     }
 
@@ -185,7 +171,7 @@ export const createLocalSponsor = mutation({
       ...(args.endsAt !== undefined ? { endsAt: args.endsAt } : {}),
       createdAt: now,
       updatedAt: now,
-      createdBy: admin._id
+      ...(admin ? { createdBy: admin._id } : {})
     });
   }
 });

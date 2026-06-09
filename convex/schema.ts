@@ -27,7 +27,9 @@ export default defineSchema({
     updatedAt: v.number(),
     role: userRoleValidator,
     plan: v.optional(userPlanValidator),
-    planExpiresAt: v.optional(v.number())
+    planExpiresAt: v.optional(v.number()),
+    isBlocked: v.optional(v.boolean()),
+    blockedReason: v.optional(v.string())
   })
     .index("by_clerkUserId", ["clerkUserId"])
     .index("by_role", ["role"]),
@@ -61,6 +63,7 @@ export default defineSchema({
     featuredUntil: v.optional(v.number()),
     featuredLabel: v.optional(featuredLabelValidator),
     featuredCreatedAt: v.optional(v.number()),
+    isDemo: v.optional(v.boolean()),
     createdAt: v.number(),
     updatedAt: v.number(),
     resolvedAt: v.optional(v.number()),

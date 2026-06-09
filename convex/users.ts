@@ -1,5 +1,6 @@
 import { ConvexError } from "convex/values";
 import { mutation } from "./_generated/server";
+import { isAdminEmail } from "./adminAuth";
 
 function optionalString(value: unknown) {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
@@ -30,6 +31,7 @@ export const upsertCurrentUser = mutation({
       "Korisnik Buvljaka";
     const email = optionalString(identity.email);
     const city = optionalString(identity.city);
+    const shouldBeAdmin = isAdminEmail(email);
 
     const existing = await ctx.db
       .query("users")
@@ -42,6 +44,7 @@ export const upsertCurrentUser = mutation({
         ...(email !== undefined ? { email } : {}),
         ...(city !== undefined ? { city } : {}),
         ...(existing.plan === undefined ? { plan: "free" } : {}),
+        ...(shouldBeAdmin && existing.role !== "admin" ? { role: "admin" } : {}),
         updatedAt: now
       });
 
@@ -55,7 +58,7 @@ export const upsertCurrentUser = mutation({
       ...(city !== undefined ? { city } : {}),
       createdAt: now,
       updatedAt: now,
-      role: "user",
+      role: shouldBeAdmin ? "admin" : "user",
       plan: "free"
     });
   }

@@ -9,6 +9,7 @@ import {
   listingTypeValidator,
   priceTypeValidator
 } from "./validators";
+import { isAdminEmail, requireAdmin } from "./adminAuth";
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
@@ -131,6 +132,7 @@ async function getOrCreateCurrentUser(ctx: GenericMutationCtx<DataModel>) {
     "Korisnik Buvljaka";
   const email = optionalString(identity.email);
   const city = optionalString(identity.city);
+  const shouldBeAdmin = isAdminEmail(email);
 
   const existing = await ctx.db
     .query("users")
@@ -141,10 +143,11 @@ async function getOrCreateCurrentUser(ctx: GenericMutationCtx<DataModel>) {
     await ctx.db.patch(existing._id, {
       displayName,
       ...(email !== undefined ? { email } : {}),
-      ...(city !== undefined ? { city } : {}),
-      ...(existing.plan === undefined ? { plan: "free" } : {}),
-      updatedAt: now
-    });
+        ...(city !== undefined ? { city } : {}),
+        ...(existing.plan === undefined ? { plan: "free" } : {}),
+        ...(shouldBeAdmin && existing.role !== "admin" ? { role: "admin" } : {}),
+        updatedAt: now
+      });
 
     return existing;
   }
@@ -156,7 +159,7 @@ async function getOrCreateCurrentUser(ctx: GenericMutationCtx<DataModel>) {
     ...(city !== undefined ? { city } : {}),
     createdAt: now,
     updatedAt: now,
-    role: "user",
+    role: shouldBeAdmin ? "admin" : "user",
     plan: "free"
   });
 
@@ -339,6 +342,10 @@ export const getPublicListingById = query({
       return null;
     }
 
+    if (listing.status === "removed") {
+      return null;
+    }
+
     return await withPublicListingPresentation(ctx, listing);
   }
 });
@@ -346,6 +353,8 @@ export const getPublicListingById = query({
 export const getAdminStats = query({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
+
     const [listings, reports] = await Promise.all([
       ctx.db.query("listings").collect(),
       ctx.db.query("reports").collect()
@@ -366,6 +375,8 @@ export const listAdminListings = query({
     limit: v.optional(v.number())
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const limit = clampLimit(args.limit);
     const listings = await ctx.db.query("listings").collect();
 
@@ -444,6 +455,10 @@ export const createListing = mutation({
 
     if (!currentUser) {
       throw new ConvexError("Authentication is required.");
+    }
+
+    if (currentUser.isBlocked) {
+      throw new ConvexError("Tvoj korisnički račun je blokiran za objavu oglasa.");
     }
 
     if (args.price !== undefined && args.price < 0) {
@@ -534,8 +549,8 @@ export const updateListingStatus = mutation({
       throw new ConvexError("Listing not found.");
     }
 
-    if (listing.ownerId !== currentUser?._id && currentUser?.role !== "admin") {
-      throw new ConvexError("You can update only your own listings.");
+    if (listing.ownerId !== currentUser?._id) {
+      await requireAdmin(ctx);
     }
 
     const now = Date.now();
@@ -561,11 +576,7 @@ export const adminSetListingFeatured = mutation({
     featuredLabel: v.optional(featuredLabelValidator)
   },
   handler: async (ctx, args) => {
-    const currentUser = await getOrCreateCurrentUser(ctx);
-
-    if (currentUser?.role !== "admin") {
-      throw new ConvexError("Admin access is required.");
-    }
+    await requireAdmin(ctx);
 
     const listing = await ctx.db.get(args.id);
 
