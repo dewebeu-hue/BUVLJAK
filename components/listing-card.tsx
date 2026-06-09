@@ -14,6 +14,7 @@ import {
   listingTypeLabels,
   ListingType
 } from "@/lib/listings";
+import { getPublicListingUrl } from "@/lib/public-urls";
 
 const hasConvexUrl = Boolean(process.env.NEXT_PUBLIC_CONVEX_URL);
 
@@ -53,13 +54,14 @@ function ConnectedListingCard({ listing }: { listing: Listing }) {
   }
 
   async function handleShare() {
-    const shared = await shareListing(listing);
+    const shareResult = await shareListing(listing);
 
-    if (!shared) {
+    if (!shareResult) {
       setStatusMessage("Dijeljenje je prekinuto.");
       return;
     }
 
+    setStatusMessage(shareResult === "copied" ? "Link je kopiran." : "Podijeljeno.");
     setShareCount((current) => current + 1);
     await incrementShareCount({ id: listing.id as Id<"listings"> });
   }
@@ -87,13 +89,14 @@ function LocalListingCard({ listing }: { listing: Listing }) {
   }
 
   async function handleShare() {
-    const shared = await shareListing(listing);
+    const shareResult = await shareListing(listing);
 
-    if (!shared) {
+    if (!shareResult) {
       setStatusMessage("Dijeljenje je prekinuto.");
       return;
     }
 
+    setStatusMessage(shareResult === "copied" ? "Link je kopiran." : "Podijeljeno.");
     setShareCount((current) => current + 1);
   }
 
@@ -240,9 +243,7 @@ function ListingCardSurface({
 }
 
 async function shareListing(listing: Listing) {
-  const detailsHref = `/oglasi/${listing.id}`;
-  const shareUrl =
-    typeof window === "undefined" ? detailsHref : `${window.location.origin}${detailsHref}`;
+  const shareUrl = getPublicListingUrl(listing.id);
   const nav = typeof window !== "undefined" ? window.navigator : undefined;
 
   try {
@@ -252,12 +253,14 @@ async function shareListing(listing: Listing) {
         text: `${listing.title} - Buvljak`,
         url: shareUrl
       });
+      return "shared";
     } else if (nav?.clipboard) {
       await nav.clipboard.writeText(shareUrl);
+      return "copied";
     }
   } catch {
     return false;
   }
 
-  return true;
+  return false;
 }

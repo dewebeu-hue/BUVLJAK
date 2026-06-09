@@ -2,6 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { action, query } from "./_generated/server";
 import { api } from "./_generated/api";
 import { listingTypeValidator, priceTypeValidator } from "./validators";
+import { getPublicListingUrl } from "../lib/public-urls";
 
 type Tone = "simple" | "friendly" | "short";
 
@@ -78,8 +79,17 @@ function buildListingUrl(id?: string) {
     return undefined;
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
-  return appUrl ? `${appUrl}/oglasi/${id}` : `/oglasi/${id}`;
+  return getPublicListingUrl(id);
+}
+
+function ensureDetailsLink(text: string, id?: string) {
+  const listingUrl = buildListingUrl(id);
+
+  if (!listingUrl || text.includes(listingUrl)) {
+    return text.trim();
+  }
+
+  return `${text.trim()}\n\nViše detalja: ${listingUrl}`;
 }
 
 function generateFallbackText(listing: PublicListingForPost, tone: Tone) {
@@ -136,7 +146,7 @@ function generateFallbackText(listing: PublicListingForPost, tone: Tone) {
   const lines = tone === "short" ? templates[listing.type].filter((line) => line !== "") : templates[listing.type];
 
   if (listingUrl) {
-    lines.push("", `Link: ${listingUrl}`);
+    lines.push("", `Više detalja: ${listingUrl}`);
   }
 
   return lines.filter((line, index, all) => line || all[index - 1]).join("\n").trim();
@@ -257,13 +267,13 @@ export const generateFacebookPostText = action({
 
     if (generatedText) {
       return {
-        generatedText,
+        generatedText: ensureDetailsLink(generatedText, listing.id),
         usedAi: true
       };
     }
 
     return {
-      generatedText: generateFallbackText(listing, tone),
+      generatedText: ensureDetailsLink(generateFallbackText(listing, tone), listing.id),
       usedAi: false
     };
   }

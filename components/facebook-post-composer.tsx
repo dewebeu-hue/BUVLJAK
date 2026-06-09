@@ -10,6 +10,7 @@ import {
   type FacebookPostTone
 } from "@/lib/facebook-post-text";
 import type { Listing } from "@/lib/listings";
+import { getPublicListingUrl } from "@/lib/public-urls";
 
 type FacebookPostComposerProps = {
   listing: Listing;
@@ -94,8 +95,7 @@ export function FacebookPostComposer({
   async function shareText() {
     setIsSharing(true);
 
-    const shareUrl =
-      typeof window === "undefined" ? `/oglasi/${listing.id}` : `${window.location.origin}/oglasi/${listing.id}`;
+    const shareUrl = getPublicListingUrl(listing.id);
 
     try {
       if (navigator.share) {
@@ -107,7 +107,7 @@ export function FacebookPostComposer({
         await registerShare();
         setMessage("Podijeljeno.");
       } else if (navigator.clipboard) {
-        await navigator.clipboard.writeText(`${postText}\n\n${shareUrl}`);
+        await navigator.clipboard.writeText(postText.includes(shareUrl) ? postText : `${postText}\n\nViše detalja: ${shareUrl}`);
         await registerShare();
         setMessage("Kopirano.");
       } else {

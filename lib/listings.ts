@@ -10,6 +10,8 @@ export type PriceType = "fixed" | "negotiable" | "free" | "swap" | "wanted";
 
 export type ListingImportSource = "manual" | "facebook_text" | "facebook_url";
 
+export type FeaturedLabel = "Istaknuto" | "Hitno" | "Top oglas";
+
 export type Listing = {
   id: string;
   type: ListingType;
@@ -28,6 +30,10 @@ export type Listing = {
   saveCount: number;
   shareCount: number;
   contactClickCount: number;
+  isFeatured?: boolean;
+  featuredUntil?: number;
+  featuredLabel?: FeaturedLabel;
+  featuredCreatedAt?: number;
   importSource?: ListingImportSource;
   sourceFacebookUrl?: string;
   importedRawText?: string;
@@ -321,6 +327,10 @@ export function fromConvexListing(listing: ConvexListingWithPresentation): Listi
     sourceFacebookUrl: listing.sourceFacebookUrl,
     importedRawText: listing.importedRawText,
     importParsedAt: listing.importParsedAt,
+    isFeatured: listing.isFeatured,
+    featuredUntil: listing.featuredUntil,
+    featuredLabel: listing.featuredLabel,
+    featuredCreatedAt: listing.featuredCreatedAt,
     shareCount: listing.shareCount,
     saveCount: listing.saveCount,
     createdAt: new Date(listing.createdAt).toISOString(),

@@ -41,6 +41,7 @@ export const upsertCurrentUser = mutation({
         displayName,
         ...(email !== undefined ? { email } : {}),
         ...(city !== undefined ? { city } : {}),
+        ...(existing.plan === undefined ? { plan: "free" } : {}),
         updatedAt: now
       });
 
@@ -54,7 +55,8 @@ export const upsertCurrentUser = mutation({
       ...(city !== undefined ? { city } : {}),
       createdAt: now,
       updatedAt: now,
-      role: "user"
+      role: "user",
+      plan: "free"
     });
   }
 });

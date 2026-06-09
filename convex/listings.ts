@@ -4,6 +4,7 @@ import { mutation, query } from "./_generated/server";
 import type { DataModel, Doc } from "./_generated/dataModel";
 import {
   contactMethodValidator,
+  featuredLabelValidator,
   listingStatusValidator,
   listingTypeValidator,
   priceTypeValidator
@@ -141,6 +142,7 @@ async function getOrCreateCurrentUser(ctx: GenericMutationCtx<DataModel>) {
       displayName,
       ...(email !== undefined ? { email } : {}),
       ...(city !== undefined ? { city } : {}),
+      ...(existing.plan === undefined ? { plan: "free" } : {}),
       updatedAt: now
     });
 
@@ -154,7 +156,8 @@ async function getOrCreateCurrentUser(ctx: GenericMutationCtx<DataModel>) {
     ...(city !== undefined ? { city } : {}),
     createdAt: now,
     updatedAt: now,
-    role: "user"
+    role: "user",
+    plan: "free"
   });
 
   return await ctx.db.get(userId);
@@ -205,10 +208,77 @@ async function withListingPresentation(
   ]);
 
   return {
-    ...listing,
+    _id: listing._id,
+    _creationTime: listing._creationTime,
+    ownerId: listing.ownerId,
+    type: listing.type,
+    title: listing.title,
+    description: listing.description,
+    city: listing.city,
+    category: listing.category,
+    ...(listing.price !== undefined ? { price: listing.price } : {}),
+    priceType: listing.priceType,
+    status: listing.status,
+    contactMethod: listing.contactMethod,
+    contactVisibility: listing.contactVisibility,
+    allowOffers: listing.allowOffers,
+    images: listing.images,
+    viewCount: listing.viewCount,
+    contactClickCount: listing.contactClickCount,
+    shareCount: listing.shareCount,
+    saveCount: listing.saveCount,
+    isFeatured: listing.isFeatured,
+    featuredUntil: listing.featuredUntil,
+    featuredLabel: listing.featuredLabel,
+    featuredCreatedAt: listing.featuredCreatedAt,
+    importSource: listing.importSource,
+    importParsedAt: listing.importParsedAt,
+    createdAt: listing.createdAt,
+    updatedAt: listing.updatedAt,
+    resolvedAt: listing.resolvedAt,
+    removedReason: listing.removedReason,
     imageUrls: imageUrls.filter((url): url is string => Boolean(url)),
     ownerDisplayName: owner?.displayName,
     isOwner: Boolean(currentUser && listing.ownerId === currentUser._id)
+  };
+}
+
+async function withPublicListingPresentation(
+  ctx: GenericQueryCtx<DataModel>,
+  listing: Doc<"listings">
+) {
+  const imageUrls = await Promise.all(
+    listing.images.map(async (imageId) => {
+      try {
+        return await ctx.storage.getUrl(imageId);
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  return {
+    id: listing._id,
+    type: listing.type,
+    title: listing.title,
+    description: listing.description,
+    city: listing.city,
+    category: listing.category,
+    ...(listing.price !== undefined ? { price: listing.price } : {}),
+    priceType: listing.priceType,
+    status: listing.status,
+    allowOffers: listing.allowOffers,
+    images: listing.images,
+    imageUrls: imageUrls.filter((url): url is string => Boolean(url)),
+    viewCount: listing.viewCount,
+    shareCount: listing.shareCount,
+    saveCount: listing.saveCount,
+    isFeatured: listing.isFeatured,
+    featuredUntil: listing.featuredUntil,
+    featuredLabel: listing.featuredLabel,
+    featuredCreatedAt: listing.featuredCreatedAt,
+    createdAt: listing.createdAt,
+    updatedAt: listing.updatedAt
   };
 }
 
@@ -255,6 +325,21 @@ export const getListingById = query({
     }
 
     return await withListingPresentation(ctx, listing);
+  }
+});
+
+export const getPublicListingById = query({
+  args: {
+    id: v.id("listings")
+  },
+  handler: async (ctx, args) => {
+    const listing = await ctx.db.get(args.id);
+
+    if (!listing) {
+      return null;
+    }
+
+    return await withPublicListingPresentation(ctx, listing);
   }
 });
 
@@ -420,6 +505,7 @@ export const createListing = mutation({
       contactVisibility: "hidden_until_click",
       allowOffers: args.allowOffers ?? priceType !== "free",
       images: args.images ?? [],
+      isFeatured: false,
       viewCount: 0,
       contactClickCount: 0,
       shareCount: 0,
@@ -461,6 +547,44 @@ export const updateListingStatus = mutation({
       ...(args.status === "removed"
         ? { removedReason: cleanOptional(args.removedReason) ?? "Removed by admin" }
         : {})
+    });
+
+    return args.id;
+  }
+});
+
+export const adminSetListingFeatured = mutation({
+  args: {
+    id: v.id("listings"),
+    isFeatured: v.boolean(),
+    featuredUntil: v.optional(v.number()),
+    featuredLabel: v.optional(featuredLabelValidator)
+  },
+  handler: async (ctx, args) => {
+    const currentUser = await getOrCreateCurrentUser(ctx);
+
+    if (currentUser?.role !== "admin") {
+      throw new ConvexError("Admin access is required.");
+    }
+
+    const listing = await ctx.db.get(args.id);
+
+    if (!listing) {
+      throw new ConvexError("Listing not found.");
+    }
+
+    const now = Date.now();
+
+    await ctx.db.patch(args.id, {
+      isFeatured: args.isFeatured,
+      ...(args.isFeatured
+        ? {
+            ...(args.featuredUntil !== undefined ? { featuredUntil: args.featuredUntil } : {}),
+            featuredLabel: args.featuredLabel ?? "Istaknuto",
+            featuredCreatedAt: listing.featuredCreatedAt ?? now
+          }
+        : {}),
+      updatedAt: now
     });
 
     return args.id;

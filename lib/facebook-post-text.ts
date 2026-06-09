@@ -3,6 +3,7 @@ import {
   type ListingType,
   type PriceType
 } from "@/lib/listings";
+import { getPublicListingUrl } from "@/lib/public-urls";
 
 export type FacebookPostTone = "simple" | "friendly" | "short";
 
@@ -37,17 +38,7 @@ export function buildListingUrl(listingId?: string, appUrl?: string) {
     return undefined;
   }
 
-  const configuredUrl = appUrl?.trim().replace(/\/$/, "");
-
-  if (configuredUrl) {
-    return `${configuredUrl}/oglasi/${listingId}`;
-  }
-
-  if (typeof window !== "undefined") {
-    return `${window.location.origin}/oglasi/${listingId}`;
-  }
-
-  return `/oglasi/${listingId}`;
+  return getPublicListingUrl(listingId, appUrl);
 }
 
 export function generateFallbackFacebookPostText(
@@ -112,7 +103,7 @@ export function generateFallbackFacebookPostText(
   const lines = tone === "short" ? templates[listing.type].filter((line) => line !== "") : templates[listing.type];
 
   if (listingUrl) {
-    lines.push("", `Link: ${listingUrl}`);
+    lines.push("", `Više detalja: ${listingUrl}`);
   }
 
   return lines.filter((line, index, all) => line || all[index - 1]).join("\n").trim();

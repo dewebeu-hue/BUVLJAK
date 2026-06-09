@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Eye,
   Handshake,
+  Loader2,
   MapPin,
   Pause,
   RotateCcw,
@@ -35,6 +36,7 @@ import {
   type ListingStatus,
   type ListingType
 } from "@/lib/listings";
+import { getPublicListingUrl } from "@/lib/public-urls";
 
 const hasConvexUrl = Boolean(process.env.NEXT_PUBLIC_CONVEX_URL);
 
@@ -52,6 +54,15 @@ const reportReasons = [
   "Oglas više nije aktualan",
   "Drugo"
 ];
+
+type ContactIntent = "contact" | "availability" | "offer" | "pickup" | "swap" | "have_item";
+
+type ContactResponse = {
+  method: "whatsapp" | "email" | "facebook" | "none";
+  redirectUrl?: string;
+  emailSent?: boolean;
+  displayMessage: string;
+};
 
 export function ListingDetailView({ listingId }: { listingId: string }) {
   const isMounted = useClientMounted();
@@ -77,6 +88,7 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
   const incrementShareCount = useMutation(api.listings.incrementShareCount);
   const updateListingStatus = useMutation(api.listings.updateListingStatus);
   const createReport = useMutation(api.listings.createReport);
+  const requestContactInfo = useAction(api.contact.requestContactInfo);
   const wasJustPublished =
     typeof window !== "undefined" && new URLSearchParams(window.location.search).get("published") === "1";
   const publishedMessage = "Oglas je objavljen. Sada ga možeš kopirati u Facebook grupu.";
@@ -89,6 +101,7 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [offerAmount, setOfferAmount] = useState("");
   const [offerMessage, setOfferMessage] = useState("");
+  const [pendingContactIntent, setPendingContactIntent] = useState<ContactIntent | null>(null);
   const [selectedReportReason, setSelectedReportReason] = useState(reportReasons[0]);
 
   const listing = useMemo<Listing | null>(() => {
@@ -149,8 +162,7 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
       return;
     }
 
-    const shareUrl =
-      typeof window === "undefined" ? `/oglasi/${listing.id}` : `${window.location.origin}/oglasi/${listing.id}`;
+    const shareUrl = getPublicListingUrl(listing.id);
     const nav = typeof window !== "undefined" ? window.navigator : undefined;
 
     try {
@@ -160,9 +172,13 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
           text: `${listing.title} - Buvljak`,
           url: shareUrl
         });
+        setStatusMessage("Podijeljeno.");
       } else if (nav?.clipboard) {
         await nav.clipboard.writeText(shareUrl);
         setStatusMessage("Link je kopiran.");
+      } else {
+        setStatusMessage("Dijeljenje nije podržano u ovom pregledniku.");
+        return;
       }
     } catch {
       setStatusMessage("Dijeljenje je prekinuto.");
@@ -231,8 +247,39 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
     setStatusMessage("Prijava je zaprimljena.");
   }
 
-  function submitOfferPlaceholder() {
-    setStatusMessage("Slanje ponuda dolazi u sljedećem koraku kontakt flowa.");
+  async function requestContact(
+    intent: ContactIntent,
+    options?: { offerAmount?: number; message?: string }
+  ) {
+    if (!listing || !canPersist) {
+      setStatusMessage("Kontakt flow radi na stvarnim Convex oglasima.");
+      return false;
+    }
+
+    setPendingContactIntent(intent);
+    setStatusMessage("");
+
+    try {
+      const result = (await requestContactInfo({
+        listingId: listing.id as Id<"listings">,
+        source: "listing_page",
+        intent,
+        ...(options?.offerAmount !== undefined ? { offerAmount: options.offerAmount } : {}),
+        ...(options?.message ? { message: options.message } : {})
+      })) as ContactResponse;
+
+      if (result.redirectUrl) {
+        window.open(result.redirectUrl, "_blank", "noopener,noreferrer");
+      }
+
+      setStatusMessage(result.displayMessage);
+      return Boolean(result.redirectUrl || result.emailSent);
+    } catch {
+      setStatusMessage("Kontakt trenutno nije dostupan. Pokušaj kasnije.");
+      return false;
+    } finally {
+      setPendingContactIntent(null);
+    }
   }
 
   const actionLabel = actionLabelForListing(listing);
@@ -357,32 +404,43 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
               </dl>
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => setStatusMessage("Kontakt flow dolazi u sljedećem koraku.")}
-                className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
-              >
-                <Send aria-hidden="true" size={17} />
-                Kontaktiraj oglašivača
-              </button>
-              <button
-                type="button"
-                onClick={() => setStatusMessage("Pitanje o dostupnosti dolazi u kontakt flowu.")}
-                className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-ink/12 bg-white px-4 text-sm font-black text-ink transition hover:bg-field"
-              >
-                <CheckCircle2 aria-hidden="true" size={17} />
-                Pitaj je li još dostupno
-              </button>
-              <button
-                id="akcija"
-                type="button"
-                onClick={() => setIsActionOpen((current) => !current)}
-                className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-moss/18 bg-moss/8 px-4 text-sm font-black text-mossDark transition hover:bg-moss/12"
-              >
-                <Handshake aria-hidden="true" size={17} />
-                {actionLabel}
-              </button>
+            {listing.isOwner ? (
+              <div className="rounded-lg border border-moss/16 bg-moss/8 p-4">
+                <p className="font-black text-mossDark">Ovo je tvoj oglas.</p>
+                <p className="mt-1 text-sm font-semibold leading-relaxed text-ink/64">
+                  Kontakt gumbe ne prikazujemo vlasniku oglasa.
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-2 sm:grid-cols-2">
+                <ContactButton
+                  loading={pendingContactIntent === "contact"}
+                  icon={<Send aria-hidden="true" size={17} />}
+                  label="Kontaktiraj oglašivača"
+                  primary
+                  onClick={() => requestContact("contact")}
+                />
+                <ContactButton
+                  loading={pendingContactIntent === "availability"}
+                  icon={<CheckCircle2 aria-hidden="true" size={17} />}
+                  label="Pitaj je li još dostupno"
+                  onClick={() => requestContact("availability")}
+                />
+                <ContactButton
+                  id="akcija"
+                  loading={pendingContactIntent === "pickup"}
+                  icon={<Handshake aria-hidden="true" size={17} />}
+                  label={actionLabel}
+                  tone="soft"
+                  onClick={() => {
+                    if (listing.type === "give") {
+                      void requestContact("pickup");
+                      return;
+                    }
+
+                    setIsActionOpen((current) => !current);
+                  }}
+                />
               <button
                 type="button"
                 onClick={() => handleMetricAction("save")}
@@ -407,16 +465,23 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
                 <AlertTriangle aria-hidden="true" size={17} />
                 Prijavi oglas
               </button>
-            </div>
+              </div>
+            )}
 
-            {isActionOpen ? (
-              <ActionPlaceholderPanel
+            {isActionOpen && !listing.isOwner ? (
+              <ActionContactPanel
                 listing={listing}
                 offerAmount={offerAmount}
                 offerMessage={offerMessage}
                 onAmountChange={setOfferAmount}
                 onMessageChange={setOfferMessage}
-                onSubmit={submitOfferPlaceholder}
+                loading={pendingContactIntent === "offer" || pendingContactIntent === "swap" || pendingContactIntent === "have_item"}
+                onSubmit={async (intent, payload) => {
+                  const sent = await requestContact(intent, payload);
+                  if (sent) {
+                    setIsActionOpen(false);
+                  }
+                }}
               />
             ) : null}
 
@@ -459,12 +524,50 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
   );
 }
 
-function ActionPlaceholderPanel({
+function ContactButton({
+  id,
+  loading,
+  icon,
+  label,
+  onClick,
+  primary = false,
+  tone = "plain"
+}: {
+  id?: string;
+  loading: boolean;
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+  primary?: boolean;
+  tone?: "plain" | "soft";
+}) {
+  const className = primary
+    ? "bg-moss px-4 text-white hover:bg-mossDark"
+    : tone === "soft"
+      ? "border border-moss/18 bg-moss/8 px-4 text-mossDark hover:bg-moss/12"
+      : "border border-ink/12 bg-white px-4 text-ink hover:bg-field";
+
+  return (
+    <button
+      id={id}
+      type="button"
+      disabled={loading}
+      onClick={onClick}
+      className={`focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg text-sm font-black transition disabled:cursor-wait disabled:opacity-70 ${className}`}
+    >
+      {loading ? <Loader2 aria-hidden="true" className="animate-spin" size={17} /> : icon}
+      {label}
+    </button>
+  );
+}
+
+function ActionContactPanel({
   listing,
   offerAmount,
   offerMessage,
   onAmountChange,
   onMessageChange,
+  loading,
   onSubmit
 }: {
   listing: Listing;
@@ -472,16 +575,66 @@ function ActionPlaceholderPanel({
   offerMessage: string;
   onAmountChange: (value: string) => void;
   onMessageChange: (value: string) => void;
-  onSubmit: () => void;
+  loading: boolean;
+  onSubmit: (
+    intent: ContactIntent,
+    payload?: { offerAmount?: number; message?: string }
+  ) => Promise<void>;
 }) {
+  const [error, setError] = useState("");
   const title = actionLabelForListing(listing);
-  const showAmount = listing.type === "sell" && listing.allowOffers;
+  const isOffer = listing.type === "sell" && listing.allowOffers;
+  const intent: ContactIntent =
+    listing.type === "swap"
+      ? "swap"
+      : listing.type === "want"
+        ? "have_item"
+        : isOffer
+          ? "offer"
+          : "contact";
+  const messageLabel =
+    listing.type === "swap"
+      ? "Što nudiš u zamjenu"
+      : listing.type === "want"
+        ? "Što imaš"
+        : "Kratka poruka";
+  const messagePlaceholder =
+    listing.type === "swap"
+      ? "Npr. nudim manji regal ili policu."
+      : listing.type === "want"
+        ? "Npr. imam stariji ispravan model, mogu poslati detalje."
+        : "Napiši kratku poruku oglašivaču.";
+
+  async function handleSubmit() {
+    setError("");
+
+    if (isOffer) {
+      const amount = Number(offerAmount.replace(",", "."));
+      if (!Number.isFinite(amount) || amount <= 0) {
+        setError("Upiši iznos ponude.");
+        return;
+      }
+
+      await onSubmit(intent, {
+        offerAmount: amount,
+        ...(offerMessage.trim() ? { message: offerMessage.trim() } : {})
+      });
+      return;
+    }
+
+    if ((intent === "swap" || intent === "have_item") && !offerMessage.trim()) {
+      setError("Napiši kratku poruku prije slanja.");
+      return;
+    }
+
+    await onSubmit(intent, offerMessage.trim() ? { message: offerMessage.trim() } : undefined);
+  }
 
   return (
     <section className="rounded-lg border border-moss/18 bg-moss/8 p-5">
       <h2 className="text-xl font-black text-ink">{title}</h2>
       <div className="mt-4 grid gap-3">
-        {showAmount ? (
+        {isOffer ? (
           <label className="block">
             <span className="text-sm font-black text-ink">Iznos ponude</span>
             <input
@@ -495,24 +648,31 @@ function ActionPlaceholderPanel({
           </label>
         ) : null}
         <label className="block">
-          <span className="text-sm font-black text-ink">Kratka poruka</span>
+          <span className="text-sm font-black text-ink">{messageLabel}</span>
           <textarea
             value={offerMessage}
             onChange={(event) => onMessageChange(event.target.value)}
-            placeholder="Napiši kratku poruku oglašivaču."
+            placeholder={messagePlaceholder}
             className="focus-ring mt-2 min-h-28 w-full rounded-lg border border-ink/12 bg-white px-3 py-3 text-sm font-bold text-ink"
           />
         </label>
+        {error ? (
+          <p className="text-sm font-black text-clay" aria-live="polite">
+            {error}
+          </p>
+        ) : null}
         <button
           type="button"
-          onClick={onSubmit}
-          className="focus-ring inline-flex h-11 items-center justify-center rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
+          disabled={loading}
+          onClick={handleSubmit}
+          className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark disabled:cursor-wait disabled:opacity-70"
         >
+          {loading ? <Loader2 aria-hidden="true" className="animate-spin" size={17} /> : null}
           {title}
         </button>
       </div>
       <p className="mt-3 text-sm font-bold text-ink/64">
-        Slanje ponuda dolazi u sljedećem koraku kontakt flowa.
+        Poruka ide kroz sigurni kontakt resolver, a dogovor se nastavlja izvan aplikacije.
       </p>
     </section>
   );
