@@ -1,6 +1,7 @@
 import { ConvexError, v } from "convex/values";
+import type { GenericMutationCtx } from "convex/server";
 import { mutation, query } from "./_generated/server";
-import type { Doc } from "./_generated/dataModel";
+import type { DataModel, Doc } from "./_generated/dataModel";
 import {
   contactMethodValidator,
   listingStatusValidator,
@@ -10,6 +11,10 @@ import {
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
+
+function optionalString(value: unknown) {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+}
 
 function cleanRequired(value: string, fieldName: string, minLength = 2) {
   const cleaned = value.trim();
@@ -89,6 +94,59 @@ function defaultPriceType(type: Doc<"listings">["type"], price?: number): Doc<"l
   return price === undefined ? "negotiable" : "fixed";
 }
 
+async function getOrCreateCurrentUser(ctx: GenericMutationCtx<DataModel>) {
+  const identity = await ctx.auth.getUserIdentity();
+
+  if (!identity) {
+    throw new ConvexError("Authentication is required.");
+  }
+
+  const now = Date.now();
+  const clerkUserId = identity.subject;
+  const fullName = optionalString(
+    [optionalString(identity.givenName), optionalString(identity.familyName)]
+      .filter(Boolean)
+      .join(" ")
+  );
+  const displayName =
+    optionalString(identity.name) ??
+    fullName ??
+    optionalString(identity.preferredUsername) ??
+    optionalString(identity.nickname) ??
+    optionalString(identity.email) ??
+    "Korisnik Buvljaka";
+  const email = optionalString(identity.email);
+  const city = optionalString(identity.city);
+
+  const existing = await ctx.db
+    .query("users")
+    .withIndex("by_clerkUserId", (q) => q.eq("clerkUserId", clerkUserId))
+    .first();
+
+  if (existing) {
+    await ctx.db.patch(existing._id, {
+      displayName,
+      ...(email !== undefined ? { email } : {}),
+      ...(city !== undefined ? { city } : {}),
+      updatedAt: now
+    });
+
+    return existing;
+  }
+
+  const userId = await ctx.db.insert("users", {
+    clerkUserId,
+    displayName,
+    ...(email !== undefined ? { email } : {}),
+    ...(city !== undefined ? { city } : {}),
+    createdAt: now,
+    updatedAt: now,
+    role: "user"
+  });
+
+  return await ctx.db.get(userId);
+}
+
 export const listActiveListings = query({
   args: {
     city: v.optional(v.string()),
@@ -157,6 +215,44 @@ export const listAdminListings = query({
   }
 });
 
+export const listMyListings = query({
+  args: {
+    limit: v.optional(v.number())
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      return [];
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerkUserId", (q) => q.eq("clerkUserId", identity.subject))
+      .first();
+
+    if (!user) {
+      return [];
+    }
+
+    const limit = clampLimit(args.limit);
+    const listings = await ctx.db
+      .query("listings")
+      .withIndex("by_ownerId", (q) => q.eq("ownerId", user._id))
+      .collect();
+
+    return listings.sort((a, b) => b.createdAt - a.createdAt).slice(0, limit);
+  }
+});
+
+export const generateListingImageUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    await getOrCreateCurrentUser(ctx);
+    return await ctx.storage.generateUploadUrl();
+  }
+});
+
 export const createListing = mutation({
   args: {
     ownerId: v.optional(v.id("users")),
@@ -175,19 +271,46 @@ export const createListing = mutation({
     images: v.optional(v.array(v.string()))
   },
   handler: async (ctx, args) => {
+    const currentUser = await getOrCreateCurrentUser(ctx);
+
+    if (!currentUser) {
+      throw new ConvexError("Authentication is required.");
+    }
+
     if (args.price !== undefined && args.price < 0) {
       throw new ConvexError("Price cannot be negative.");
     }
 
     const now = Date.now();
-    const title = cleanRequired(args.title, "Title");
-    const description = cleanRequired(args.description, "Description", 8);
+    const title = cleanRequired(args.title, "Title", 3);
+    const description = cleanRequired(args.description, "Description", 10);
     const city = cleanRequired(args.city, "City");
     const category = cleanRequired(args.category, "Category");
     const priceType = args.priceType ?? defaultPriceType(args.type, args.price);
+    const needsPrice = priceType === "fixed" || priceType === "negotiable";
+
+    if (needsPrice && args.price === undefined) {
+      throw new ConvexError("Price is required for this price type.");
+    }
+
+    if ((args.images?.length ?? 0) < 1 || (args.images?.length ?? 0) > 5) {
+      throw new ConvexError("Add between 1 and 5 images.");
+    }
+
+    if (args.contactMethod === "whatsapp" && !cleanOptional(args.contactPhone)) {
+      throw new ConvexError("WhatsApp phone is required.");
+    }
+
+    if (args.contactMethod === "email" && !cleanOptional(args.contactEmail)) {
+      throw new ConvexError("Email is required.");
+    }
+
+    if (args.contactMethod === "facebook" && !cleanOptional(args.contactFacebookUrl)) {
+      throw new ConvexError("Facebook URL is required.");
+    }
 
     return await ctx.db.insert("listings", {
-      ...(args.ownerId !== undefined ? { ownerId: args.ownerId } : {}),
+      ownerId: currentUser._id,
       type: args.type,
       title,
       description,
@@ -226,10 +349,15 @@ export const updateListingStatus = mutation({
     removedReason: v.optional(v.string())
   },
   handler: async (ctx, args) => {
+    const currentUser = await getOrCreateCurrentUser(ctx);
     const listing = await ctx.db.get(args.id);
 
     if (!listing) {
       throw new ConvexError("Listing not found.");
+    }
+
+    if (listing.ownerId !== currentUser?._id && currentUser?.role !== "admin") {
+      throw new ConvexError("You can update only your own listings.");
     }
 
     const now = Date.now();
