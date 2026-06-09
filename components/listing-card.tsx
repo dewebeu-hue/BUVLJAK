@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useMutation } from "convex/react";
-import { Bookmark, Eye, Handshake, MapPin, Send, Share2, Tag } from "lucide-react";
+import { Bookmark, Eye, Handshake, MapPin, Send, Share2, Sparkles, Tag } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import {
@@ -32,15 +32,27 @@ const visualTone: Record<ListingType, string> = {
   want: "from-clay/24 via-field to-skywash"
 };
 
-export function ListingCard({ listing }: { listing: Listing }) {
+export function ListingCard({
+  listing,
+  showFeatured = false
+}: {
+  listing: Listing;
+  showFeatured?: boolean;
+}) {
   if (hasConvexUrl && listing.isPersisted) {
-    return <ConnectedListingCard listing={listing} />;
+    return <ConnectedListingCard listing={listing} showFeatured={showFeatured} />;
   }
 
-  return <LocalListingCard listing={listing} />;
+  return <LocalListingCard listing={listing} showFeatured={showFeatured} />;
 }
 
-function ConnectedListingCard({ listing }: { listing: Listing }) {
+function ConnectedListingCard({
+  listing,
+  showFeatured
+}: {
+  listing: Listing;
+  showFeatured: boolean;
+}) {
   const incrementSaveCount = useMutation(api.listings.incrementSaveCount);
   const incrementShareCount = useMutation(api.listings.incrementShareCount);
   const [saveCount, setSaveCount] = useState(listing.saveCount);
@@ -74,11 +86,18 @@ function ConnectedListingCard({ listing }: { listing: Listing }) {
       statusMessage={statusMessage}
       onSave={handleSave}
       onShare={handleShare}
+      showFeatured={showFeatured}
     />
   );
 }
 
-function LocalListingCard({ listing }: { listing: Listing }) {
+function LocalListingCard({
+  listing,
+  showFeatured
+}: {
+  listing: Listing;
+  showFeatured: boolean;
+}) {
   const [saveCount, setSaveCount] = useState(listing.saveCount);
   const [shareCount, setShareCount] = useState(listing.shareCount);
   const [statusMessage, setStatusMessage] = useState("");
@@ -108,6 +127,7 @@ function LocalListingCard({ listing }: { listing: Listing }) {
       statusMessage={statusMessage}
       onSave={handleSave}
       onShare={handleShare}
+      showFeatured={showFeatured}
     />
   );
 }
@@ -118,7 +138,8 @@ function ListingCardSurface({
   shareCount,
   statusMessage,
   onSave,
-  onShare
+  onShare,
+  showFeatured
 }: {
   listing: Listing;
   saveCount: number;
@@ -126,6 +147,7 @@ function ListingCardSurface({
   statusMessage: string;
   onSave: () => void;
   onShare: () => void;
+  showFeatured: boolean;
 }) {
   const created = new Intl.DateTimeFormat("hr-HR", {
     day: "numeric",
@@ -150,6 +172,12 @@ function ListingCardSurface({
               <Tag aria-hidden="true" size={32} strokeWidth={1.9} />
             </div>
           )}
+          {showFeatured && listing.isFeatured ? (
+            <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-honey/35 bg-white/95 px-3 py-1 text-xs font-black text-[#72520d] shadow-sm">
+              <Sparkles aria-hidden="true" size={14} />
+              {listing.featuredLabel ?? "Istaknuto"}
+            </span>
+          ) : null}
         </div>
       </Link>
 
