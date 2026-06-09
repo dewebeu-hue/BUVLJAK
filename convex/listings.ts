@@ -1,5 +1,5 @@
 import { ConvexError, v } from "convex/values";
-import type { GenericMutationCtx } from "convex/server";
+import type { GenericMutationCtx, GenericQueryCtx } from "convex/server";
 import { mutation, query } from "./_generated/server";
 import type { DataModel, Doc } from "./_generated/dataModel";
 import {
@@ -147,6 +147,58 @@ async function getOrCreateCurrentUser(ctx: GenericMutationCtx<DataModel>) {
   return await ctx.db.get(userId);
 }
 
+async function getCurrentUser(ctx: GenericQueryCtx<DataModel>) {
+  const identity = await ctx.auth.getUserIdentity();
+
+  if (!identity) {
+    return null;
+  }
+
+  return await ctx.db
+    .query("users")
+    .withIndex("by_clerkUserId", (q) => q.eq("clerkUserId", identity.subject))
+    .first();
+}
+
+async function getReporterUser(ctx: GenericMutationCtx<DataModel>) {
+  const identity = await ctx.auth.getUserIdentity();
+
+  if (!identity) {
+    return null;
+  }
+
+  return await ctx.db
+    .query("users")
+    .withIndex("by_clerkUserId", (q) => q.eq("clerkUserId", identity.subject))
+    .first();
+}
+
+async function withListingPresentation(
+  ctx: GenericQueryCtx<DataModel>,
+  listing: Doc<"listings">
+) {
+  const [currentUser, owner, imageUrls] = await Promise.all([
+    getCurrentUser(ctx),
+    listing.ownerId ? ctx.db.get(listing.ownerId) : Promise.resolve(null),
+    Promise.all(
+      listing.images.map(async (imageId) => {
+        try {
+          return await ctx.storage.getUrl(imageId);
+        } catch {
+          return null;
+        }
+      })
+    )
+  ]);
+
+  return {
+    ...listing,
+    imageUrls: imageUrls.filter((url): url is string => Boolean(url)),
+    ownerDisplayName: owner?.displayName,
+    isOwner: Boolean(currentUser && listing.ownerId === currentUser._id)
+  };
+}
+
 export const listActiveListings = query({
   args: {
     city: v.optional(v.string()),
@@ -163,7 +215,7 @@ export const listActiveListings = query({
       .order("desc")
       .collect();
 
-    return listings
+    const filtered = listings
       .filter((listing) =>
         matchesListingFilters(listing, {
           city: cleanOptional(args.city),
@@ -173,6 +225,8 @@ export const listActiveListings = query({
         })
       )
       .slice(0, limit);
+
+    return await Promise.all(filtered.map((listing) => withListingPresentation(ctx, listing)));
   }
 });
 
@@ -181,7 +235,13 @@ export const getListingById = query({
     id: v.id("listings")
   },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.id);
+    const listing = await ctx.db.get(args.id);
+
+    if (!listing) {
+      return null;
+    }
+
+    return await withListingPresentation(ctx, listing);
   }
 });
 
@@ -217,6 +277,7 @@ export const listAdminListings = query({
 
 export const listMyListings = query({
   args: {
+    status: v.optional(listingStatusValidator),
     limit: v.optional(v.number())
   },
   handler: async (ctx, args) => {
@@ -241,7 +302,13 @@ export const listMyListings = query({
       .withIndex("by_ownerId", (q) => q.eq("ownerId", user._id))
       .collect();
 
-    return listings.sort((a, b) => b.createdAt - a.createdAt).slice(0, limit);
+    const filtered = args.status
+      ? listings.filter((listing) => listing.status === args.status)
+      : listings;
+
+    const sorted = filtered.sort((a, b) => b.createdAt - a.createdAt).slice(0, limit);
+
+    return await Promise.all(sorted.map((listing) => withListingPresentation(ctx, listing)));
   }
 });
 
@@ -432,5 +499,30 @@ export const incrementViewCount = mutation({
     });
 
     return listing.viewCount + 1;
+  }
+});
+
+export const createReport = mutation({
+  args: {
+    listingId: v.id("listings"),
+    reason: v.string()
+  },
+  handler: async (ctx, args) => {
+    const listing = await ctx.db.get(args.listingId);
+
+    if (!listing) {
+      throw new ConvexError("Listing not found.");
+    }
+
+    const reporter = await getReporterUser(ctx);
+    const reason = cleanRequired(args.reason, "Reason", 2);
+
+    return await ctx.db.insert("reports", {
+      listingId: args.listingId,
+      ...(reporter ? { reporterUserId: reporter._id } : {}),
+      reason,
+      status: "new",
+      createdAt: Date.now()
+    });
   }
 });

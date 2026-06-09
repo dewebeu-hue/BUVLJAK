@@ -3,14 +3,26 @@
 import { Show, SignInButton } from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
 import Link from "next/link";
-import { CheckCircle2, Eye, Loader2, Pause, PlusCircle, UserRound } from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  CheckCircle2,
+  Eye,
+  Loader2,
+  Pause,
+  PlusCircle,
+  RotateCcw,
+  Trash2,
+  UserRound
+} from "lucide-react";
 import { FacebookAuthButton } from "@/components/facebook-auth-button";
 import { api } from "@/convex/_generated/api";
-import type { Doc } from "@/convex/_generated/dataModel";
+import type { Id } from "@/convex/_generated/dataModel";
 import {
+  adminListings,
   demoListings,
-  formatPrice,
+  formatListingPrice,
   fromConvexListing,
+  listingStatusFilterOptions,
   listingStatusLabels,
   listingTypeLabels,
   type Listing,
@@ -19,8 +31,13 @@ import {
 
 const hasConvexUrl = Boolean(process.env.NEXT_PUBLIC_CONVEX_URL);
 
-const userDemoListings = demoListings.slice(0, 3);
-type ConvexListing = Doc<"listings">;
+const userDemoListings: Listing[] = [
+  demoListings[0],
+  { ...demoListings[1], status: "paused" },
+  { ...demoListings[2], status: "resolved" },
+  { ...adminListings[6], status: "removed" }
+];
+type ConvexListingResult = Parameters<typeof fromConvexListing>[0];
 
 export function MyListingsPanel() {
   return (
@@ -60,13 +77,23 @@ export function MyListingsPanel() {
 }
 
 function ConnectedMyListings() {
+  const [statusFilter, setStatusFilter] = useState<ListingStatus>("active");
   const listings = useQuery(api.listings.listMyListings, {
-    limit: 30
+    limit: 50
   });
   const updateListingStatus = useMutation(api.listings.updateListingStatus);
+  const listingModels = useMemo<Listing[]>(
+    () => ((listings ?? []) as ConvexListingResult[]).map((listing) => fromConvexListing(listing)),
+    [listings]
+  );
+  const filteredListings = listingModels.filter((listing) => listing.status === statusFilter);
 
   async function updateStatus(id: string, status: ListingStatus) {
-    await updateListingStatus({ id, status });
+    await updateListingStatus({
+      id: id as Id<"listings">,
+      status,
+      ...(status === "removed" ? { removedReason: "Removed by owner" } : {})
+    });
   }
 
   if (listings === undefined) {
@@ -84,20 +111,32 @@ function ConnectedMyListings() {
   }
 
   return (
-    <section className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {(listings as ConvexListing[]).map((listing) => (
-        <MyListingCard
-          key={listing._id}
-          listing={fromConvexListing(listing)}
-          onPause={() => updateStatus(listing._id, "paused")}
-          onResolve={() => updateStatus(listing._id, "resolved")}
-        />
-      ))}
-    </section>
+    <>
+      <StatusFilterBar value={statusFilter} onChange={setStatusFilter} />
+      {filteredListings.length > 0 ? (
+        <section className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredListings.map((listing) => (
+            <MyListingCard
+              key={listing.id}
+              listing={listing}
+              onPause={() => updateStatus(listing.id, "paused")}
+              onResolve={() => updateStatus(listing.id, "resolved")}
+              onActivate={() => updateStatus(listing.id, "active")}
+              onRemove={() => updateStatus(listing.id, "removed")}
+            />
+          ))}
+        </section>
+      ) : (
+        <EmptyStatusState />
+      )}
+    </>
   );
 }
 
 function LocalMyListingsFallback() {
+  const [statusFilter, setStatusFilter] = useState<ListingStatus>("active");
+  const filteredListings = userDemoListings.filter((listing) => listing.status === statusFilter);
+
   return (
     <>
       <section className="mt-7 rounded-lg border border-honey/30 bg-honey/16 p-5">
@@ -108,11 +147,16 @@ function LocalMyListingsFallback() {
       </section>
       <section className="mt-8">
         <h2 className="text-2xl font-black text-ink">Demo prikaz</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {userDemoListings.map((listing) => (
-            <MyListingCard key={listing.id} listing={listing} />
-          ))}
-        </div>
+        <StatusFilterBar value={statusFilter} onChange={setStatusFilter} />
+        {filteredListings.length > 0 ? (
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredListings.map((listing) => (
+              <MyListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+        ) : (
+          <EmptyStatusState />
+        )}
       </section>
     </>
   );
@@ -121,7 +165,7 @@ function LocalMyListingsFallback() {
 function EmptyMyListings() {
   return (
     <section className="mt-7 rounded-lg border border-dashed border-ink/18 bg-white p-6">
-      <h2 className="text-xl font-black text-ink">Još nema tvojih oglasa</h2>
+      <h2 className="text-xl font-black text-ink">Još nisi objavio/la oglas.</h2>
       <p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/64">
         Kad objaviš prvi oglas, moći ćeš ga pronaći ovdje i pratiti njegov status.
       </p>
@@ -136,14 +180,60 @@ function EmptyMyListings() {
   );
 }
 
+function EmptyStatusState() {
+  return (
+    <section className="mt-5 rounded-lg border border-dashed border-ink/18 bg-white p-5">
+      <h2 className="text-lg font-black text-ink">Nema oglasa u ovom statusu.</h2>
+      <p className="mt-2 text-sm font-semibold leading-relaxed text-ink/64">
+        Promijeni filter statusa ili objavi novi oglas.
+      </p>
+    </section>
+  );
+}
+
+function StatusFilterBar({
+  value,
+  onChange
+}: {
+  value: ListingStatus;
+  onChange: (status: ListingStatus) => void;
+}) {
+  return (
+    <div className="mt-7 flex gap-2 overflow-x-auto pb-1" aria-label="Filter statusa oglasa">
+      {listingStatusFilterOptions.map((filter) => {
+        const isActive = filter.value === value;
+
+        return (
+          <button
+            key={filter.value}
+            type="button"
+            onClick={() => onChange(filter.value)}
+            className={`focus-ring h-10 shrink-0 rounded-full border px-4 text-sm font-black transition ${
+              isActive
+                ? "border-moss bg-moss text-white"
+                : "border-ink/12 bg-white text-ink/70 hover:bg-field"
+            }`}
+          >
+            {filter.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function MyListingCard({
   listing,
   onPause,
-  onResolve
+  onResolve,
+  onActivate,
+  onRemove
 }: {
   listing: Listing;
   onPause?: () => Promise<void> | void;
   onResolve?: () => Promise<void> | void;
+  onActivate?: () => Promise<void> | void;
+  onRemove?: () => Promise<void> | void;
 }) {
   return (
     <article className="rounded-lg border border-ink/10 bg-white p-4 shadow-sm">
@@ -160,20 +250,31 @@ function MyListingCard({
         {listing.description}
       </p>
       <div className="mt-4 rounded-lg bg-field px-3 py-2 text-sm font-black text-ink">
-        {listing.city} · {formatPrice(listing.price, listing.type)}
+        {listing.city} · {formatListingPrice(listing)}
       </div>
-      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
         <Link
-          href="/oglasi/demo"
+          href={`/oglasi/${listing.id}`}
           className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-ink/12 bg-white px-3 text-sm font-black text-ink transition hover:bg-field"
         >
           <Eye aria-hidden="true" size={16} />
           Pregledaj
         </Link>
+        {listing.status === "paused" ? (
+          <button
+            type="button"
+            onClick={onActivate}
+            disabled={!onActivate}
+            className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-moss px-3 text-sm font-black text-white transition hover:bg-mossDark disabled:cursor-not-allowed disabled:bg-ink/30"
+          >
+            <RotateCcw aria-hidden="true" size={16} />
+            Aktiviraj
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={onPause}
-          disabled={!onPause || listing.status === "paused"}
+          disabled={!onPause || listing.status !== "active"}
           className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-ink/12 bg-white px-3 text-sm font-black text-ink transition hover:bg-field disabled:cursor-not-allowed disabled:text-ink/35"
         >
           {onPause ? <Pause aria-hidden="true" size={16} /> : <Loader2 aria-hidden="true" size={16} />}
@@ -187,6 +288,15 @@ function MyListingCard({
         >
           <CheckCircle2 aria-hidden="true" size={16} />
           Riješeno
+        </button>
+        <button
+          type="button"
+          onClick={onRemove}
+          disabled={!onRemove || listing.status === "removed"}
+          className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-clay/20 bg-clay/8 px-3 text-sm font-black text-clay transition hover:bg-clay/12 disabled:cursor-not-allowed disabled:opacity-45"
+        >
+          <Trash2 aria-hidden="true" size={16} />
+          Ukloni
         </button>
       </div>
     </article>

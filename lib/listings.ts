@@ -16,10 +16,27 @@ export type Listing = {
   city: string;
   category: string;
   price: number | null;
-  priceType?: PriceType;
+  priceType: PriceType;
   status: ListingStatus;
   contactMethod: ContactMethod;
+  allowOffers: boolean;
+  images: string[];
+  imageUrls: string[];
+  viewCount: number;
+  saveCount: number;
+  shareCount: number;
+  contactClickCount: number;
   createdAt: string;
+  updatedAt?: string;
+  ownerDisplayName?: string;
+  isOwner?: boolean;
+  isPersisted?: boolean;
+};
+
+type ConvexListingWithPresentation = Doc<"listings"> & {
+  imageUrls?: string[];
+  ownerDisplayName?: string;
+  isOwner?: boolean;
 };
 
 export const listingTypeLabels: Record<ListingType, string> = {
@@ -43,7 +60,36 @@ export const contactMethodLabels: Record<ContactMethod, string> = {
   none: "Bez kontakta"
 };
 
-export const demoListings: Listing[] = [
+export const listingTypeFilterOptions: Array<{ value: ListingType | "all"; label: string }> = [
+  { value: "all", label: "Sve" },
+  { value: "sell", label: listingTypeLabels.sell },
+  { value: "give", label: listingTypeLabels.give },
+  { value: "swap", label: listingTypeLabels.swap },
+  { value: "want", label: listingTypeLabels.want }
+];
+
+export const listingStatusFilterOptions: Array<{ value: ListingStatus; label: string }> = [
+  { value: "active", label: "Aktivni" },
+  { value: "paused", label: "Pauzirani" },
+  { value: "resolved", label: "Riješeni" },
+  { value: "removed", label: "Uklonjeni" }
+];
+
+const baseDemoListings: Array<
+  Omit<
+    Listing,
+    | "allowOffers"
+    | "contactClickCount"
+    | "imageUrls"
+    | "images"
+    | "isPersisted"
+    | "priceType"
+    | "saveCount"
+    | "shareCount"
+    | "viewCount"
+  > &
+    Partial<Pick<Listing, "allowOffers" | "priceType">>
+> = [
   {
     id: "demo-bike",
     type: "sell",
@@ -52,6 +98,7 @@ export const demoListings: Listing[] = [
     city: "Nova Gradiška",
     category: "Djeca",
     price: 65,
+    priceType: "negotiable",
     status: "active",
     contactMethod: "whatsapp",
     createdAt: "2026-06-08T09:15:00.000Z"
@@ -142,6 +189,19 @@ export const demoListings: Listing[] = [
   }
 ];
 
+export const demoListings: Listing[] = baseDemoListings.map((listing, index) => ({
+  ...listing,
+  priceType: listing.priceType ?? inferPriceType(listing.type),
+  allowOffers: listing.allowOffers ?? listing.type !== "give",
+  images: [],
+  imageUrls: [],
+  viewCount: 8 + index * 3,
+  contactClickCount: index,
+  shareCount: Math.max(0, index - 1),
+  saveCount: 2 + index,
+  isPersisted: false
+}));
+
 export const adminListings: Listing[] = [
   ...demoListings.slice(0, 4),
   { ...demoListings[4], status: "paused" },
@@ -150,9 +210,33 @@ export const adminListings: Listing[] = [
   { ...demoListings[7], status: "active" }
 ];
 
+export function inferPriceType(type: ListingType): PriceType {
+  if (type === "give") {
+    return "free";
+  }
+
+  if (type === "swap") {
+    return "swap";
+  }
+
+  if (type === "want") {
+    return "wanted";
+  }
+
+  return "fixed";
+}
+
 export function formatPrice(price: number | null, type?: ListingType) {
   if (type === "give") {
     return "Poklanjam";
+  }
+
+  if (type === "swap") {
+    return "Zamjena";
+  }
+
+  if (type === "want" && price === null) {
+    return "Tražim";
   }
 
   if (price === null) {
@@ -166,7 +250,51 @@ export function formatPrice(price: number | null, type?: ListingType) {
   }).format(price);
 }
 
-export function fromConvexListing(listing: Doc<"listings">): Listing {
+export function formatListingPrice(listing: Pick<Listing, "price" | "priceType" | "type">) {
+  if (listing.priceType === "free") {
+    return "Poklanjam";
+  }
+
+  if (listing.priceType === "swap") {
+    return "Zamjena";
+  }
+
+  if (listing.priceType === "wanted") {
+    return listing.price === null ? "Tražim" : `Tražim do ${formatPrice(listing.price)}`;
+  }
+
+  if (listing.priceType === "negotiable") {
+    return listing.price === null ? "Može dogovor" : `${formatPrice(listing.price)} · Može dogovor`;
+  }
+
+  return formatPrice(listing.price, listing.type);
+}
+
+export function actionLabelForListing(listing: Pick<Listing, "allowOffers" | "type">) {
+  if (listing.type === "give") {
+    return "Javi se za preuzimanje";
+  }
+
+  if (listing.type === "swap") {
+    return "Predloži zamjenu";
+  }
+
+  if (listing.type === "want") {
+    return "Imam nešto za ponuditi";
+  }
+
+  return listing.allowOffers ? "Pošalji ponudu" : "Pitaj za dogovor";
+}
+
+export function contactMethodHint(method: ContactMethod) {
+  if (method === "none") {
+    return "Oglašivač nije ostavio javni kontakt.";
+  }
+
+  return `${contactMethodLabels[method]} je spremljen, ali privatni podaci nisu javno prikazani.`;
+}
+
+export function fromConvexListing(listing: ConvexListingWithPresentation): Listing {
   return {
     id: listing._id,
     type: listing.type,
@@ -178,6 +306,17 @@ export function fromConvexListing(listing: Doc<"listings">): Listing {
     priceType: listing.priceType,
     status: listing.status,
     contactMethod: listing.contactMethod,
-    createdAt: new Date(listing.createdAt).toISOString()
+    allowOffers: listing.allowOffers,
+    images: listing.images,
+    imageUrls: listing.imageUrls ?? [],
+    viewCount: listing.viewCount,
+    contactClickCount: listing.contactClickCount,
+    shareCount: listing.shareCount,
+    saveCount: listing.saveCount,
+    createdAt: new Date(listing.createdAt).toISOString(),
+    updatedAt: new Date(listing.updatedAt).toISOString(),
+    ownerDisplayName: listing.ownerDisplayName,
+    isOwner: listing.isOwner,
+    isPersisted: true
   };
 }
