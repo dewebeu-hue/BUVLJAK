@@ -2,6 +2,7 @@
 
 import { Show, SignInButton } from "@clerk/nextjs";
 import { Camera, FileText } from "lucide-react";
+import { FacebookAuthButton } from "@/components/facebook-auth-button";
 import { NewListingForm } from "@/components/new-listing-form";
 
 export default function NewListingPage() {
@@ -20,14 +21,17 @@ export default function NewListingPage() {
               <p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/68">
                 Prijavi se da možeš objaviti i kasnije urediti svoj oglas.
               </p>
-              <SignInButton mode="modal">
-                <button
-                  type="button"
-                  className="focus-ring mt-4 inline-flex h-11 items-center justify-center rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
-                >
-                  Prijava
-                </button>
-              </SignInButton>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <SignInButton mode="modal">
+                  <button
+                    type="button"
+                    className="focus-ring inline-flex h-11 items-center justify-center rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
+                  >
+                    Prijava
+                  </button>
+                </SignInButton>
+                <FacebookAuthButton redirectUrlComplete="/novi-oglas" />
+              </div>
             </div>
           </Show>
 

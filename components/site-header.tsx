@@ -19,6 +19,7 @@ import {
   Store,
   UserRound
 } from "lucide-react";
+import { FacebookAuthButton } from "@/components/facebook-auth-button";
 
 const navItems = [
   { href: "/oglasi", label: "Oglasi", icon: ScrollText },
@@ -87,6 +88,13 @@ function HeaderAuth({ pathname }: { pathname: string }) {
   return (
     <div className="flex min-w-0 items-center gap-1.5">
       <Show when="signed-out">
+        <FacebookAuthButton
+          redirectUrlComplete={pathname || "/"}
+          variant="header"
+          className="hidden sm:inline-flex"
+        >
+          Facebook
+        </FacebookAuthButton>
         <SignInButton mode="modal">
           <button
             type="button"
