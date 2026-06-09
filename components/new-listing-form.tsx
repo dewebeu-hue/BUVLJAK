@@ -249,7 +249,7 @@ function ConnectedNewListingForm() {
       const price = parsePrice(form.price);
       const imageStorageIds = await compressAndUploadImages();
 
-      await createListing({
+      const createdListingId = await createListing({
         type: form.type,
         title: form.title,
         description: form.description,
@@ -267,7 +267,7 @@ function ConnectedNewListingForm() {
         images: imageStorageIds
       });
 
-      router.push("/moji-oglasi");
+      router.push(`/oglasi/${createdListingId}?published=1`);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Oglas nije spremljen.");
     } finally {

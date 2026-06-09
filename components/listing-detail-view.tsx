@@ -20,6 +20,7 @@ import {
   Trash2
 } from "lucide-react";
 import { api } from "@/convex/_generated/api";
+import { FacebookPostComposer } from "@/components/facebook-post-composer";
 import { useClientMounted } from "@/components/use-client-mounted";
 import type { Id } from "@/convex/_generated/dataModel";
 import {
@@ -76,11 +77,14 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
   const incrementShareCount = useMutation(api.listings.incrementShareCount);
   const updateListingStatus = useMutation(api.listings.updateListingStatus);
   const createReport = useMutation(api.listings.createReport);
+  const wasJustPublished =
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("published") === "1";
+  const publishedMessage = "Oglas je objavljen. Sada ga možeš kopirati u Facebook grupu.";
 
   const [metricOverrides, setMetricOverrides] = useState<
     Record<string, { saveCount?: number; shareCount?: number }>
   >({});
-  const [statusMessage, setStatusMessage] = useState("");
+  const [statusMessage, setStatusMessage] = useState(wasJustPublished ? publishedMessage : "");
   const [isActionOpen, setIsActionOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [offerAmount, setOfferAmount] = useState("");
@@ -179,6 +183,23 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
     if (canPersist) {
       await incrementShareCount({ id: listing.id as Id<"listings"> });
     }
+  }
+
+  function countFacebookPostShare() {
+    if (!listing) {
+      return;
+    }
+
+    setMetricOverrides((current) => {
+      const previous = current[listing.id] ?? {};
+      return {
+        ...current,
+        [listing.id]: {
+          ...previous,
+          shareCount: (previous.shareCount ?? listing.shareCount) + 1
+        }
+      };
+    });
   }
 
   async function updateStatus(status: ListingStatus) {
@@ -406,6 +427,15 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
             <p className="min-h-5 text-sm font-black text-mossDark" aria-live="polite">
               {statusMessage}
             </p>
+
+            <FacebookPostComposer
+              listing={listing}
+              canPersist={canPersist}
+              initialMessage={
+                wasJustPublished ? publishedMessage : ""
+              }
+              onShareCounted={countFacebookPostShare}
+            />
 
             <div className="rounded-lg border border-honey/30 bg-honey/16 p-4">
               <p className="font-bold leading-relaxed text-ink/76">
