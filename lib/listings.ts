@@ -1,8 +1,12 @@
+import type { Doc } from "@/convex/_generated/dataModel";
+
 export type ListingType = "sell" | "give" | "swap" | "want";
 
 export type ListingStatus = "active" | "paused" | "resolved" | "removed";
 
 export type ContactMethod = "whatsapp" | "email" | "facebook" | "none";
+
+export type PriceType = "fixed" | "negotiable" | "free" | "swap" | "wanted";
 
 export type Listing = {
   id: string;
@@ -12,6 +16,7 @@ export type Listing = {
   city: string;
   category: string;
   price: number | null;
+  priceType?: PriceType;
   status: ListingStatus;
   contactMethod: ContactMethod;
   createdAt: string;
@@ -159,4 +164,20 @@ export function formatPrice(price: number | null, type?: ListingType) {
     currency: "EUR",
     maximumFractionDigits: 0
   }).format(price);
+}
+
+export function fromConvexListing(listing: Doc<"listings">): Listing {
+  return {
+    id: listing._id,
+    type: listing.type,
+    title: listing.title,
+    description: listing.description,
+    city: listing.city,
+    category: listing.category,
+    price: listing.price ?? null,
+    priceType: listing.priceType,
+    status: listing.status,
+    contactMethod: listing.contactMethod,
+    createdAt: new Date(listing.createdAt).toISOString()
+  };
 }

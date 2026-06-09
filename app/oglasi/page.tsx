@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ChevronDown, Filter, Plus, Search } from "lucide-react";
-import { ListingCard } from "@/components/listing-card";
-import { demoListings, listingTypeLabels } from "@/lib/listings";
+import { ListingsFeed } from "@/components/listings-feed";
+import { listingTypeLabels } from "@/lib/listings";
 
 const quickFilters = ["Sve", listingTypeLabels.sell, listingTypeLabels.give, listingTypeLabels.swap, listingTypeLabels.want];
 
@@ -79,11 +79,7 @@ export default function ListingsPage() {
 
       <section className="px-4 py-8 sm:px-6">
         <div className="mx-auto max-w-6xl">
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {demoListings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
-            ))}
-          </div>
+          <ListingsFeed />
 
           <div className="mt-8 flex justify-center">
             <button

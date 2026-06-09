@@ -7,9 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "convex:dev": "convex dev",
+    "convex:codegen": "convex codegen",
+    "convex:seed": "convex run seed:seedDemoListings"
   },
   "dependencies": {
+    "convex": "^1.40.0",
     "lucide-react": "^0.468.0",
     "next": "16.2.7",
     "react": "18.3.1",
