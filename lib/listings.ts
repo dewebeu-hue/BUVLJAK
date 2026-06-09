@@ -8,6 +8,8 @@ export type ContactMethod = "whatsapp" | "email" | "facebook" | "none";
 
 export type PriceType = "fixed" | "negotiable" | "free" | "swap" | "wanted";
 
+export type ListingImportSource = "manual" | "facebook_text" | "facebook_url";
+
 export type Listing = {
   id: string;
   type: ListingType;
@@ -26,6 +28,10 @@ export type Listing = {
   saveCount: number;
   shareCount: number;
   contactClickCount: number;
+  importSource?: ListingImportSource;
+  sourceFacebookUrl?: string;
+  importedRawText?: string;
+  importParsedAt?: number;
   createdAt: string;
   updatedAt?: string;
   ownerDisplayName?: string;
@@ -311,6 +317,10 @@ export function fromConvexListing(listing: ConvexListingWithPresentation): Listi
     imageUrls: listing.imageUrls ?? [],
     viewCount: listing.viewCount,
     contactClickCount: listing.contactClickCount,
+    importSource: listing.importSource,
+    sourceFacebookUrl: listing.sourceFacebookUrl,
+    importedRawText: listing.importedRawText,
+    importParsedAt: listing.importParsedAt,
     shareCount: listing.shareCount,
     saveCount: listing.saveCount,
     createdAt: new Date(listing.createdAt).toISOString(),

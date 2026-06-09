@@ -2,8 +2,18 @@
 
 import { useUser } from "@clerk/nextjs";
 import imageCompression from "browser-image-compression";
-import { useMutation } from "convex/react";
-import { AlertCircle, CheckCircle2, ImagePlus, Loader2, Send, X } from "lucide-react";
+import { useAction, useMutation } from "convex/react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle2,
+  FileText,
+  ImagePlus,
+  Link as LinkIcon,
+  Loader2,
+  Send,
+  X
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { api } from "@/convex/_generated/api";
@@ -33,10 +43,27 @@ type FormState = {
   category: string;
   price: string;
   priceType: PriceType;
+  sourceFacebookUrl: string;
   contactMethod: ContactMethod;
   contactEmail: string;
   contactPhone: string;
   contactFacebookUrl: string;
+};
+
+type CreationMode = "manual" | "facebook";
+
+type ParsedImportDraft = {
+  type: ListingType;
+  title: string;
+  description: string;
+  city: string;
+  category: string;
+  price?: number;
+  priceType: PriceType;
+  allowOffers: boolean;
+  confidence?: number;
+  warnings?: string[];
+  usedAi?: boolean;
 };
 
 const initialFormState: FormState = {
@@ -47,6 +74,7 @@ const initialFormState: FormState = {
   category: "Namještaj",
   price: "",
   priceType: "negotiable",
+  sourceFacebookUrl: "",
   contactMethod: "whatsapp",
   contactEmail: "",
   contactPhone: "",
@@ -127,12 +155,22 @@ export function NewListingForm() {
 function ConnectedNewListingForm() {
   const router = useRouter();
   const { user } = useUser();
+  const parseImportedListingText = useAction(api.facebookImports.parseImportedListingText);
   const createListing = useMutation(api.listings.createListing);
   const generateUploadUrl = useMutation(api.listings.generateListingImageUploadUrl);
   const defaultEmail = user?.primaryEmailAddress?.emailAddress ?? "";
+  const [creationMode, setCreationMode] = useState<CreationMode>("manual");
+  const [isImportReview, setIsImportReview] = useState(false);
+  const [importRawText, setImportRawText] = useState("");
+  const [importFacebookUrl, setImportFacebookUrl] = useState("");
+  const [importWarnings, setImportWarnings] = useState<string[]>([]);
+  const [importParserLabel, setImportParserLabel] = useState("");
+  const [importParsedAt, setImportParsedAt] = useState<number | null>(null);
   const [form, setForm] = useState<FormState>(initialFormState);
   const [images, setImages] = useState<SelectedImage[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [isParsingImport, setIsParsingImport] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const priceOptions = useMemo(() => priceOptionsFor(form.type), [form.type]);
@@ -146,6 +184,20 @@ function ConnectedNewListingForm() {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
+  function switchCreationMode(mode: CreationMode) {
+    setCreationMode(mode);
+    setError(null);
+    setImportError(null);
+
+    if (mode === "manual") {
+      setIsImportReview(false);
+      setImportWarnings([]);
+      setImportParserLabel("");
+      setImportParsedAt(null);
+      setForm((current) => ({ ...current, sourceFacebookUrl: "" }));
+    }
+  }
+
   function handleTypeChange(type: ListingType) {
     setForm((current) => ({
       ...current,
@@ -153,6 +205,62 @@ function ConnectedNewListingForm() {
       price: type === "give" || type === "swap" ? "" : current.price,
       priceType: defaultPriceType(type)
     }));
+  }
+
+  async function handleImportSubmit() {
+    const rawText = importRawText.trim();
+    const sourceFacebookUrl = importFacebookUrl.trim();
+
+    setImportError(null);
+    setError(null);
+
+    if (!rawText && !sourceFacebookUrl) {
+      setImportError("Zalijepi tekst oglasa ili unesi podatke ručno.");
+      return;
+    }
+
+    if (!rawText && sourceFacebookUrl) {
+      setImportError("Ne možemo automatski pročitati ovu Facebook objavu. Zalijepi tekst oglasa ispod.");
+      return;
+    }
+
+    setIsParsingImport(true);
+
+    try {
+      const parsed = (await parseImportedListingText({
+        rawText,
+        ...(sourceFacebookUrl ? { sourceFacebookUrl } : {})
+      })) as ParsedImportDraft;
+
+      setForm((current) => ({
+        ...current,
+        type: parsed.type,
+        title: parsed.title,
+        description: parsed.description,
+        city: parsed.city,
+        category: categories.includes(parsed.category) ? parsed.category : "Ostalo",
+        price: typeof parsed.price === "number" ? String(parsed.price) : "",
+        priceType: parsed.priceType,
+        sourceFacebookUrl,
+        contactMethod: "none",
+        contactEmail: "",
+        contactPhone: "",
+        contactFacebookUrl: sourceFacebookUrl
+      }));
+      setImportWarnings(parsed.warnings ?? []);
+      setImportParserLabel(parsed.usedAi ? "AI parser je predložio polja." : "Fallback parser je predložio polja.");
+      setImportParsedAt(Date.now());
+      setIsImportReview(true);
+    } catch {
+      setImportError("Nismo uspjeli automatski strukturirati oglas. Možeš ga unijeti ručno.");
+    } finally {
+      setIsParsingImport(false);
+    }
+  }
+
+  function returnToImportText() {
+    setIsImportReview(false);
+    setError(null);
   }
 
   function handleImagesChange(event: ChangeEvent<HTMLInputElement>) {
@@ -264,7 +372,13 @@ function ConnectedNewListingForm() {
         ...(form.contactMethod === "whatsapp" ? { contactPhone: form.contactPhone } : {}),
         ...(form.contactMethod === "facebook" ? { contactFacebookUrl: form.contactFacebookUrl } : {}),
         allowOffers: allowOffersFor(form.type, form.priceType),
-        images: imageStorageIds
+        images: imageStorageIds,
+        importSource: isImportReview ? "facebook_text" : "manual",
+        ...(isImportReview && form.sourceFacebookUrl.trim()
+          ? { sourceFacebookUrl: form.sourceFacebookUrl.trim() }
+          : {}),
+        ...(isImportReview && importRawText.trim() ? { importedRawText: importRawText.trim() } : {}),
+        ...(isImportReview && importParsedAt ? { importParsedAt } : {})
       });
 
       router.push(`/oglasi/${createdListingId}?published=1`);
@@ -276,10 +390,168 @@ function ConnectedNewListingForm() {
   }
 
   return (
-    <form
-      className="mt-6 space-y-6 rounded-lg border border-ink/10 bg-white p-4 shadow-sm sm:p-6"
-      onSubmit={handleSubmit}
-    >
+    <div className="mt-6 space-y-5">
+      <div className="rounded-lg border border-ink/10 bg-white p-2 shadow-sm">
+        <div className="grid gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => switchCreationMode("manual")}
+            className={`focus-ring flex min-h-12 items-center justify-center gap-2 rounded-lg px-4 text-sm font-black transition ${
+              creationMode === "manual"
+                ? "bg-moss text-white"
+                : "bg-field text-ink/68 hover:bg-moss/8 hover:text-mossDark"
+            }`}
+          >
+            <FileText aria-hidden="true" size={17} />
+            Novi oglas od nule
+          </button>
+          <button
+            type="button"
+            onClick={() => switchCreationMode("facebook")}
+            className={`focus-ring flex min-h-12 items-center justify-center gap-2 rounded-lg px-4 text-sm font-black transition ${
+              creationMode === "facebook"
+                ? "bg-moss text-white"
+                : "bg-field text-ink/68 hover:bg-moss/8 hover:text-mossDark"
+            }`}
+          >
+            <LinkIcon aria-hidden="true" size={17} />
+            Uvezi moj Facebook oglas
+          </button>
+        </div>
+      </div>
+
+      {creationMode === "facebook" && !isImportReview ? (
+        <section className="rounded-lg border border-ink/10 bg-white p-4 shadow-sm sm:p-6">
+          <div className="flex items-start gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-skywash text-mossDark">
+              <LinkIcon aria-hidden="true" size={21} />
+            </span>
+            <div>
+              <h2 className="text-2xl font-black text-ink">Uvezi moj Facebook oglas</h2>
+              <p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/68">
+                Ako već imaš oglas u Facebook grupi, zalijepi tekst oglasa ovdje. Buvljak će ga pretvoriti u uredan oglas koji možeš pregledati i potvrditi.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-3 rounded-lg border border-honey/30 bg-honey/16 p-4 text-sm font-bold text-ink/72">
+            <p>Najbolje radi ako zalijepiš tekst svoje Facebook objave.</p>
+            <p>Link iz privatne grupe možda neće biti čitljiv.</p>
+            <p>Ne uvozi tuđe oglase bez dopuštenja.</p>
+          </div>
+
+          {importError ? (
+            <div className="mt-5 flex gap-3 rounded-lg border border-clay/20 bg-clay/8 p-4 text-clay">
+              <AlertCircle aria-hidden="true" className="mt-0.5 shrink-0" size={20} />
+              <p className="text-sm font-black leading-relaxed">{importError}</p>
+            </div>
+          ) : null}
+
+          {importFacebookUrl.trim() ? (
+            <div className="mt-5 flex gap-3 rounded-lg border border-moss/16 bg-moss/8 p-4 text-mossDark">
+              <CheckCircle2 aria-hidden="true" className="mt-0.5 shrink-0" size={18} />
+              <p className="text-sm font-bold leading-relaxed">
+                Facebook link ćemo spremiti kao izvor, ali zbog privatnosti grupa možda ne možemo automatski pročitati sadržaj. Zalijepi tekst oglasa ispod za najbolji rezultat.
+              </p>
+            </div>
+          ) : null}
+
+          <div className="mt-5 grid gap-4">
+            <label className="grid gap-2">
+              <span className="text-sm font-black text-ink">Facebook link, opcionalno</span>
+              <input
+                type="url"
+                value={importFacebookUrl}
+                onChange={(event) => setImportFacebookUrl(event.target.value)}
+                placeholder="https://www.facebook.com/..."
+                className="focus-ring h-12 rounded-lg border border-ink/12 bg-field px-4 text-base font-semibold text-ink placeholder:text-ink/38"
+              />
+            </label>
+
+            <label className="grid gap-2">
+              <span className="text-sm font-black text-ink">Tekst oglasa</span>
+              <textarea
+                rows={8}
+                value={importRawText}
+                onChange={(event) => setImportRawText(event.target.value)}
+                placeholder="Primjer: Prodajem dječji bicikl 20 cola, Nova Gradiška, 50 eura, inbox..."
+                className="focus-ring resize-y rounded-lg border border-ink/12 bg-field px-4 py-3 text-base font-semibold leading-relaxed text-ink placeholder:text-ink/38"
+              />
+            </label>
+          </div>
+
+          <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              onClick={handleImportSubmit}
+              disabled={isParsingImport}
+              className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-moss px-5 text-base font-black text-white transition hover:bg-mossDark disabled:cursor-not-allowed disabled:bg-ink/30"
+            >
+              {isParsingImport ? <Loader2 aria-hidden="true" className="animate-spin" size={18} /> : <FileText aria-hidden="true" size={18} />}
+              {isParsingImport ? "Pretvaram oglas" : "Pretvori u oglas"}
+            </button>
+            <button
+              type="button"
+              onClick={() => switchCreationMode("manual")}
+              className="focus-ring inline-flex h-12 items-center justify-center rounded-lg border border-ink/12 bg-white px-5 text-base font-black text-ink transition hover:bg-field"
+            >
+              Radije unosim ručno
+            </button>
+          </div>
+        </section>
+      ) : null}
+
+      {creationMode === "manual" || isImportReview ? (
+        <form
+          className="space-y-6 rounded-lg border border-ink/10 bg-white p-4 shadow-sm sm:p-6"
+          onSubmit={handleSubmit}
+        >
+      {isImportReview ? (
+        <section className="rounded-lg border border-moss/16 bg-moss/8 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="text-xl font-black text-ink">Pregledaj prijedlog prije objave</h2>
+              <p className="mt-2 text-sm font-semibold leading-relaxed text-ink/68">
+                Prije objave možeš sve urediti. Kontakt podaci se neće javno prikazivati. Otvarat će se tek kroz kasniji kontakt flow.
+              </p>
+              {importParserLabel ? (
+                <p className="mt-2 text-sm font-black text-mossDark">{importParserLabel}</p>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              onClick={returnToImportText}
+              className="focus-ring inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-ink/12 bg-white px-3 text-sm font-black text-ink transition hover:bg-field"
+            >
+              <ArrowLeft aria-hidden="true" size={16} />
+              Vrati se na tekst
+            </button>
+          </div>
+
+          {importWarnings.length ? (
+            <div className="mt-4 grid gap-2">
+              {importWarnings.map((warning) => (
+                <div key={warning} className="flex gap-2 rounded-lg border border-honey/28 bg-honey/18 p-3 text-sm font-bold text-ink/72">
+                  <AlertCircle aria-hidden="true" className="mt-0.5 shrink-0 text-[#72520d]" size={16} />
+                  <span>{warning}</span>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          <label className="mt-4 grid gap-2">
+            <span className="text-sm font-black text-ink">Facebook izvor</span>
+            <input
+              type="url"
+              value={form.sourceFacebookUrl}
+              onChange={(event) => updateForm("sourceFacebookUrl", event.target.value)}
+              placeholder="https://www.facebook.com/..."
+              className="focus-ring h-11 rounded-lg border border-ink/12 bg-white px-3 text-sm font-semibold text-ink placeholder:text-ink/38"
+            />
+          </label>
+        </section>
+      ) : null}
+
       {error ? (
         <div className="flex gap-3 rounded-lg border border-clay/20 bg-clay/8 p-4 text-clay">
           <AlertCircle aria-hidden="true" className="mt-0.5 shrink-0" size={20} />
@@ -515,19 +787,32 @@ function ConnectedNewListingForm() {
         ) : null}
       </fieldset>
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="focus-ring inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-moss px-5 text-base font-black text-white transition hover:bg-mossDark disabled:cursor-not-allowed disabled:bg-ink/30 sm:w-auto"
-      >
-        {isSubmitting ? <Loader2 aria-hidden="true" className="animate-spin" size={18} /> : <Send aria-hidden="true" size={18} />}
-        {isSubmitting ? "Spremam oglas" : "Objavi oglas"}
-      </button>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="focus-ring inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-moss px-5 text-base font-black text-white transition hover:bg-mossDark disabled:cursor-not-allowed disabled:bg-ink/30 sm:w-auto"
+        >
+          {isSubmitting ? <Loader2 aria-hidden="true" className="animate-spin" size={18} /> : <Send aria-hidden="true" size={18} />}
+          {isSubmitting ? "Spremam oglas" : isImportReview ? "Potvrdi i objavi" : "Objavi oglas"}
+        </button>
+        {isImportReview ? (
+          <button
+            type="button"
+            onClick={returnToImportText}
+            className="focus-ring inline-flex h-12 items-center justify-center rounded-lg border border-ink/12 bg-white px-5 text-base font-black text-ink transition hover:bg-field"
+          >
+            Vrati se na tekst
+          </button>
+        ) : null}
+      </div>
 
       <div className="flex gap-2 rounded-lg bg-moss/8 p-3 text-sm font-bold text-mossDark">
         <CheckCircle2 aria-hidden="true" className="mt-0.5 shrink-0" size={17} />
         <span>Status oglasa nakon objave bit će aktivan.</span>
       </div>
-    </form>
+        </form>
+      ) : null}
+    </div>
   );
 }

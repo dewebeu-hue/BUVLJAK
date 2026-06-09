@@ -31,6 +31,19 @@ function cleanOptional(value?: string) {
   return cleaned ? cleaned : undefined;
 }
 
+function scrubImportedText(value?: string) {
+  const cleaned = cleanOptional(value);
+
+  if (!cleaned) {
+    return undefined;
+  }
+
+  return cleaned
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[email skriven]")
+    .replace(/(?:\+?\d[\s().-]?){7,}\d/g, "[telefon skriven]")
+    .slice(0, 2000);
+}
+
 function clampLimit(limit?: number) {
   if (limit === undefined) {
     return DEFAULT_LIMIT;
@@ -335,7 +348,11 @@ export const createListing = mutation({
     contactPhone: v.optional(v.string()),
     contactFacebookUrl: v.optional(v.string()),
     allowOffers: v.optional(v.boolean()),
-    images: v.optional(v.array(v.string()))
+    images: v.optional(v.array(v.string())),
+    importSource: v.optional(v.union(v.literal("manual"), v.literal("facebook_text"), v.literal("facebook_url"))),
+    sourceFacebookUrl: v.optional(v.string()),
+    importedRawText: v.optional(v.string()),
+    importParsedAt: v.optional(v.number())
   },
   handler: async (ctx, args) => {
     const currentUser = await getOrCreateCurrentUser(ctx);
@@ -376,6 +393,10 @@ export const createListing = mutation({
       throw new ConvexError("Facebook URL is required.");
     }
 
+    const importSource = args.importSource ?? "manual";
+    const sourceFacebookUrl = cleanOptional(args.sourceFacebookUrl);
+    const importedRawText = scrubImportedText(args.importedRawText);
+
     return await ctx.db.insert("listings", {
       ownerId: currentUser._id,
       type: args.type,
@@ -403,6 +424,10 @@ export const createListing = mutation({
       contactClickCount: 0,
       shareCount: 0,
       saveCount: 0,
+      importSource,
+      ...(sourceFacebookUrl !== undefined ? { sourceFacebookUrl } : {}),
+      ...(importedRawText !== undefined ? { importedRawText } : {}),
+      ...(args.importParsedAt !== undefined ? { importParsedAt: args.importParsedAt } : {}),
       createdAt: now,
       updatedAt: now
     });
