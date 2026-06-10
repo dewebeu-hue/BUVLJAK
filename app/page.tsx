@@ -79,6 +79,7 @@ export default function HomePage() {
                     <span className="hero-rolodex-item">Poklanjam</span>
                     <span className="hero-rolodex-item">Mijenjam</span>
                     <span className="hero-rolodex-item">Tražim</span>
+                    <span className="hero-rolodex-item">Prodajem</span>
                   </span>
                 </span>
                 <span className="hero-rolodex-static">u tvojoj blizini</span>
