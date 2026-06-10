@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { action, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { contactMethodValidator, contactSourceValidator } from "./validators";
 import { getPublicListingUrl } from "../lib/public-urls";
 
@@ -19,6 +19,57 @@ const rateLimitActionValidator = v.union(
   v.literal("email"),
   v.literal("offer")
 );
+
+type ContactMethod = Doc<"listings">["contactMethod"];
+type ContactSource = Doc<"contactEvents">["source"];
+type ContactIntent = "contact" | "availability" | "offer" | "pickup" | "swap" | "have_item";
+type RateLimitAction = Doc<"rateLimitEvents">["action"];
+
+type PreparedContactFailure = {
+  ok: false;
+  method: ContactMethod;
+  displayMessage: string;
+  rateLimited?: boolean;
+};
+
+type PreparedContactSuccess = {
+  ok: true;
+  listingId: Id<"listings">;
+  userId?: Id<"users">;
+  requesterEmail?: string;
+  method: ContactMethod;
+  source: ContactSource;
+  intent: ContactIntent;
+  rateLimitAction: RateLimitAction;
+  title: string;
+  type: Doc<"listings">["type"];
+  contactPhone?: string;
+  contactEmail?: string;
+  contactFacebookUrl?: string;
+  offerAmount?: number;
+  message?: string;
+  contactMessage: string;
+};
+
+type PreparedContactRequestResult = PreparedContactFailure | PreparedContactSuccess;
+
+type RecordContactSuccessArgs = {
+  listingId: Id<"listings">;
+  userId?: Id<"users">;
+  method: ContactMethod;
+  source: ContactSource;
+  action: RateLimitAction;
+  intent?: ContactIntent;
+  offerAmount?: number;
+  message?: string;
+};
+
+type RequestContactInfoResult = {
+  method: ContactMethod;
+  emailSent: boolean;
+  displayMessage: string;
+  redirectUrl?: string;
+};
 
 function optionalString(value: unknown) {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
@@ -145,7 +196,7 @@ export const prepareContactRequest = internalMutation({
     offerAmount: v.optional(v.number()),
     message: v.optional(v.string())
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<PreparedContactRequestResult> => {
     const identity = await ctx.auth.getUserIdentity();
 
     if (!identity) {
@@ -385,8 +436,11 @@ export const requestContactInfo = action({
     offerAmount: v.optional(v.number()),
     message: v.optional(v.string())
   },
-  handler: async (ctx, args) => {
-    const prepared = await ctx.runMutation(internal.contact.prepareContactRequest, args);
+  handler: async (ctx, args): Promise<RequestContactInfoResult> => {
+    const prepared: PreparedContactRequestResult = await ctx.runMutation(
+      internal.contact.prepareContactRequest,
+      args
+    );
 
     if (!prepared.ok) {
       return {
@@ -397,9 +451,9 @@ export const requestContactInfo = action({
     }
 
     const listingUrl = getPublicListingUrl(prepared.listingId);
-    const successArgs = {
-      listingId: prepared.listingId as Id<"listings">,
-      ...(prepared.userId ? { userId: prepared.userId as Id<"users"> } : {}),
+    const successArgs: RecordContactSuccessArgs = {
+      listingId: prepared.listingId,
+      ...(prepared.userId ? { userId: prepared.userId } : {}),
       method: prepared.method,
       source: prepared.source,
       action: prepared.rateLimitAction,
@@ -430,11 +484,21 @@ export const requestContactInfo = action({
     }
 
     if (prepared.method === "facebook") {
+      const facebookUrl = optionalString(prepared.contactFacebookUrl);
+
+      if (!facebookUrl) {
+        return {
+          method: "facebook" as const,
+          emailSent: false,
+          displayMessage: "Facebook kontakt trenutno nije dostupan."
+        };
+      }
+
       await ctx.runMutation(internal.contact.recordContactSuccess, successArgs);
 
       return {
         method: "facebook" as const,
-        redirectUrl: prepared.contactFacebookUrl,
+        redirectUrl: facebookUrl,
         emailSent: false,
         displayMessage: "Otvaram Facebook kontakt."
       };
@@ -443,8 +507,9 @@ export const requestContactInfo = action({
     if (prepared.method === "email") {
       const resendApiKey = process.env.RESEND_API_KEY;
       const fromEmail = process.env.CONTACT_FROM_EMAIL;
+      const contactEmail = optionalString(prepared.contactEmail);
 
-      if (!resendApiKey || !fromEmail) {
+      if (!resendApiKey || !fromEmail || !contactEmail) {
         return {
           method: "email" as const,
           emailSent: false,
@@ -453,7 +518,7 @@ export const requestContactInfo = action({
       }
 
       const sent = await sendContactEmail({
-        to: prepared.contactEmail,
+        to: contactEmail,
         from: fromEmail,
         apiKey: resendApiKey,
         subject: emailSubject(prepared.title, prepared.rateLimitAction),

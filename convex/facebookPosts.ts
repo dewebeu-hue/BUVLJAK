@@ -17,6 +17,11 @@ type PublicListingForPost = {
   description: string;
 };
 
+type GenerateFacebookPostTextResult = {
+  generatedText: string;
+  usedAi: boolean;
+};
+
 type ResponsesApiResponse = {
   output_text?: string;
   output?: Array<{
@@ -234,7 +239,7 @@ export const getListingForFacebookPost = query({
   args: {
     id: v.id("listings")
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<PublicListingForPost | null> => {
     const listing = await ctx.db.get(args.id);
 
     if (!listing) {
@@ -264,9 +269,9 @@ export const generateFacebookPostText = action({
     draft: v.optional(listingDraftValidator),
     tone: v.optional(toneValidator)
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<GenerateFacebookPostTextResult> => {
     const tone = args.tone ?? "friendly";
-    const listing = args.listingId
+    const listing: PublicListingForPost | null | undefined = args.listingId
       ? await ctx.runQuery(api.facebookPosts.getListingForFacebookPost, { id: args.listingId })
       : args.draft;
 

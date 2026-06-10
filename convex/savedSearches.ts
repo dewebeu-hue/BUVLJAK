@@ -226,6 +226,31 @@ function publicListingMatchPayload(listing: Doc<"listings">) {
   };
 }
 
+type PublicSearchPayload = ReturnType<typeof publicSearchPayload>;
+type PublicListingMatchPayload = ReturnType<typeof publicListingMatchPayload>;
+
+type PreparedSavedSearchNotificationJob = {
+  savedSearchId: Id<"savedSearches">;
+  userId?: Id<"users">;
+  userEmail?: string;
+  displayName?: string;
+  search: PublicSearchPayload;
+  listings: PublicListingMatchPayload[];
+};
+
+type PreparedSavedSearchNotifications = {
+  checkedSearches: number;
+  jobs: PreparedSavedSearchNotificationJob[];
+};
+
+type SavedSearchNotificationRunResult = {
+  checkedSearches: number;
+  attemptedEmails: number;
+  sent: number;
+  skipped: number;
+  failed: number;
+};
+
 async function listActiveListings(ctx: QueryCtx) {
   return await ctx.db
     .query("listings")
@@ -392,7 +417,7 @@ export const prepareSavedSearchNotifications = internalQuery({
   args: {
     maxEmails: v.optional(v.number())
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<PreparedSavedSearchNotifications> => {
     const maxEmails = Math.min(
       Math.max(Math.floor(args.maxEmails ?? MAX_EMAILS_PER_RUN), 1),
       MAX_EMAILS_PER_RUN
@@ -404,7 +429,7 @@ export const prepareSavedSearchNotifications = internalQuery({
         .collect(),
       listActiveListings(ctx)
     ]);
-    const jobs = [];
+    const jobs: PreparedSavedSearchNotificationJob[] = [];
 
     for (const search of searches) {
       if (jobs.length >= maxEmails) {
@@ -418,7 +443,7 @@ export const prepareSavedSearchNotifications = internalQuery({
       const matches = listings
         .filter((listing) => matchesSavedSearch(search, listing))
         .slice(0, LISTINGS_PER_EMAIL);
-      const newMatches = [];
+      const newMatches: Doc<"listings">[] = [];
 
       for (const listing of matches) {
         const existing = await ctx.db
@@ -503,15 +528,15 @@ export const runSavedSearchNotificationsNow = action({
   args: {
     maxEmails: v.optional(v.number())
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<SavedSearchNotificationRunResult> => {
     await ctx.runQuery(internal.savedSearches.requireNotificationAdmin, {});
 
-    const prepared = await ctx.runQuery(internal.savedSearches.prepareSavedSearchNotifications, {
+    const prepared: PreparedSavedSearchNotifications = await ctx.runQuery(internal.savedSearches.prepareSavedSearchNotifications, {
       maxEmails: args.maxEmails
     });
     const apiKey = optionalString(process.env.RESEND_API_KEY);
     const from = optionalString(process.env.CONTACT_FROM_EMAIL);
-    const result = {
+    const result: SavedSearchNotificationRunResult = {
       checkedSearches: prepared.checkedSearches,
       attemptedEmails: prepared.jobs.length,
       sent: 0,
@@ -520,9 +545,7 @@ export const runSavedSearchNotificationsNow = action({
     };
 
     for (const job of prepared.jobs) {
-      const listingIds = job.listings.map(
-        (listing: ReturnType<typeof publicListingMatchPayload>) => listing.id
-      );
+      const listingIds = job.listings.map((listing) => listing.id);
 
       if (!job.userEmail) {
         result.skipped += 1;
