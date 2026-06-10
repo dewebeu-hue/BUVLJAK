@@ -13,9 +13,17 @@ export function SiteFooter() {
             Privatnost
           </Link>
         </div>
-        <p>
-          Kontakt: <NeedsEdit>[UPIŠI EMAIL]</NeedsEdit>
-        </p>
+        <div className="flex flex-col gap-1 sm:items-end">
+          <p>
+            Kontakt: <NeedsEdit>[UPIŠI EMAIL]</NeedsEdit>
+          </p>
+          <p className="text-xs font-bold text-ink/45">
+            © 2026 Buvljak.hr · lokalni projekt by{" "}
+            <a href="https://deweb.hr" className="transition hover:text-mossDark">
+              deweb
+            </a>
+          </p>
+        </div>
       </div>
     </footer>
   );
