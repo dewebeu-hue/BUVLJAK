@@ -76,88 +76,92 @@ select {
 }
 
 .hero-rolodex-heading {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.08em 0.34em;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.02em;
   color: #1f2933;
+  line-height: 1.02;
 }
 
 .hero-rolodex-word {
+  --hero-rolodex-step: 1.12em;
+
   position: relative;
   display: inline-block;
-  width: 9.2ch;
-  height: 1.08em;
+  width: 9.4ch;
+  height: var(--hero-rolodex-step);
   overflow: hidden;
   contain: layout paint;
   color: #2f6f3e;
-  vertical-align: bottom;
-}
-
-.hero-rolodex-word::after {
-  position: absolute;
-  right: 0.04em;
-  bottom: 0.02em;
-  left: 0.04em;
-  z-index: -1;
-  height: 0.16em;
-  border-radius: 999px;
-  background: rgba(245, 158, 11, 0.34);
-  content: "";
+  font-size: calc(1em + 4px);
+  line-height: var(--hero-rolodex-step);
+  vertical-align: top;
 }
 
 .hero-rolodex-track {
-  display: flex;
-  flex-direction: column;
-  animation: hero-rolodex 8s cubic-bezier(0.76, 0, 0.24, 1) infinite;
-  will-change: transform;
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .hero-rolodex-item {
+  position: absolute;
+  inset: 0;
   display: block;
-  height: 1.08em;
-  line-height: 1.08;
+  height: var(--hero-rolodex-step);
+  margin: 0;
+  padding: 0;
+  line-height: var(--hero-rolodex-step);
+  opacity: 0;
+  transform: translate3d(0, 0.18em, 0);
+  animation: hero-rolodex-word 8s cubic-bezier(0.76, 0, 0.24, 1) infinite;
+  backface-visibility: hidden;
+  will-change: opacity, transform;
+}
+
+.hero-rolodex-item:nth-child(2) {
+  animation-delay: 2s;
+}
+
+.hero-rolodex-item:nth-child(3) {
+  animation-delay: 4s;
+}
+
+.hero-rolodex-item:nth-child(4) {
+  animation-delay: 6s;
 }
 
 .hero-rolodex-static {
   color: rgba(31, 41, 51, 0.9);
+  line-height: 1.05;
 }
 
-@keyframes hero-rolodex {
+@keyframes hero-rolodex-word {
   0%,
-  14% {
-    transform: translateY(0);
+  3%,
+  21% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
   }
 
-  20%,
-  34% {
-    transform: translateY(-1.08em);
-  }
-
-  40%,
-  54% {
-    transform: translateY(-2.16em);
-  }
-
-  60%,
-  74% {
-    transform: translateY(-3.24em);
-  }
-
-  80%,
-  94% {
-    transform: translateY(-4.32em);
-  }
-
+  24.5%,
   100% {
-    transform: translateY(-4.32em);
+    opacity: 0;
+    transform: translate3d(0, -0.14em, 0);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-rolodex-track {
+  .hero-rolodex-item {
     animation: none;
-    transform: translateY(0);
+    opacity: 0;
+    transform: none;
+  }
+
+  .hero-rolodex-item:first-child {
+    opacity: 1;
   }
 }
 
