@@ -70,12 +70,23 @@ export default function HomePage() {
 
         <div className="relative z-10 mx-auto flex min-h-[520px] max-w-6xl items-start px-4 pb-44 pt-8 sm:px-6 md:min-h-[620px] md:items-center md:py-12 lg:min-h-[660px]">
           <div className="hero-copy max-w-xl text-ink">
-            <h1 className="max-w-xl text-4xl font-black leading-[1.05] text-mossDark sm:text-5xl">
-              Lokalni buvljak bez beskonačnog skrolanja
+            <h1 className="max-w-xl text-4xl font-black leading-[1.05] text-[#1F2933] sm:text-5xl">
+              <span className="sr-only">Prodajem, poklanjam, mijenjam i tražim u tvojoj blizini</span>
+              <span className="hero-rolodex-heading" aria-hidden="true">
+                <span className="hero-rolodex-word">
+                  <span className="hero-rolodex-track">
+                    <span className="hero-rolodex-item">Prodajem</span>
+                    <span className="hero-rolodex-item">Poklanjam</span>
+                    <span className="hero-rolodex-item">Mijenjam</span>
+                    <span className="hero-rolodex-item">Tražim</span>
+                    <span className="hero-rolodex-item">Prodajem</span>
+                  </span>
+                </span>
+                <span className="hero-rolodex-static">u tvojoj blizini</span>
+              </span>
             </h1>
             <p className="mt-5 max-w-xl text-lg font-bold leading-relaxed text-ink/72 sm:text-xl">
-              Prodajem, poklanjam, mijenjam i tražim - složi oglas, podijeli ga u grupu
-              ili pronađi nešto zanimljivo u blizini.
+              Složi oglas, podijeli ga u grupu ili pronađi nešto zanimljivo u blizini.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
