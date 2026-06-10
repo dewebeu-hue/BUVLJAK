@@ -4,6 +4,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { ConvexClientProvider } from "@/components/convex-client-provider";
 import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import { UserProfileSync } from "@/components/user-profile-sync";
 import { getAppBaseUrl, getDefaultOgImageUrl } from "@/lib/public-urls";
 
@@ -46,6 +47,7 @@ export default function RootLayout({
             <UserProfileSync />
             <SiteHeader />
             {children}
+            <SiteFooter />
           </ConvexClientProvider>
         </ClerkProvider>
       </body>
