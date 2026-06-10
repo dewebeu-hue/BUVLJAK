@@ -62,7 +62,7 @@ export default function HomePage() {
             alt=""
             fill
             priority
-            quality={100}
+            quality={90}
             unoptimized
             sizes="(max-width: 767px) 118vw, 72vw"
           />
