@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import imageCompression from "browser-image-compression";
 import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
 import {
@@ -54,6 +54,7 @@ type FormState = {
 };
 
 type CreationMode = "manual" | "facebook";
+type ClerkConvexTokenStatus = "checking" | "available" | "missing";
 
 type ParsedImportDraft = {
   type: ListingType;
@@ -157,6 +158,7 @@ export function NewListingForm() {
 
 function ConnectedNewListingForm() {
   const router = useRouter();
+  const { getToken } = useAuth();
   const { isLoaded: isClerkLoaded, isSignedIn, user } = useUser();
   const convexAuth = useConvexAuth();
   const authDebug = useQuery(api.authDebug.getCurrentIdentity, isDevelopment ? {} : "skip");
@@ -177,8 +179,49 @@ function ConnectedNewListingForm() {
   const [importError, setImportError] = useState<string | null>(null);
   const [isParsingImport, setIsParsingImport] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [clerkConvexTokenStatus, setClerkConvexTokenStatus] =
+    useState<ClerkConvexTokenStatus>("checking");
 
   const priceOptions = useMemo(() => priceOptionsFor(form.type), [form.type]);
+
+  useEffect(() => {
+    if (!isDevelopment) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    void Promise.resolve().then(async () => {
+      if (isCancelled || !isClerkLoaded) {
+        return;
+      }
+
+      if (!isSignedIn) {
+        if (!isCancelled) {
+          setClerkConvexTokenStatus("missing");
+        }
+        return;
+      }
+
+      setClerkConvexTokenStatus("checking");
+
+      try {
+        const token = await getToken({ template: "convex" });
+        if (!isCancelled) {
+          setClerkConvexTokenStatus(token ? "available" : "missing");
+        }
+      } catch {
+        if (!isCancelled) {
+          setClerkConvexTokenStatus("missing");
+        }
+      }
+    });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [getToken, isClerkLoaded, isSignedIn]);
+
   useEffect(() => {
     return () => {
       images.forEach((image) => URL.revokeObjectURL(image.previewUrl));
@@ -416,17 +459,29 @@ function ConnectedNewListingForm() {
   return (
     <div className="mt-6 space-y-5">
       {isDevelopment ? (
-        <div className="rounded-lg border border-ink/10 bg-field p-3 text-xs font-black text-ink/62">
-          <span>Clerk auth: {isClerkLoaded && isSignedIn ? "signed in" : "signed out"}</span>
-          <span className="mx-2 text-ink/30">|</span>
-          <span>
-            Convex auth:{" "}
-            {authDebug === undefined
-              ? "checking"
-              : authDebug.isAuthenticated && convexAuth.isAuthenticated
-                ? "connected"
-                : "missing"}
-          </span>
+        <div className="space-y-2 rounded-lg border border-ink/10 bg-field p-3 text-xs font-black text-ink/62">
+          <div>
+            <span>Clerk auth: {isClerkLoaded && isSignedIn ? "signed in" : "signed out"}</span>
+            <span className="mx-2 text-ink/30">|</span>
+            <span>Clerk Convex token: {clerkConvexTokenStatus}</span>
+            <span className="mx-2 text-ink/30">|</span>
+            <span>
+              Convex auth:{" "}
+              {authDebug === undefined || convexAuth.isLoading
+                ? "checking"
+                : authDebug.isAuthenticated && convexAuth.isAuthenticated
+                  ? "connected"
+                  : "missing"}
+            </span>
+          </div>
+          {isSignedIn && clerkConvexTokenStatus === "missing" ? (
+            <p>Clerk JWT template named &apos;convex&apos; is missing or not issuing tokens.</p>
+          ) : null}
+          {clerkConvexTokenStatus === "available" && !convexAuth.isLoading && !convexAuth.isAuthenticated ? (
+            <p>
+              Convex auth config/env is not active. Check npx convex dev and CLERK_JWT_ISSUER_DOMAIN in Convex env.
+            </p>
+          ) : null}
         </div>
       ) : null}
 

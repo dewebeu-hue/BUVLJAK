@@ -1,7 +1,7 @@
 "use client";
 
-import { Show, SignInButton } from "@clerk/nextjs";
-import { useMutation, useQuery } from "convex/react";
+import { useUser } from "@clerk/nextjs";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
 import {
@@ -38,36 +38,71 @@ type SavedSearch = {
 };
 
 export function SavedSearchesPanel() {
-  return (
-    <>
-      <Show when="signed-out">
-        <section className="mt-7 rounded-lg border border-honey/30 bg-honey/16 p-5">
-          <div className="flex gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-white text-mossDark">
-              <UserRound aria-hidden="true" size={21} />
-            </span>
-            <div>
-              <h2 className="text-xl font-black text-ink">Prijavi se za spremljene potrage</h2>
-              <p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/68">
-                Prijavi se da možeš spremiti ono što tražiš i dobiti email kad se pojavi nešto slično.
-              </p>
-              <SignInButton mode="modal">
-                <button
-                  type="button"
-                  className="focus-ring mt-4 inline-flex h-11 items-center justify-center rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
-                >
-                  Prijava
-                </button>
-              </SignInButton>
-            </div>
-          </div>
-        </section>
-      </Show>
+  const { isLoaded, isSignedIn } = useUser();
+  const convexAuth = useConvexAuth();
 
-      <Show when="signed-in">
-        {hasConvexUrl ? <ConnectedSavedSearches /> : <LocalSavedSearchesFallback />}
-      </Show>
-    </>
+  if (!isLoaded) {
+    return <SavedSearchesSkeleton />;
+  }
+
+  if (!isSignedIn) {
+    return <SavedSearchesLoginRequired />;
+  }
+
+  if (!hasConvexUrl) {
+    return <LocalSavedSearchesFallback />;
+  }
+
+  if (convexAuth.isLoading) {
+    return <SavedSearchesSkeleton />;
+  }
+
+  if (!convexAuth.isAuthenticated) {
+    return (
+      <SavedSearchesAuthProblem message="Nismo uspjeli učitati potrage. Provjeri prijavu i pokušaj ponovno." />
+    );
+  }
+
+  return <ConnectedSavedSearches />;
+}
+
+function SavedSearchesLoginRequired() {
+  return (
+    <section className="mt-7 rounded-lg border border-honey/30 bg-honey/16 p-5">
+      <div className="flex gap-3">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-white text-mossDark">
+          <UserRound aria-hidden="true" size={21} />
+        </span>
+        <div>
+          <h2 className="text-xl font-black text-ink">Prijavi se za spremljene potrage</h2>
+          <p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/68">
+            Prijavi se da možeš spremati i pratiti potrage.
+          </p>
+          <Link
+            href="/sign-in"
+            className="focus-ring mt-4 inline-flex h-11 items-center justify-center rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
+          >
+            Prijava
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SavedSearchesAuthProblem({ message }: { message: string }) {
+  return (
+    <section className="mt-7 rounded-lg border border-honey/30 bg-honey/16 p-5">
+      <div className="flex gap-3">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-white text-mossDark">
+          <UserRound aria-hidden="true" size={21} />
+        </span>
+        <div>
+          <h2 className="text-xl font-black text-ink">Potrage trenutno nisu dostupne</h2>
+          <p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/68">{message}</p>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -87,8 +122,8 @@ function ConnectedSavedSearches() {
     try {
       await action();
       setStatusMessage(success);
-    } catch (error) {
-      setStatusMessage(error instanceof Error ? error.message : "Akcija trenutno nije uspjela.");
+    } catch {
+      setStatusMessage("Za ovu akciju moraš biti prijavljen/a.");
     } finally {
       setPendingId(null);
     }

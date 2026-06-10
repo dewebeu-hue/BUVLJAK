@@ -1,11 +1,14 @@
 "use client";
 
-import { Show, SignInButton } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import { Camera, FileText } from "lucide-react";
+import Link from "next/link";
 import { FacebookAuthButton } from "@/components/facebook-auth-button";
 import { NewListingForm } from "@/components/new-listing-form";
 
 export default function NewListingPage() {
+  const { isLoaded, isSignedIn } = useUser();
+
   return (
     <main className="px-4 py-8 sm:px-6">
       <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
@@ -15,29 +18,9 @@ export default function NewListingPage() {
           </span>
           <h1 className="mt-3 text-4xl font-black leading-tight text-ink">Objavi nešto za susjedstvo</h1>
 
-          <Show when="signed-out">
-            <div className="mt-6 rounded-lg border border-honey/30 bg-honey/16 p-5">
-              <h2 className="text-xl font-black text-ink">Prijava je potrebna za objavu</h2>
-              <p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/68">
-                Prijavi se da možeš objaviti i kasnije urediti svoj oglas.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <SignInButton mode="modal">
-                  <button
-                    type="button"
-                    className="focus-ring inline-flex h-11 items-center justify-center rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
-                  >
-                    Prijava
-                  </button>
-                </SignInButton>
-                <FacebookAuthButton redirectUrlComplete="/novi-oglas" />
-              </div>
-            </div>
-          </Show>
-
-          <Show when="signed-in">
-            <NewListingForm />
-          </Show>
+          {!isLoaded ? <NewListingAuthLoading /> : null}
+          {isLoaded && !isSignedIn ? <NewListingLoginRequired /> : null}
+          {isLoaded && isSignedIn ? <NewListingForm /> : null}
         </section>
 
         <aside className="space-y-4 lg:sticky lg:top-24">
@@ -71,5 +54,35 @@ export default function NewListingPage() {
         </aside>
       </div>
     </main>
+  );
+}
+
+function NewListingAuthLoading() {
+  return (
+    <div className="mt-6 rounded-lg border border-ink/10 bg-white p-5 shadow-sm">
+      <div className="h-5 w-44 animate-pulse rounded-full bg-field" />
+      <div className="mt-4 h-4 w-full max-w-xl animate-pulse rounded-full bg-field" />
+      <div className="mt-2 h-4 w-4/5 max-w-lg animate-pulse rounded-full bg-field" />
+    </div>
+  );
+}
+
+function NewListingLoginRequired() {
+  return (
+    <div className="mt-6 rounded-lg border border-honey/30 bg-honey/16 p-5">
+      <h2 className="text-xl font-black text-ink">Prijava je potrebna za objavu</h2>
+      <p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/68">
+        Prijavi se da možeš objaviti i kasnije urediti svoj oglas.
+      </p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Link
+          href="/sign-in"
+          className="focus-ring inline-flex h-11 items-center justify-center rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
+        >
+          Prijava
+        </Link>
+        <FacebookAuthButton redirectUrlComplete="/novi-oglas" />
+      </div>
+    </div>
   );
 }

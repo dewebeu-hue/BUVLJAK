@@ -1,7 +1,7 @@
 "use client";
 
-import { Show, SignInButton } from "@clerk/nextjs";
-import { useMutation, useQuery } from "convex/react";
+import { useUser } from "@clerk/nextjs";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
@@ -41,44 +41,86 @@ const userDemoListings: Listing[] = [
 type ConvexListingResult = Parameters<typeof fromConvexListing>[0];
 
 export function MyListingsPanel() {
-  return (
-    <>
-      <Show when="signed-out">
-        <section className="mt-7 rounded-lg border border-honey/30 bg-honey/16 p-5">
-          <div className="flex gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-white text-mossDark">
-              <UserRound aria-hidden="true" size={21} />
-            </span>
-            <div>
-              <h2 className="text-xl font-black text-ink">Prijavi se za svoje oglase</h2>
-              <p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/68">
-                Prijavi se da možeš objaviti i kasnije urediti svoj oglas.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <SignInButton mode="modal">
-                  <button
-                    type="button"
-                    className="focus-ring inline-flex h-11 items-center justify-center rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
-                  >
-                    Prijava
-                  </button>
-                </SignInButton>
-                <FacebookAuthButton redirectUrlComplete="/moji-oglasi" />
-              </div>
-            </div>
-          </div>
-        </section>
-      </Show>
+  const { isLoaded, isSignedIn } = useUser();
+  const convexAuth = useConvexAuth();
 
-      <Show when="signed-in">
-        {hasConvexUrl ? <ConnectedMyListings /> : <LocalMyListingsFallback />}
-      </Show>
-    </>
+  if (!isLoaded || convexAuth.isLoading) {
+    return <MyListingsSkeleton />;
+  }
+
+  if (!isSignedIn) {
+    return <MyListingsLoginRequired />;
+  }
+
+  if (!hasConvexUrl) {
+    return <LocalMyListingsFallback />;
+  }
+
+  if (!convexAuth.isAuthenticated) {
+    return <MyListingsAuthProblem />;
+  }
+
+  return <ConnectedMyListings />;
+}
+
+function MyListingsLoginRequired() {
+  return (
+    <section className="mt-7 rounded-lg border border-honey/30 bg-honey/16 p-5">
+      <div className="flex gap-3">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-white text-mossDark">
+          <UserRound aria-hidden="true" size={21} />
+        </span>
+        <div>
+          <h2 className="text-xl font-black text-ink">Prijavi se za svoje oglase</h2>
+          <p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/68">
+            Prijavi se da možeš objaviti i kasnije urediti svoj oglas.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              href="/sign-in"
+              className="focus-ring inline-flex h-11 items-center justify-center rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
+            >
+              Prijava
+            </Link>
+            <FacebookAuthButton redirectUrlComplete="/moji-oglasi" />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MyListingsAuthProblem() {
+  return (
+    <section className="mt-7 rounded-lg border border-honey/30 bg-honey/16 p-5">
+      <div className="flex gap-3">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-white text-mossDark">
+          <UserRound aria-hidden="true" size={21} />
+        </span>
+        <div>
+          <h2 className="text-xl font-black text-ink">Oglasi trenutno nisu dostupni</h2>
+          <p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/68">
+            Za ovu akciju moraš biti prijavljen/a.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MyListingsSkeleton() {
+  return (
+    <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: 3 }, (_, index) => (
+        <div key={index} className="h-56 animate-pulse rounded-lg border border-ink/10 bg-white" />
+      ))}
+    </div>
   );
 }
 
 function ConnectedMyListings() {
   const [statusFilter, setStatusFilter] = useState<ListingStatus>("active");
+  const [statusMessage, setStatusMessage] = useState("");
   const listings = useQuery(api.listings.listMyListings, {
     limit: 50
   });
@@ -93,11 +135,18 @@ function ConnectedMyListings() {
   const paymentsEnabled = Boolean(monetizationSettings?.paymentsEnabled);
 
   async function updateStatus(id: string, status: ListingStatus) {
-    await updateListingStatus({
-      id: id as Id<"listings">,
-      status,
-      ...(status === "removed" ? { removedReason: "Removed by owner" } : {})
-    });
+    setStatusMessage("");
+
+    try {
+      await updateListingStatus({
+        id: id as Id<"listings">,
+        status,
+        ...(status === "removed" ? { removedReason: "Removed by owner" } : {})
+      });
+      setStatusMessage("Status oglasa je ažuriran.");
+    } catch {
+      setStatusMessage("Za ovu akciju moraš biti prijavljen/a.");
+    }
   }
 
   if (listings === undefined) {
@@ -116,6 +165,12 @@ function ConnectedMyListings() {
 
   return (
     <>
+      {statusMessage ? (
+        <p className="mt-5 inline-flex items-center gap-2 text-sm font-black text-mossDark" aria-live="polite">
+          <CheckCircle2 aria-hidden="true" size={17} />
+          {statusMessage}
+        </p>
+      ) : null}
       <StatusFilterBar value={statusFilter} onChange={setStatusFilter} />
       {filteredListings.length > 0 ? (
         <section className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
