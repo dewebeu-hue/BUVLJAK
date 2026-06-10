@@ -18,6 +18,8 @@ const variantClasses = {
     "h-11 rounded-lg bg-[#1877f2] px-4 text-sm font-black text-white shadow-sm transition hover:bg-[#145dbf]"
 };
 
+const isFacebookLoginEnabled = false;
+
 export function FacebookAuthButton({
   children = "Nastavi s Facebookom",
   className = "",
@@ -28,6 +30,10 @@ export function FacebookAuthButton({
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [hasError, setHasError] = useState(false);
   const isBusy = fetchStatus === "fetching" || isRedirecting;
+
+  if (!isFacebookLoginEnabled) {
+    return null;
+  }
 
   async function handleFacebookLogin() {
     if (isBusy) {
