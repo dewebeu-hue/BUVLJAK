@@ -10,6 +10,7 @@
 
 import type * as admin from "../admin.js";
 import type * as adminAuth from "../adminAuth.js";
+import type * as authDebug from "../authDebug.js";
 import type * as contact from "../contact.js";
 import type * as facebookImports from "../facebookImports.js";
 import type * as facebookPosts from "../facebookPosts.js";
@@ -29,6 +30,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
   adminAuth: typeof adminAuth;
+  authDebug: typeof authDebug;
   contact: typeof contact;
   facebookImports: typeof facebookImports;
   facebookPosts: typeof facebookPosts;

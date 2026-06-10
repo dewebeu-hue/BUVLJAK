@@ -1,16 +1,23 @@
 "use client";
 
 import { Show } from "@clerk/nextjs";
-import { useMutation } from "convex/react";
+import { useConvexAuth, useMutation } from "convex/react";
 import { useEffect } from "react";
 import { api } from "@/convex/_generated/api";
 
 function SyncAuthenticatedUser() {
+  const { isAuthenticated, isLoading } = useConvexAuth();
   const upsertCurrentUser = useMutation(api.users.upsertCurrentUser);
 
   useEffect(() => {
-    void upsertCurrentUser({});
-  }, [upsertCurrentUser]);
+    if (isLoading || !isAuthenticated) {
+      return;
+    }
+
+    void upsertCurrentUser({}).catch(() => {
+      // The new-listing page shows the explicit auth debug state in development.
+    });
+  }, [isAuthenticated, isLoading, upsertCurrentUser]);
 
   return null;
 }

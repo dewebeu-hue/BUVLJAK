@@ -2,7 +2,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import imageCompression from "browser-image-compression";
-import { useAction, useMutation } from "convex/react";
+import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
 import {
   AlertCircle,
   ArrowLeft,
@@ -26,6 +26,9 @@ import {
 } from "@/lib/listings";
 
 const hasConvexUrl = Boolean(process.env.NEXT_PUBLIC_CONVEX_URL);
+const isDevelopment = process.env.NODE_ENV === "development";
+const imageUploadPrepareErrorMessage =
+  "Nismo uspjeli pripremiti upload slika. Provjeri prijavu i pokušaj ponovno.";
 
 type SelectedImage = {
   id: string;
@@ -154,7 +157,9 @@ export function NewListingForm() {
 
 function ConnectedNewListingForm() {
   const router = useRouter();
-  const { user } = useUser();
+  const { isLoaded: isClerkLoaded, isSignedIn, user } = useUser();
+  const convexAuth = useConvexAuth();
+  const authDebug = useQuery(api.authDebug.getCurrentIdentity, isDevelopment ? {} : "skip");
   const parseImportedListingText = useAction(api.facebookImports.parseImportedListingText);
   const createListing = useMutation(api.listings.createListing);
   const generateUploadUrl = useMutation(api.listings.generateListingImageUploadUrl);
@@ -317,7 +322,14 @@ function ConnectedNewListingForm() {
         useWebWorker: true,
         initialQuality: 0.82
       });
-      const uploadUrl = await generateUploadUrl({});
+      let uploadUrl: string;
+
+      try {
+        uploadUrl = await generateUploadUrl({});
+      } catch {
+        throw new Error(imageUploadPrepareErrorMessage);
+      }
+
       const response = await fetch(uploadUrl, {
         method: "POST",
         headers: { "Content-Type": compressed.type || image.file.type || "image/jpeg" },
@@ -354,6 +366,14 @@ function ConnectedNewListingForm() {
     setIsSubmitting(true);
 
     try {
+      if (convexAuth.isLoading) {
+        throw new Error("Još provjeravamo prijavu. Pokušaj ponovno za trenutak.");
+      }
+
+      if (!convexAuth.isAuthenticated) {
+        throw new Error("Prijavi se da možeš objaviti oglas.");
+      }
+
       const price = parsePrice(form.price);
       const imageStorageIds = await compressAndUploadImages();
 
@@ -383,7 +403,11 @@ function ConnectedNewListingForm() {
 
       router.push(`/oglasi/${createdListingId}?published=1`);
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Oglas nije spremljen.");
+      const message = submitError instanceof Error ? submitError.message : "Oglas nije spremljen.";
+      const friendlyMessage = message.includes("Authentication is required")
+        ? "Prijavi se da možeš objaviti oglas."
+        : message;
+      setError(friendlyMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -391,6 +415,21 @@ function ConnectedNewListingForm() {
 
   return (
     <div className="mt-6 space-y-5">
+      {isDevelopment ? (
+        <div className="rounded-lg border border-ink/10 bg-field p-3 text-xs font-black text-ink/62">
+          <span>Clerk auth: {isClerkLoaded && isSignedIn ? "signed in" : "signed out"}</span>
+          <span className="mx-2 text-ink/30">|</span>
+          <span>
+            Convex auth:{" "}
+            {authDebug === undefined
+              ? "checking"
+              : authDebug.isAuthenticated && convexAuth.isAuthenticated
+                ? "connected"
+                : "missing"}
+          </span>
+        </div>
+      ) : null}
+
       <div className="rounded-lg border border-ink/10 bg-white p-2 shadow-sm">
         <div className="grid gap-2 sm:grid-cols-2">
           <button
