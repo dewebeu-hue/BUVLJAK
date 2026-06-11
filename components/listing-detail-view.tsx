@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuth, useClerk } from "@clerk/nextjs";
 import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useAction, useMutation, useQuery } from "convex/react";
@@ -83,9 +84,16 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
     api.listings.getListingById,
     { id: listingId as Id<"listings"> }
   );
+  const { isLoaded: isAuthLoaded, isSignedIn } = useAuth();
+  const { openSignIn } = useClerk();
+  const isSaved = useQuery(
+    api.savedListings.isListingSaved,
+    isSignedIn ? { listingId: listingId as Id<"listings"> } : "skip"
+  );
   const incrementViewCount = useMutation(api.listings.incrementViewCount);
-  const incrementSaveCount = useMutation(api.listings.incrementSaveCount);
   const incrementShareCount = useMutation(api.listings.incrementShareCount);
+  const saveListing = useMutation(api.savedListings.saveListing);
+  const unsaveListing = useMutation(api.savedListings.unsaveListing);
   const updateListingStatus = useMutation(api.listings.updateListingStatus);
   const createReport = useMutation(api.listings.createReport);
   const requestContactInfo = useAction(api.contact.requestContactInfo);
@@ -103,6 +111,7 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
   const [offerMessage, setOfferMessage] = useState("");
   const [pendingContactIntent, setPendingContactIntent] = useState<ContactIntent | null>(null);
   const [selectedReportReason, setSelectedReportReason] = useState(reportReasons[0]);
+  const [isSavingListing, setIsSavingListing] = useState(false);
 
   const listing = useMemo<Listing | null>(() => {
     return convexListing ? fromConvexListing(convexListing) : null;
@@ -148,20 +157,44 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
     }
 
     if (kind === "save") {
-      setMetricOverrides((current) => {
-        const previous = current[listing.id] ?? {};
-        return {
-          ...current,
-          [listing.id]: {
-            ...previous,
-            saveCount: (previous.saveCount ?? listing.saveCount) + 1
-          }
-        };
-      });
-      setStatusMessage("Oglas spremljen.");
+      if (!isAuthLoaded) {
+        return;
+      }
 
-      if (canPersist) {
-        await incrementSaveCount({ id: listing.id as Id<"listings"> });
+      if (!isSignedIn) {
+        setStatusMessage("Prijavi se da možeš spremiti oglas.");
+        openSignIn();
+        return;
+      }
+
+      if (!canPersist) {
+        setStatusMessage("Spremanje oglasa radi na stvarnim Convex oglasima.");
+        return;
+      }
+
+      setIsSavingListing(true);
+      setStatusMessage("");
+
+      try {
+        const result = isSaved
+          ? await unsaveListing({ listingId: listing.id as Id<"listings"> })
+          : await saveListing({ listingId: listing.id as Id<"listings"> });
+
+        setMetricOverrides((current) => {
+          const previous = current[listing.id] ?? {};
+          return {
+            ...current,
+            [listing.id]: {
+              ...previous,
+              saveCount: result.saveCount
+            }
+          };
+        });
+        setStatusMessage(result.saved ? "Oglas spremljen." : "Oglas uklonjen iz spremljenih.");
+      } catch {
+        setStatusMessage("Spremanje oglasa trenutno nije uspjelo. Pokušaj ponovno.");
+      } finally {
+        setIsSavingListing(false);
       }
       return;
     }
@@ -450,10 +483,15 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
               <button
                 type="button"
                 onClick={() => handleMetricAction("save")}
-                className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-ink/12 bg-white px-4 text-sm font-black text-ink transition hover:bg-field"
+                disabled={isSavingListing}
+                className={`focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg border px-4 text-sm font-black transition disabled:cursor-wait disabled:opacity-70 ${
+                  isSaved
+                    ? "border-moss/20 bg-moss/8 text-mossDark hover:bg-moss/12"
+                    : "border-ink/12 bg-white text-ink hover:bg-field"
+                }`}
               >
-                <Bookmark aria-hidden="true" size={17} />
-                Spremi
+                <Bookmark aria-hidden="true" size={17} fill={isSaved ? "currentColor" : "none"} />
+                {isSavingListing ? "Spremanje..." : isSaved ? "Spremljeno" : "Spremi"}
               </button>
               <button
                 type="button"

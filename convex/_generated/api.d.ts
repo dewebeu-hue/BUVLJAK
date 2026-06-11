@@ -16,6 +16,7 @@ import type * as facebookImports from "../facebookImports.js";
 import type * as facebookPosts from "../facebookPosts.js";
 import type * as listings from "../listings.js";
 import type * as monetization from "../monetization.js";
+import type * as savedListings from "../savedListings.js";
 import type * as savedSearches from "../savedSearches.js";
 import type * as seed from "../seed.js";
 import type * as users from "../users.js";
@@ -36,6 +37,7 @@ declare const fullApi: ApiFromModules<{
   facebookPosts: typeof facebookPosts;
   listings: typeof listings;
   monetization: typeof monetization;
+  savedListings: typeof savedListings;
   savedSearches: typeof savedSearches;
   seed: typeof seed;
   users: typeof users;

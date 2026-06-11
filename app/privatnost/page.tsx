@@ -38,7 +38,7 @@ export default function PrivacyPage() {
             "podatke za prijavu putem Clerk autentifikacije",
             "podatke iz oglasa: naslov, opis, grad, kategorija, cijena, slike",
             "kontakt metodu koju korisnik sam unese: WhatsApp broj, email ili Facebook link",
-            "spremljene potrage",
+            "spremljene oglase",
             "kontakt klikove i osnovne metrike korištenja",
             "prijave oglasa",
             "tehničke podatke potrebne za rad aplikacije"
@@ -55,7 +55,7 @@ export default function PrivacyPage() {
             "objave i upravljanja oglasima",
             "prikaza lokalnog feeda oglasa",
             "omogućavanja kontakta između korisnika",
-            "spremanja potraga i slanja obavijesti",
+            "spremanja oglasa za kasnije pregledavanje",
             "moderacije i sprječavanja zloupotrebe",
             "održavanja sigurnosti aplikacije",
             "poboljšanja korisničkog iskustva"
@@ -101,12 +101,12 @@ export default function PrivacyPage() {
         <p>Korisnik smije uvesti samo vlastiti oglas ili oglas za koji ima dopuštenje.</p>
       </LegalSection>
 
-      <LegalSection title="8. Email obavijesti">
+      <LegalSection title="8. Obavijesti">
         <p>
-          Ako korisnik spremi potragu i uključi email obavijesti, Buvljak može poslati email kada se pojavi oglas koji
-          odgovara spremljenoj potrazi.
+          Ako korisnik uključi opcionalne obavijesti, Buvljak može poslati poruku vezanu uz korisnički račun,
+          objavljeni oglas ili spremljeni oglas.
         </p>
-        <p>Korisnik može pauzirati ili obrisati spremljenu potragu.</p>
+        <p>Korisnik može ukloniti spremljeni oglas iz svojeg profila.</p>
       </LegalSection>
 
       <LegalSection title="9. Kome se podaci mogu proslijediti">
@@ -137,7 +137,7 @@ export default function PrivacyPage() {
 
       <LegalSection title="10. Koliko dugo čuvamo podatke">
         <p>
-          Podatke čuvamo dok su potrebni za rad aplikacije, korisnički račun, objavljene oglase, spremljene potrage,
+          Podatke čuvamo dok su potrebni za rad aplikacije, korisnički račun, objavljene oglase, spremljene oglase,
           sigurnost i zakonske obveze.
         </p>
         <p>

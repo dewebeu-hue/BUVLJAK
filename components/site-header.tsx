@@ -14,6 +14,7 @@ import { usePathname } from "next/navigation";
 import {
   CircleDollarSign,
   Gift,
+  BookmarkCheck,
   LogIn,
   LogOut,
   Menu,
@@ -21,7 +22,6 @@ import {
   Repeat2,
   ScrollText,
   Search,
-  SearchCheck,
   UserRound,
   X
 } from "lucide-react";
@@ -154,12 +154,12 @@ export function SiteHeader() {
             {showSignedInMobileMenu ? (
               <div className="grid gap-2">
                 <Link
-                  href="/moje-potrage"
+                  href="/spremljeni-oglasi"
                   onClick={closeMobileMenu}
                   className="focus-ring flex h-11 items-center gap-3 rounded-lg border border-ink/12 bg-white px-3 text-sm font-black text-ink transition hover:bg-field"
                 >
-                  <SearchCheck aria-hidden="true" size={18} />
-                  Moje potrage
+                  <BookmarkCheck aria-hidden="true" size={18} />
+                  Spremljeni oglasi
                 </Link>
                 <Link
                   href="/moji-oglasi"
@@ -292,17 +292,17 @@ function HeaderAuth({ pathname }: { pathname: string }) {
 
       <Show when="signed-in">
         <Link
-          href="/moje-potrage"
-          aria-current={pathname === "/moje-potrage" ? "page" : undefined}
+          href="/spremljeni-oglasi"
+          aria-current={pathname === "/spremljeni-oglasi" ? "page" : undefined}
           className={`focus-ring inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-black transition ${
-            pathname === "/moje-potrage"
+            pathname === "/spremljeni-oglasi"
               ? "bg-moss/10 text-mossDark"
               : "border border-ink/12 bg-white text-ink hover:bg-field"
           }`}
         >
-          <SearchCheck aria-hidden="true" size={16} />
-          <span className="hidden lg:inline">Moje potrage</span>
-          <span className="sr-only lg:hidden">Moje potrage</span>
+          <BookmarkCheck aria-hidden="true" size={16} />
+          <span className="hidden lg:inline">Spremljeni oglasi</span>
+          <span className="sr-only lg:hidden">Spremljeni oglasi</span>
         </Link>
         <Link
           href="/moji-oglasi"

@@ -19,6 +19,7 @@ import {
 
 const hasConvexUrl = Boolean(process.env.NEXT_PUBLIC_CONVEX_URL);
 const PAGE_SIZE = 20;
+const savedSearchesEnabled = false;
 
 type FeedFilters = {
   search: string;
@@ -152,7 +153,7 @@ export function ListingsExplorer() {
             />
           </div>
 
-          <SavedSearchPrompt filters={filters} />
+          {savedSearchesEnabled ? <SavedSearchPrompt filters={filters} /> : null}
         </div>
       </section>
 

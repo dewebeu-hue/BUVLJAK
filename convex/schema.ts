@@ -139,6 +139,16 @@ export default defineSchema({
     createdAt: v.number()
   }).index("by_status", ["status"]),
 
+  savedListings: defineTable({
+    userId: v.id("users"),
+    listingId: v.id("listings"),
+    createdAt: v.number(),
+    savedAt: v.number()
+  })
+    .index("by_userId_and_listingId", ["userId", "listingId"])
+    .index("by_userId_and_savedAt", ["userId", "savedAt"])
+    .index("by_listingId", ["listingId"]),
+
   savedSearches: defineTable({
     userId: v.optional(v.id("users")),
     query: v.string(),

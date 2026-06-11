@@ -1,8 +1,9 @@
 "use client";
 
+import { useAuth, useClerk } from "@clerk/nextjs";
 import Link from "next/link";
 import { useState } from "react";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { Bookmark, Eye, Handshake, MapPin, Send, Share2, Sparkles, Tag } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -53,16 +54,47 @@ function ConnectedListingCard({
   listing: Listing;
   showFeatured: boolean;
 }) {
-  const incrementSaveCount = useMutation(api.listings.incrementSaveCount);
+  const { isLoaded, isSignedIn } = useAuth();
+  const { openSignIn } = useClerk();
+  const listingId = listing.id as Id<"listings">;
+  const isSaved = useQuery(
+    api.savedListings.isListingSaved,
+    isSignedIn ? { listingId } : "skip"
+  );
+  const saveListing = useMutation(api.savedListings.saveListing);
+  const unsaveListing = useMutation(api.savedListings.unsaveListing);
   const incrementShareCount = useMutation(api.listings.incrementShareCount);
   const [saveCount, setSaveCount] = useState(listing.saveCount);
   const [shareCount, setShareCount] = useState(listing.shareCount);
   const [statusMessage, setStatusMessage] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   async function handleSave() {
-    setSaveCount((current) => current + 1);
-    setStatusMessage("Oglas spremljen.");
-    await incrementSaveCount({ id: listing.id as Id<"listings"> });
+    if (!isLoaded) {
+      return;
+    }
+
+    if (!isSignedIn) {
+      setStatusMessage("Prijavi se da možeš spremiti oglas.");
+      openSignIn();
+      return;
+    }
+
+    setIsSaving(true);
+    setStatusMessage("");
+
+    try {
+      const result = isSaved
+        ? await unsaveListing({ listingId })
+        : await saveListing({ listingId });
+
+      setSaveCount(result.saveCount);
+      setStatusMessage(result.saved ? "Oglas spremljen." : "Oglas uklonjen iz spremljenih.");
+    } catch {
+      setStatusMessage("Spremanje oglasa trenutno nije uspjelo. Pokušaj ponovno.");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   async function handleShare() {
@@ -86,6 +118,8 @@ function ConnectedListingCard({
       statusMessage={statusMessage}
       onSave={handleSave}
       onShare={handleShare}
+      isSaved={Boolean(isSaved)}
+      isSaving={isSaving}
       showFeatured={showFeatured}
     />
   );
@@ -98,13 +132,12 @@ function LocalListingCard({
   listing: Listing;
   showFeatured: boolean;
 }) {
-  const [saveCount, setSaveCount] = useState(listing.saveCount);
+  const [saveCount] = useState(listing.saveCount);
   const [shareCount, setShareCount] = useState(listing.shareCount);
   const [statusMessage, setStatusMessage] = useState("");
 
   async function handleSave() {
-    setSaveCount((current) => current + 1);
-    setStatusMessage("Oglas spremljen.");
+    setStatusMessage("Spremanje oglasa radi nakon prijave i povezane baze.");
   }
 
   async function handleShare() {
@@ -127,6 +160,8 @@ function LocalListingCard({
       statusMessage={statusMessage}
       onSave={handleSave}
       onShare={handleShare}
+      isSaved={false}
+      isSaving={false}
       showFeatured={showFeatured}
     />
   );
@@ -139,14 +174,18 @@ function ListingCardSurface({
   statusMessage,
   onSave,
   onShare,
+  isSaved,
+  isSaving,
   showFeatured
 }: {
   listing: Listing;
   saveCount: number;
   shareCount: number;
   statusMessage: string;
-  onSave: () => void;
-  onShare: () => void;
+  onSave: () => void | Promise<void>;
+  onShare: () => void | Promise<void>;
+  isSaved: boolean;
+  isSaving: boolean;
   showFeatured: boolean;
 }) {
   const created = new Intl.DateTimeFormat("hr-HR", {
@@ -247,10 +286,15 @@ function ListingCardSurface({
           <button
             type="button"
             onClick={onSave}
-            className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-ink/12 bg-white px-3 text-sm font-black text-ink transition hover:bg-field"
+            disabled={isSaving}
+            className={`focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-black transition disabled:cursor-wait disabled:opacity-70 ${
+              isSaved
+                ? "border-moss/20 bg-moss/8 text-mossDark hover:bg-moss/12"
+                : "border-ink/12 bg-white text-ink hover:bg-field"
+            }`}
           >
-            <Bookmark aria-hidden="true" size={16} />
-            Spremi
+            <Bookmark aria-hidden="true" size={16} fill={isSaved ? "currentColor" : "none"} />
+            {isSaving ? "Spremanje..." : isSaved ? "Spremljeno" : "Spremi"}
           </button>
           <button
             type="button"
