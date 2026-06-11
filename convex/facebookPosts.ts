@@ -240,9 +240,28 @@ export const getListingForFacebookPost = query({
     id: v.id("listings")
   },
   handler: async (ctx, args): Promise<PublicListingForPost | null> => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      return null;
+    }
+
+    const currentUser = await ctx.db
+      .query("users")
+      .withIndex("by_clerkUserId", (q) => q.eq("clerkUserId", identity.subject))
+      .first();
+
+    if (!currentUser) {
+      return null;
+    }
+
     const listing = await ctx.db.get(args.id);
 
     if (!listing) {
+      return null;
+    }
+
+    if (listing.ownerId !== currentUser._id) {
       return null;
     }
 
@@ -271,12 +290,21 @@ export const generateFacebookPostText = action({
   },
   handler: async (ctx, args): Promise<GenerateFacebookPostTextResult> => {
     const tone = args.tone ?? "friendly";
+
+    if (args.draft) {
+      const identity = await ctx.auth.getUserIdentity();
+
+      if (!identity) {
+        throw new ConvexError("Authentication is required.");
+      }
+    }
+
     const listing: PublicListingForPost | null | undefined = args.listingId
       ? await ctx.runQuery(api.facebookPosts.getListingForFacebookPost, { id: args.listingId })
       : args.draft;
 
     if (!listing) {
-      throw new ConvexError("Listing or draft is required.");
+      throw new ConvexError("Only the listing owner can generate Facebook post text.");
     }
 
     const generatedText = await generateWithOpenAI(listing, tone);

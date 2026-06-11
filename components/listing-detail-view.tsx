@@ -96,7 +96,7 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
   const [metricOverrides, setMetricOverrides] = useState<
     Record<string, { saveCount?: number; shareCount?: number }>
   >({});
-  const [statusMessage, setStatusMessage] = useState(wasJustPublished ? publishedMessage : "");
+  const [statusMessage, setStatusMessage] = useState("");
   const [isActionOpen, setIsActionOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [offerAmount, setOfferAmount] = useState("");
@@ -296,6 +296,8 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
     year: "numeric"
   }).format(new Date(listing.createdAt));
   const primaryImage = listing.imageUrls[0];
+  const ownerPublishedMessage = wasJustPublished && listing.isOwner ? publishedMessage : "";
+  const visibleStatusMessage = statusMessage || ownerPublishedMessage;
 
   return (
     <main className="px-4 py-8 sm:px-6">
@@ -494,17 +496,17 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
             ) : null}
 
             <p className="min-h-5 text-sm font-black text-mossDark" aria-live="polite">
-              {statusMessage}
+              {visibleStatusMessage}
             </p>
 
-            <FacebookPostComposer
-              listing={listing}
-              canPersist={canPersist}
-              initialMessage={
-                wasJustPublished ? publishedMessage : ""
-              }
-              onShareCounted={countFacebookPostShare}
-            />
+            {listing.isOwner ? (
+              <FacebookPostComposer
+                listing={listing}
+                canPersist={canPersist}
+                initialMessage={ownerPublishedMessage}
+                onShareCounted={countFacebookPostShare}
+              />
+            ) : null}
 
             <div className="rounded-lg border border-honey/30 bg-honey/16 p-4">
               <p className="font-bold leading-relaxed text-ink/76">
