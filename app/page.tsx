@@ -68,7 +68,7 @@ export default function HomePage() {
           />
         </div>
 
-        <div className="relative z-10 mx-auto flex min-h-[520px] max-w-6xl items-start px-4 pb-44 pt-8 sm:px-6 md:min-h-[620px] md:items-center md:py-12 lg:min-h-[660px]">
+        <div className="relative z-10 mx-auto flex min-h-[520px] max-w-6xl items-start px-4 pb-44 pt-10 sm:px-6 md:min-h-[620px] md:items-center md:py-12 lg:min-h-[660px]">
           <div className="hero-copy max-w-xl text-ink">
             <h1 className="max-w-xl text-4xl font-black leading-[1.05] text-[#1F2933] sm:text-5xl">
               <span className="sr-only">Prodajem, poklanjam, mijenjam i tražim u tvojoj blizini</span>

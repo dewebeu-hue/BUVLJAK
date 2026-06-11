@@ -43,6 +43,36 @@ select {
   background: rgba(244, 185, 66, 0.45);
 }
 
+.mobile-menu-trigger-close,
+.mobile-menu-shell {
+  display: none;
+}
+
+.mobile-menu-toggle:checked ~ .site-header-bar .mobile-menu-trigger-open {
+  display: none;
+}
+
+.mobile-menu-toggle:checked ~ .site-header-bar .mobile-menu-trigger-close {
+  display: inline-flex;
+}
+
+.mobile-menu-toggle:checked ~ .mobile-menu-shell {
+  display: block;
+}
+
+.mobile-menu-toggle:focus-visible ~ .site-header-bar .mobile-menu-trigger {
+  outline: 2px solid #2f6f3e;
+  outline-offset: 2px;
+}
+
+@media (min-width: 640px) {
+  .mobile-menu-trigger-open,
+  .mobile-menu-trigger-close,
+  .mobile-menu-shell {
+    display: none !important;
+  }
+}
+
 .hero-image {
   position: relative;
   isolation: isolate;
