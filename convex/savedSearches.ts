@@ -4,6 +4,7 @@ import { action, internalMutation, internalQuery, mutation, query } from "./_gen
 import { internal } from "./_generated/api";
 import type { DataModel, Doc, Id } from "./_generated/dataModel";
 import { listingTypeValidator, notificationStatusValidator } from "./validators";
+import { requireAdmin as requireAdminAccess } from "./adminAuth";
 import { getPublicListingUrl } from "../lib/public-urls";
 
 const DEFAULT_CITY = "Nova Gradiška";
@@ -150,14 +151,7 @@ async function requireOwnedSearch(ctx: ConvexCtx, searchId: Id<"savedSearches">)
 }
 
 async function requireAdmin(ctx: ConvexCtx) {
-  const user = await getCurrentUser(ctx);
-
-  // TODO: Move admin protection to a route-level Clerk/Convex guard before live operations.
-  if (user.role !== "admin") {
-    throw new ConvexError("Admin access is required.");
-  }
-
-  return user;
+  return requireAdminAccess(ctx);
 }
 
 export function matchesSavedSearch(search: Doc<"savedSearches">, listing: Doc<"listings">) {

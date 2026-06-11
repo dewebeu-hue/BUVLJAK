@@ -4,6 +4,8 @@ import type { DataModel, Doc } from "./_generated/dataModel";
 
 type ConvexCtx = GenericQueryCtx<DataModel> | GenericMutationCtx<DataModel>;
 
+const ADMIN_EMAIL = "deweb.eu@gmail.com";
+
 function optionalString(value: unknown) {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
 }
@@ -15,15 +17,7 @@ function normalizedEmail(value?: string) {
 export function isAdminEmail(email?: string) {
   const currentEmail = normalizedEmail(email);
 
-  if (!currentEmail) {
-    return false;
-  }
-
-  return (process.env.ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((item) => normalizedEmail(item))
-    .filter(Boolean)
-    .includes(currentEmail);
+  return currentEmail === ADMIN_EMAIL;
 }
 
 export async function getAdminStatus(ctx: ConvexCtx) {
@@ -45,7 +39,7 @@ export async function getAdminStatus(ctx: ConvexCtx) {
     .withIndex("by_clerkUserId", (q) => q.eq("clerkUserId", identity.subject))
     .first();
   const adminEmail = isAdminEmail(email);
-  const isAdmin = user?.role === "admin" || adminEmail;
+  const isAdmin = adminEmail;
 
   return {
     state: isAdmin ? ("admin" as const) : ("forbidden" as const),

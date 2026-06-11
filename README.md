@@ -11,6 +11,16 @@ npm run convex:seed
 
 The listings feed uses Convex when `NEXT_PUBLIC_CONVEX_URL` is available. Otherwise it falls back to local demo listings.
 
+## Admin portal
+
+The admin area is intentionally not linked from the public UI. Open it manually at:
+
+```text
+/admin-portal
+```
+
+Access is allowed only for the Clerk user whose email is exactly `deweb.eu@gmail.com`. The old `/admin` route should remain unavailable and must not redirect to the portal.
+
 ## Clerk auth
 
 The app uses Clerk for sign-in, including a direct Facebook login button that starts Clerk OAuth with the `oauth_facebook` strategy and completes on `/sso-callback`.

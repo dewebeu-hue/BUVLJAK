@@ -17,14 +17,12 @@ import {
   SearchCheck,
   PlusCircle,
   ScrollText,
-  ShieldCheck,
   UserRound
 } from "lucide-react";
 import { FacebookAuthButton } from "@/components/facebook-auth-button";
 
 const navItems = [
-  { href: "/oglasi", label: "Oglasi", icon: ScrollText },
-  { href: "/admin", label: "Admin", icon: ShieldCheck }
+  { href: "/oglasi", label: "Oglasi", icon: ScrollText }
 ];
 
 export function SiteHeader() {

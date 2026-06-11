@@ -17,14 +17,9 @@ CLERK_JWT_ISSUER_DOMAIN=
 RESEND_API_KEY=
 CONTACT_FROM_EMAIL=
 OPENAI_API_KEY=
-ADMIN_EMAILS=
 ```
 
-`ADMIN_EMAILS` je comma-separated lista admin emailova, bez razmaka je najjednostavnije:
-
-```bash
-ADMIN_EMAILS=admin@example.com,drugi-admin@example.com
-```
+Admin pristup nije konfiguriran preko env varijable. Dopusten je samo za Clerk korisnika s emailom `deweb.eu@gmail.com`.
 
 ## Lokalno pokretanje
 
@@ -58,7 +53,8 @@ Rucno provjeri:
 - `/novi-oglas`
 - `/moji-oglasi`
 - `/moje-potrage`
-- `/admin`
+- `/admin-portal`
+- `/admin` treba vratiti 404 i ne smije redirectati na `/admin-portal`
 - `/pravila`
 - `/privatnost`
 - `/paketi`
@@ -72,7 +68,7 @@ Rucno provjeri:
 - Provjeri Convex production deployment i `NEXT_PUBLIC_CONVEX_URL`.
 - Provjeri Resend sender domenu ili sender email ako se koriste email obavijesti.
 - Provjeri OpenAI key ako zelis AI pomoc za Facebook tekst.
-- Dodaj admin email u `ADMIN_EMAILS`.
+- Provjeri da admin pristup radi samo za `deweb.eu@gmail.com`.
 
 ## Convex
 
@@ -91,8 +87,9 @@ Rucno provjeri:
 - Provjeri OG image URL: `/api/og/listing/[id]`.
 - Provjeri kontakt resolver.
 - Provjeri spremanje potrage.
-- Provjeri admin pristup.
+- Provjeri admin pristup na `/admin-portal`.
 - Provjeri da obicni korisnik ne vidi admin dashboard.
+- Provjeri da `/admin` vraca 404.
 - Provjeri da monetizacija nije vidljiva dok su flagovi ugaseni.
 - Provjeri `/pravila` i `/privatnost`.
 

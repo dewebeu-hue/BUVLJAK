@@ -181,7 +181,7 @@ function ConnectedAdminDashboard() {
         <section className="rounded-lg border border-clay/20 bg-clay/8 p-5">
           <h1 className="text-2xl font-black text-ink">Nemaš pristup ovoj stranici.</h1>
           <p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/66">
-            Admin pristup je dopušten samo korisnicima s role `admin` ili emailom u `ADMIN_EMAILS`.
+            Admin pristup je dopušten samo vlasničkom računu.
           </p>
         </section>
       </AdminShell>
