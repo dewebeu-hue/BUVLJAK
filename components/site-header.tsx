@@ -28,6 +28,7 @@ import {
 import { FacebookAuthButton } from "@/components/facebook-auth-button";
 
 const navItems = [{ href: "/oglasi", label: "Oglasi", icon: ScrollText }];
+const postLoginPath = "/";
 const mobileMenuToggleId = "mobile-site-menu-toggle";
 
 const mobileMenuLinks = [
@@ -189,7 +190,11 @@ export function SiteHeader() {
               </div>
             ) : (
               <div className="grid gap-2">
-                <SignInButton mode="modal">
+                <SignInButton
+                  mode="modal"
+                  fallbackRedirectUrl={postLoginPath}
+                  forceRedirectUrl={postLoginPath}
+                >
                   <button
                     type="button"
                     onClick={closeMobileMenu}
@@ -201,13 +206,17 @@ export function SiteHeader() {
                 </SignInButton>
                 <div onClickCapture={closeMobileMenu}>
                   <FacebookAuthButton
-                    redirectUrlComplete={pathname || "/"}
+                    redirectUrlComplete={postLoginPath}
                     className="w-full [&>button]:w-full"
                   >
                     Facebook prijava
                   </FacebookAuthButton>
                 </div>
-                <SignInButton mode="modal">
+                <SignInButton
+                  mode="modal"
+                  fallbackRedirectUrl={postLoginPath}
+                  forceRedirectUrl={postLoginPath}
+                >
                   <button
                     type="button"
                     onClick={closeMobileMenu}
@@ -235,13 +244,17 @@ function HeaderAuth({ pathname }: { pathname: string }) {
     <div className="hidden min-w-0 items-center gap-1.5 sm:flex">
       <Show when="signed-out">
         <FacebookAuthButton
-          redirectUrlComplete={pathname || "/"}
+          redirectUrlComplete={postLoginPath}
           variant="header"
           className="hidden md:inline-flex"
         >
           Facebook
         </FacebookAuthButton>
-        <SignInButton mode="modal">
+        <SignInButton
+          mode="modal"
+          fallbackRedirectUrl={postLoginPath}
+          forceRedirectUrl={postLoginPath}
+        >
           <button
             type="button"
             className="focus-ring inline-flex h-10 items-center gap-2 rounded-lg border border-ink/12 bg-white px-3 text-sm font-black text-ink transition hover:bg-field"
@@ -250,7 +263,11 @@ function HeaderAuth({ pathname }: { pathname: string }) {
             Prijava
           </button>
         </SignInButton>
-        <SignUpButton mode="modal">
+        <SignUpButton
+          mode="modal"
+          fallbackRedirectUrl={postLoginPath}
+          forceRedirectUrl={postLoginPath}
+        >
           <button
             type="button"
             className="focus-ring hidden h-10 items-center gap-2 rounded-lg border border-ink/12 bg-white px-3 text-sm font-black text-ink transition hover:bg-field md:inline-flex"
@@ -258,7 +275,11 @@ function HeaderAuth({ pathname }: { pathname: string }) {
             Registracija
           </button>
         </SignUpButton>
-        <SignInButton mode="modal">
+        <SignInButton
+          mode="modal"
+          fallbackRedirectUrl={postLoginPath}
+          forceRedirectUrl={postLoginPath}
+        >
           <button
             type="button"
             className="focus-ring hidden h-10 items-center gap-2 rounded-lg bg-moss px-3 text-sm font-black text-white transition hover:bg-mossDark md:inline-flex"

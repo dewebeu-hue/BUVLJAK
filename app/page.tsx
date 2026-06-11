@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { currentUser } from "@clerk/nextjs/server";
 import {
   ArrowRight,
   BadgeCheck,
@@ -11,6 +12,7 @@ import {
   Repeat2,
   Search
 } from "lucide-react";
+import { ListingsExplorer } from "@/components/listings-explorer";
 
 const actionCards = [
   {
@@ -52,7 +54,17 @@ const whyItems = [
   "bez nepotrebnog chata i kompliciranih profila"
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const user = await currentUser();
+
+  if (user) {
+    return <ListingsExplorer />;
+  }
+
+  return <LandingPage />;
+}
+
+function LandingPage() {
   return (
     <main>
       <section className="hero-image">
