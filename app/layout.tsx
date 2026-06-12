@@ -7,6 +7,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { UserProfileSync } from "@/components/user-profile-sync";
 import { getAppBaseUrl, getDefaultOgImageUrl } from "@/lib/public-urls";
+import { hrHR } from "@clerk/localizations";
 
 const appBaseUrl = getAppBaseUrl();
 const defaultOgImageUrl = getDefaultOgImageUrl(appBaseUrl);
@@ -42,8 +43,11 @@ export default function RootLayout({
   return (
     <html lang="hr">
       <body>
-        <ClerkProvider>
-          <ConvexClientProvider>
+        <ClerkProvider
+  publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+  localization={hrHR}
+>
+                <ConvexClientProvider>
             <UserProfileSync />
             <SiteHeader />
             {children}
