@@ -12,7 +12,11 @@ function logSavedListingDebug(
   message: string,
   payload: { listingId?: Id<"listings">; userId?: Id<"users">; email?: string; storage?: string }
 ) {
-  if (process.env.NODE_ENV !== "production") {
+  const isDevelopment =
+    process.env.NODE_ENV === "development" ||
+    process.env.CONVEX_DEPLOYMENT?.startsWith("dev:");
+
+  if (isDevelopment) {
     console.info(`[savedListings] ${message}`, {
       ...payload,
       email: payload.email ?? null
