@@ -123,7 +123,7 @@ function buildContactMessage({
   const cleanMessage = optionalString(message);
 
   if (intent === "offer" && typeof offerAmount === "number") {
-    return `Pozdrav, vidio/la sam oglas "${title}" na Buvljaku. Nudim ${offerAmount} EUR. Je li prihvatljivo?`;
+    return cleanMessage ?? `Pozdrav, nudim ${offerAmount} € za ovaj oglas. Je li još dostupno?`;
   }
 
   if (intent === "swap") {
@@ -135,7 +135,7 @@ function buildContactMessage({
   }
 
   if (intent === "pickup" || type === "give") {
-    return `Pozdrav, vidio/la sam da poklanjate "${title}" na Buvljaku. Je li još dostupno za preuzimanje?`;
+    return cleanMessage ?? "Pozdrav, zanima me preuzimanje ovog oglasa. Je li još dostupno?";
   }
 
   return `Pozdrav, vidio/la sam oglas "${title}" na Buvljaku. Je li još dostupno?`;

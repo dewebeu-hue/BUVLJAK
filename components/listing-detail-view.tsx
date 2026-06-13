@@ -19,7 +19,8 @@ import {
   Send,
   Share2,
   Tag,
-  Trash2
+  Trash2,
+  X
 } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { FacebookPostComposer } from "@/components/facebook-post-composer";
@@ -52,6 +53,10 @@ const reportReasons = [
 
 const safetyNoteText =
   "Buvljak.hr ne sudjeluje u plaćanju ni dostavi. Dogovor obavljaš direktno s drugom osobom.";
+const offerLegalNote =
+  "Ponuda nije plaćanje ni rezervacija. Dogovor se nastavlja direktno između korisnika.";
+const pickupDefaultMessage =
+  "Pozdrav, zanima me preuzimanje ovog oglasa. Je li još dostupno?";
 
 type ContactIntent = "contact" | "availability" | "offer" | "pickup" | "swap" | "have_item";
 
@@ -105,6 +110,8 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
   const [isActionOpen, setIsActionOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [offerAmount, setOfferAmount] = useState("");
+  const [offerSubject, setOfferSubject] = useState("");
+  const [offerCondition, setOfferCondition] = useState("");
   const [offerMessage, setOfferMessage] = useState("");
   const [pendingContactIntent, setPendingContactIntent] = useState<ContactIntent | null>(null);
   const [selectedReportReason, setSelectedReportReason] = useState(reportReasons[0]);
@@ -135,6 +142,22 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
       void incrementViewCount({ id: listing.id as Id<"listings"> });
     }
   }, [canPersist, incrementViewCount, listing]);
+
+  useEffect(() => {
+    if (!listing || listing.isOwner || typeof window === "undefined") {
+      return;
+    }
+
+    if (window.location.hash === "#akcija") {
+      window.requestAnimationFrame(() => {
+        setIsActionOpen(true);
+        document.getElementById("akcija")?.scrollIntoView({
+          behavior: "smooth",
+          block: "center"
+        });
+      });
+    }
+  }, [listing]);
 
   if (isLoading) {
     return <ListingDetailSkeleton />;
@@ -321,11 +344,6 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
       return;
     }
 
-    if (listing.type === "give") {
-      void requestContact("pickup");
-      return;
-    }
-
     setIsActionOpen((current) => {
       const next = !current;
 
@@ -344,7 +362,7 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
 
   const actionLabel = actionLabelForListing(listing);
   const priceLabel = formatListingPrice(listing);
-  const isPrimaryContactLoading = pendingContactIntent === "pickup";
+  const isPrimaryContactLoading = pendingContactIntent !== null;
   const metricOverride = metricOverrides[listing.id];
   const saveCount = metricOverride?.saveCount ?? listing.saveCount;
   const shareCount = metricOverride?.shareCount ?? listing.shareCount;
@@ -538,14 +556,20 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
               <ActionContactPanel
                 listing={listing}
                 offerAmount={offerAmount}
+                offerSubject={offerSubject}
+                offerCondition={offerCondition}
                 offerMessage={offerMessage}
                 onAmountChange={setOfferAmount}
+                onSubjectChange={setOfferSubject}
+                onConditionChange={setOfferCondition}
                 onMessageChange={setOfferMessage}
-                loading={pendingContactIntent === "offer" || pendingContactIntent === "swap" || pendingContactIntent === "have_item"}
+                loading={pendingContactIntent === "offer" || pendingContactIntent === "swap" || pendingContactIntent === "have_item" || pendingContactIntent === "pickup"}
+                onClose={() => setIsActionOpen(false)}
                 onSubmit={async (intent, payload) => {
                   const sent = await requestContact(intent, payload);
                   if (sent) {
                     setIsActionOpen(false);
+                    setStatusMessage(intent === "pickup" ? "Upit je poslan." : "Ponuda je pripremljena.");
                   }
                 }}
               />
@@ -710,18 +734,28 @@ function StickyDetailActionBar({
 function ActionContactPanel({
   listing,
   offerAmount,
+  offerSubject,
+  offerCondition,
   offerMessage,
   onAmountChange,
+  onSubjectChange,
+  onConditionChange,
   onMessageChange,
   loading,
+  onClose,
   onSubmit
 }: {
   listing: Listing;
   offerAmount: string;
+  offerSubject: string;
+  offerCondition: string;
   offerMessage: string;
   onAmountChange: (value: string) => void;
+  onSubjectChange: (value: string) => void;
+  onConditionChange: (value: string) => void;
   onMessageChange: (value: string) => void;
   loading: boolean;
+  onClose: () => void;
   onSubmit: (
     intent: ContactIntent,
     payload?: { offerAmount?: number; message?: string }
@@ -729,32 +763,83 @@ function ActionContactPanel({
 }) {
   const [error, setError] = useState("");
   const title = actionLabelForListing(listing);
-  const isOffer = listing.type === "sell" && listing.allowOffers;
+  const isSell = listing.type === "sell";
+  const isPickup = listing.type === "give";
+  const isSwap = listing.type === "swap";
+  const isWant = listing.type === "want";
   const intent: ContactIntent =
-    listing.type === "swap"
+    isPickup
+      ? "pickup"
+      : isSwap
       ? "swap"
-      : listing.type === "want"
+      : isWant
         ? "have_item"
-        : isOffer
+        : isSell
           ? "offer"
           : "contact";
-  const messageLabel =
-    listing.type === "swap"
-      ? "Što nudiš u zamjenu"
-      : listing.type === "want"
-        ? "Što imaš"
-        : "Kratka poruka";
-  const messagePlaceholder =
-    listing.type === "swap"
-      ? "Npr. nudim manji regal ili policu."
-      : listing.type === "want"
-        ? "Npr. imam stariji ispravan model, mogu poslati detalje."
-        : "Napiši kratku poruku oglašivaču.";
+  const submitLabel = isSwap ? "Pošalji prijedlog" : isPickup ? "Javi se za preuzimanje" : "Pošalji ponudu";
+
+  function defaultMessage(amount?: number) {
+    if (isPickup) {
+      return pickupDefaultMessage;
+    }
+
+    if (isSell && typeof amount === "number") {
+      return `Pozdrav, nudim ${amount} € za ovaj oglas. Je li još dostupno?`;
+    }
+
+    if (isSell) {
+      return "Pozdrav, nudim [iznos] € za ovaj oglas. Je li još dostupno?";
+    }
+
+    if (isSwap) {
+      return "Pozdrav, predlažem zamjenu za ovaj oglas. Je li još dostupno?";
+    }
+
+    if (isWant) {
+      return "Pozdrav, imam nešto što bi moglo odgovarati ovoj potrazi. Je li još aktualno?";
+    }
+
+    return "Pozdrav, zanima me ovaj oglas. Je li još dostupno?";
+  }
+
+  function structuredMessage(amount?: number) {
+    const cleanSubject = offerSubject.trim();
+    const cleanCondition = offerCondition.trim();
+    const cleanMessage = offerMessage.trim();
+
+    if (isSell) {
+      return cleanMessage || defaultMessage(amount);
+    }
+
+    if (isPickup) {
+      return cleanMessage || pickupDefaultMessage;
+    }
+
+    if (isSwap) {
+      return [
+        `Što nudim: ${cleanSubject}`,
+        `Poruka: ${cleanMessage || defaultMessage()}`
+      ].join("\n");
+    }
+
+    if (isWant) {
+      return [
+        `Što imam: ${cleanSubject}`,
+        cleanCondition ? `Cijena ili uvjet: ${cleanCondition}` : undefined,
+        `Poruka: ${cleanMessage || defaultMessage()}`
+      ]
+        .filter(Boolean)
+        .join("\n");
+    }
+
+    return cleanMessage || defaultMessage();
+  }
 
   async function handleSubmit() {
     setError("");
 
-    if (isOffer) {
+    if (isSell) {
       const amount = Number(offerAmount.replace(",", "."));
       if (!Number.isFinite(amount) || amount <= 0) {
         setError("Upiši iznos ponude.");
@@ -763,64 +848,133 @@ function ActionContactPanel({
 
       await onSubmit(intent, {
         offerAmount: amount,
-        ...(offerMessage.trim() ? { message: offerMessage.trim() } : {})
+        message: structuredMessage(amount)
       });
       return;
     }
 
-    if ((intent === "swap" || intent === "have_item") && !offerMessage.trim()) {
-      setError("Napiši kratku poruku prije slanja.");
+    if ((isSwap || isWant) && !offerSubject.trim()) {
+      setError(isSwap ? "Upiši što nudiš u zamjenu." : "Upiši što imaš za ponuditi.");
       return;
     }
 
-    await onSubmit(intent, offerMessage.trim() ? { message: offerMessage.trim() } : undefined);
+    await onSubmit(intent, { message: structuredMessage() });
   }
 
   return (
-    <section className="rounded-lg border border-moss/18 bg-moss/8 p-5">
-      <h2 className="text-xl font-black text-ink">{title}</h2>
-      <div className="mt-4 grid gap-3">
-        {isOffer ? (
+    <div className="fixed inset-0 z-50 flex items-end bg-ink/42 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-8 sm:items-center sm:justify-center sm:p-4">
+      <form
+        role="dialog"
+        aria-modal="true"
+        aria-label="Ponuda i dogovor"
+        className="offer-action-sheet max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-lg bg-white p-5 shadow-soft sm:rounded-lg"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void handleSubmit();
+        }}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-black text-mossDark">{listingTypeLabels[listing.type]}</p>
+            <h2 className="mt-1 text-2xl font-black leading-tight text-ink">{title}</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="focus-ring grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-ink/12 bg-white text-ink transition hover:bg-field"
+            aria-label="Zatvori"
+          >
+            <X aria-hidden="true" size={18} />
+          </button>
+        </div>
+
+        <div className="mt-5 grid gap-4">
+          {isSell ? (
+            <label className="block">
+              <span className="text-sm font-black text-ink">Tvoja ponuda u €</span>
+              <input
+                type="number"
+                min={0}
+                inputMode="decimal"
+                value={offerAmount}
+                onChange={(event) => onAmountChange(event.target.value)}
+                placeholder="npr. 50"
+                className="focus-ring mt-2 h-12 w-full rounded-lg border border-ink/12 bg-field px-4 text-base font-bold text-ink placeholder:text-ink/38"
+              />
+            </label>
+          ) : null}
+
+          {isSwap ? (
+            <label className="block">
+              <span className="text-sm font-black text-ink">Što nudiš?</span>
+              <input
+                type="text"
+                value={offerSubject}
+                onChange={(event) => onSubjectChange(event.target.value)}
+                placeholder="Npr. manji regal ili policu"
+                className="focus-ring mt-2 h-12 w-full rounded-lg border border-ink/12 bg-field px-4 text-base font-bold text-ink placeholder:text-ink/38"
+              />
+            </label>
+          ) : null}
+
+          {isWant ? (
+            <>
+              <label className="block">
+                <span className="text-sm font-black text-ink">Što imaš?</span>
+                <input
+                  type="text"
+                  value={offerSubject}
+                  onChange={(event) => onSubjectChange(event.target.value)}
+                  placeholder="Npr. stariji ispravan model"
+                  className="focus-ring mt-2 h-12 w-full rounded-lg border border-ink/12 bg-field px-4 text-base font-bold text-ink placeholder:text-ink/38"
+                />
+              </label>
+              <label className="block">
+                <span className="text-sm font-black text-ink">Cijena ili uvjet</span>
+                <input
+                  type="text"
+                  value={offerCondition}
+                  onChange={(event) => onConditionChange(event.target.value)}
+                  placeholder="Npr. 30 €, poklanjam ili zamjena"
+                  className="focus-ring mt-2 h-12 w-full rounded-lg border border-ink/12 bg-field px-4 text-base font-bold text-ink placeholder:text-ink/38"
+                />
+              </label>
+            </>
+          ) : null}
+
           <label className="block">
-            <span className="text-sm font-black text-ink">Iznos ponude</span>
-            <input
-              type="number"
-              min={0}
-              value={offerAmount}
-              onChange={(event) => onAmountChange(event.target.value)}
-              placeholder="npr. 50"
-              className="focus-ring mt-2 h-11 w-full rounded-lg border border-ink/12 bg-white px-3 text-sm font-bold text-ink"
+            <span className="text-sm font-black text-ink">
+              {isPickup ? "Poruka za preuzimanje" : "Kratka poruka"}
+            </span>
+            <textarea
+              value={offerMessage}
+              onChange={(event) => onMessageChange(event.target.value)}
+              placeholder={defaultMessage()}
+              className="focus-ring mt-2 min-h-28 w-full rounded-lg border border-ink/12 bg-field px-4 py-3 text-base font-bold leading-relaxed text-ink placeholder:text-ink/38"
             />
           </label>
-        ) : null}
-        <label className="block">
-          <span className="text-sm font-black text-ink">{messageLabel}</span>
-          <textarea
-            value={offerMessage}
-            onChange={(event) => onMessageChange(event.target.value)}
-            placeholder={messagePlaceholder}
-            className="focus-ring mt-2 min-h-28 w-full rounded-lg border border-ink/12 bg-white px-3 py-3 text-sm font-bold text-ink"
-          />
-        </label>
-        {error ? (
-          <p className="text-sm font-black text-clay" aria-live="polite">
-            {error}
+
+          <p className="rounded-lg border border-honey/30 bg-honey/16 p-3 text-sm font-bold leading-relaxed text-ink/72">
+            {offerLegalNote}
           </p>
-        ) : null}
-        <button
-          type="button"
-          disabled={loading}
-          onClick={handleSubmit}
-          className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark disabled:cursor-wait disabled:opacity-70"
-        >
-          {loading ? <Loader2 aria-hidden="true" className="animate-spin" size={17} /> : null}
-          {title}
-        </button>
-      </div>
-      <p className="mt-3 text-sm font-bold text-ink/64">
-        Poruka ide kroz sigurni kontakt resolver, a dogovor se nastavlja izvan aplikacije.
-      </p>
-    </section>
+
+          {error ? (
+            <p className="rounded-lg border border-clay/20 bg-clay/8 p-3 text-sm font-black text-clay" aria-live="polite">
+              {error}
+            </p>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-moss px-4 text-base font-black text-white transition hover:bg-mossDark disabled:cursor-wait disabled:opacity-70"
+          >
+            {loading ? <Loader2 aria-hidden="true" className="animate-spin" size={18} /> : <Handshake aria-hidden="true" size={18} />}
+            {submitLabel}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
 
