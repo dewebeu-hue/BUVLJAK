@@ -8,10 +8,13 @@ import {
   CheckCircle2,
   Eye,
   Loader2,
+  MapPin,
+  MessageCircle,
   Pause,
   PlusCircle,
   RotateCcw,
   Sparkles,
+  Tag,
   Trash2,
   UserRound
 } from "lucide-react";
@@ -40,6 +43,14 @@ const userDemoListings: Listing[] = [
   { ...demoListings[2], status: "resolved" },
   { ...adminListings[6], status: "removed" }
 ];
+
+const ownerCardVisualTone: Record<Listing["type"], string> = {
+  sell: "from-moss/24 via-skywash to-honey/28",
+  give: "from-honey/36 via-field to-moss/18",
+  swap: "from-plum/22 via-skywash to-honey/30",
+  want: "from-clay/22 via-field to-skywash"
+};
+
 type ConvexListingResult = Parameters<typeof fromConvexListing>[0];
 
 export function MyListingsPanel() {
@@ -82,7 +93,7 @@ function MyListingsLoginRequired() {
               href="/sign-in"
               className="focus-ring inline-flex h-11 items-center justify-center rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
             >
-              Prijava
+              Prijavi se
             </Link>
             <FacebookAuthButton redirectUrlComplete="/moji-oglasi" />
           </div>
@@ -302,84 +313,144 @@ function MyListingCard({
   showFeaturedCta?: boolean;
   paymentsEnabled?: boolean;
 }) {
+  const primaryImage = listing.imageUrls[0];
+  const priceLabel = formatListingPrice(listing);
+  const statusLabel = formatListingStatus(listing.status);
+  const typeLabel = listingTypeLabels[listing.type];
+
   return (
-    <article className="rounded-lg border border-ink/10 bg-white p-4 shadow-sm">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className={`rounded-full border px-3 py-1 text-xs font-black ${listingTypeBadgeClassNames[listing.type]}`}>
-          {listingTypeLabels[listing.type]}
-        </span>
-        <span className={`rounded-full border px-3 py-1 text-xs font-black ${listingStatusBadgeClassNames[listing.status]}`}>
-          {formatListingStatus(listing.status)}
-        </span>
-      </div>
-      <h2 className="mt-4 text-xl font-black leading-snug text-ink">{listing.title}</h2>
-      <p className="mt-2 line-clamp-2 text-sm font-semibold leading-relaxed text-ink/64">
-        {listing.description}
-      </p>
-      <div className="mt-4 rounded-lg bg-field px-3 py-2 text-sm font-black text-ink">
-        {listing.city} · {formatListingPrice(listing)}
-      </div>
-      {showFeaturedCta && listing.status === "active" ? (
-        <div className="mt-4 rounded-lg border border-honey/32 bg-honey/14 p-3">
-          <div className="flex items-start gap-2">
-            <Sparkles aria-hidden="true" size={18} className="mt-0.5 shrink-0 text-[#72520d]" />
-            <div>
-              <p className="text-sm font-black text-ink">Istakni oglas</p>
-              <p className="mt-1 text-xs font-bold leading-relaxed text-ink/62">
-                {paymentsEnabled
-                  ? "Plaćanje još nije spojeno."
-                  : "Kontaktiraj admina za beta isticanje."}
-              </p>
+    <article className="my-listing-mobile-card overflow-hidden rounded-lg border border-ink/10 bg-white shadow-sm">
+      <Link href={`/oglasi/${listing.id}`} className="focus-ring block">
+        <div className={`my-listing-mobile-card-image relative grid aspect-[4/3] place-items-center bg-gradient-to-br ${ownerCardVisualTone[listing.type]}`}>
+          {primaryImage ? (
+            <div
+              role="img"
+              aria-label={`Slika oglasa ${listing.title}`}
+              className="h-full w-full bg-cover bg-center"
+              style={{ backgroundImage: `url(${primaryImage})` }}
+            />
+          ) : (
+            <div className="grid h-20 w-20 place-items-center rounded-lg border border-white/70 bg-white/75 text-mossDark shadow-sm">
+              <Tag aria-hidden="true" size={32} strokeWidth={1.9} />
             </div>
+          )}
+          <div className="absolute left-3 top-3 flex flex-wrap gap-2">
+            <span className={`rounded-full border px-3 py-1 text-xs font-black shadow-sm ${listingTypeBadgeClassNames[listing.type]}`}>
+              {typeLabel}
+            </span>
+            <span className={`rounded-full border px-3 py-1 text-xs font-black shadow-sm ${listingStatusBadgeClassNames[listing.status]}`}>
+              {statusLabel}
+            </span>
           </div>
         </div>
-      ) : null}
-      <div className="mt-4 grid gap-2 sm:grid-cols-2">
-        <Link
-          href={`/oglasi/${listing.id}`}
-          className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-ink/12 bg-white px-3 text-sm font-black text-ink transition hover:bg-field"
-        >
-          <Eye aria-hidden="true" size={16} />
-          Pregledaj
-        </Link>
-        {listing.status === "paused" ? (
+      </Link>
+
+      <div className="space-y-4 p-4">
+        <div className="flex items-center justify-between gap-3 text-xs font-bold text-ink/58">
+          <span className="inline-flex min-w-0 items-center gap-1.5">
+            <MapPin aria-hidden="true" size={15} className="shrink-0 text-moss" />
+            <span className="truncate">{listing.city}</span>
+          </span>
+          <span className="inline-flex shrink-0 items-center gap-1.5">
+            <MessageCircle aria-hidden="true" size={15} className="text-moss" />
+            {listing.contactClickCount} kontakt klikova
+          </span>
+        </div>
+
+        <div>
+          <h2 className="text-xl font-black leading-snug text-ink">{listing.title}</h2>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="rounded-lg bg-field px-3 py-2 text-base font-black leading-none text-ink">
+              {priceLabel}
+            </span>
+            <span className={`rounded-lg border px-3 py-2 text-sm font-black leading-none ${listingStatusBadgeClassNames[listing.status]}`}>
+              {statusLabel}
+            </span>
+          </div>
+          <p className="mt-3 line-clamp-2 min-h-11 text-sm font-semibold leading-relaxed text-ink/64">
+            {listing.description}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 rounded-lg border border-ink/8 bg-field/70 px-3 py-2 text-xs font-bold text-ink/58" aria-label="Metrike tvog oglasa">
+          <span className="inline-flex items-center gap-1">
+            <Eye aria-hidden="true" size={14} />
+            {listing.viewCount}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Sparkles aria-hidden="true" size={14} />
+            {listing.saveCount}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <MessageCircle aria-hidden="true" size={14} />
+            {listing.contactClickCount}
+          </span>
+        </div>
+
+        {showFeaturedCta && listing.status === "active" ? (
+          <div className="rounded-lg border border-honey/32 bg-honey/14 p-3">
+            <div className="flex items-start gap-2">
+              <Sparkles aria-hidden="true" size={18} className="mt-0.5 shrink-0 text-[#72520d]" />
+              <div>
+                <p className="text-sm font-black text-ink">Istakni oglas</p>
+                <p className="mt-1 text-xs font-bold leading-relaxed text-ink/62">
+                  {paymentsEnabled
+                    ? "Plaćanje još nije spojeno."
+                    : "Kontaktiraj admina za beta isticanje."}
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Link
+            href={`/oglasi/${listing.id}`}
+            className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-ink/12 bg-white px-3 text-sm font-black text-ink transition hover:bg-field"
+          >
+            <Eye aria-hidden="true" size={16} />
+            Pregledaj
+          </Link>
+          {listing.status === "paused" ? (
+            <button
+              type="button"
+              onClick={onActivate}
+              disabled={!onActivate}
+              className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-moss px-3 text-sm font-black text-white transition hover:bg-mossDark disabled:cursor-not-allowed disabled:bg-ink/30"
+            >
+              <RotateCcw aria-hidden="true" size={16} />
+              Aktiviraj
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onPause}
+              disabled={!onPause || listing.status !== "active"}
+              className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-ink/12 bg-white px-3 text-sm font-black text-ink transition hover:bg-field disabled:cursor-not-allowed disabled:text-ink/35"
+            >
+              {onPause ? <Pause aria-hidden="true" size={16} /> : <Loader2 aria-hidden="true" size={16} />}
+              Pauziraj
+            </button>
+          )}
           <button
             type="button"
-            onClick={onActivate}
-            disabled={!onActivate}
-            className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-moss px-3 text-sm font-black text-white transition hover:bg-mossDark disabled:cursor-not-allowed disabled:bg-ink/30"
+            onClick={onResolve}
+            disabled={!onResolve || listing.status === "resolved"}
+            className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-moss px-3 text-sm font-black text-white transition hover:bg-mossDark disabled:cursor-not-allowed disabled:bg-ink/30 sm:col-span-2"
           >
-            <RotateCcw aria-hidden="true" size={16} />
-            Aktiviraj
+            <CheckCircle2 aria-hidden="true" size={17} />
+            Označi kao riješeno
           </button>
-        ) : null}
-        <button
-          type="button"
-          onClick={onPause}
-          disabled={!onPause || listing.status !== "active"}
-          className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-ink/12 bg-white px-3 text-sm font-black text-ink transition hover:bg-field disabled:cursor-not-allowed disabled:text-ink/35"
-        >
-          {onPause ? <Pause aria-hidden="true" size={16} /> : <Loader2 aria-hidden="true" size={16} />}
-          Pauziraj
-        </button>
-        <button
-          type="button"
-          onClick={onResolve}
-          disabled={!onResolve || listing.status === "resolved"}
-          className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-moss px-3 text-sm font-black text-white transition hover:bg-mossDark disabled:cursor-not-allowed disabled:bg-ink/30"
-        >
-          <CheckCircle2 aria-hidden="true" size={16} />
-          Riješeno
-        </button>
-        <button
-          type="button"
-          onClick={onRemove}
-          disabled={!onRemove || listing.status === "removed"}
-          className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-clay/20 bg-clay/8 px-3 text-sm font-black text-clay transition hover:bg-clay/12 disabled:cursor-not-allowed disabled:opacity-45"
-        >
-          <Trash2 aria-hidden="true" size={16} />
-          Ukloni
-        </button>
+          <button
+            type="button"
+            onClick={onRemove}
+            disabled={!onRemove || listing.status === "removed"}
+            className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-clay/20 bg-clay/8 px-3 text-sm font-black text-clay transition hover:bg-clay/12 disabled:cursor-not-allowed disabled:opacity-45 sm:col-span-2"
+          >
+            <Trash2 aria-hidden="true" size={16} />
+            Ukloni
+          </button>
+        </div>
       </div>
     </article>
   );

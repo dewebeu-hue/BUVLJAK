@@ -57,7 +57,7 @@ function ConvexListingsFeed() {
       <div className="rounded-lg border border-dashed border-ink/18 bg-white p-6 text-center">
         <h2 className="text-xl font-black text-ink">Još nema aktivnih oglasa</h2>
         <p className="mt-2 text-sm font-semibold leading-relaxed text-ink/64">
-          Prvi oglasi će se pojaviti ovdje čim ih netko objavi ili kad se pokrene demo seed.
+          Prvi oglasi će se pojaviti ovdje čim ih netko objavi u Novoj Gradiški i okolici.
         </p>
       </div>
     );

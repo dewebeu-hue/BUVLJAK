@@ -25,7 +25,6 @@ import {
   UserRound,
   X
 } from "lucide-react";
-import { FacebookAuthButton } from "@/components/facebook-auth-button";
 
 const navItems = [{ href: "/oglasi", label: "Oglasi", icon: ScrollText }];
 const postLoginPath = "/";
@@ -201,17 +200,9 @@ export function SiteHeader() {
                     className="focus-ring flex h-11 items-center gap-3 rounded-lg border border-ink/12 bg-white px-3 text-sm font-black text-ink transition hover:bg-field"
                   >
                     <LogIn aria-hidden="true" size={18} />
-                    Prijava
+                    Prijavi se
                   </button>
                 </SignInButton>
-                <div onClickCapture={closeMobileMenu}>
-                  <FacebookAuthButton
-                    redirectUrlComplete={postLoginPath}
-                    className="w-full [&>button]:w-full"
-                  >
-                    Facebook prijava
-                  </FacebookAuthButton>
-                </div>
                 <SignInButton
                   mode="modal"
                   fallbackRedirectUrl={postLoginPath}
@@ -243,13 +234,6 @@ function HeaderAuth({ pathname }: { pathname: string }) {
   return (
     <div className="hidden min-w-0 items-center gap-1.5 sm:flex">
       <Show when="signed-out">
-        <FacebookAuthButton
-          redirectUrlComplete={postLoginPath}
-          variant="header"
-          className="hidden md:inline-flex"
-        >
-          Facebook
-        </FacebookAuthButton>
         <SignInButton
           mode="modal"
           fallbackRedirectUrl={postLoginPath}

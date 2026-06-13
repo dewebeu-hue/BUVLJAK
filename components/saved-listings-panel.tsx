@@ -135,7 +135,7 @@ function SignedOutState() {
           type="button"
           className="focus-ring mt-4 inline-flex h-11 items-center justify-center rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
         >
-          Prijava
+          Prijavi se
         </button>
       </SignInButton>
     </section>
