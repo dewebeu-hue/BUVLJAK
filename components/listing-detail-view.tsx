@@ -50,6 +50,9 @@ const reportReasons = [
   "Drugo"
 ];
 
+const safetyNoteText =
+  "Buvljak.hr ne sudjeluje u plaćanju ni dostavi. Dogovor obavljaš direktno s drugom osobom.";
+
 type ContactIntent = "contact" | "availability" | "offer" | "pickup" | "swap" | "have_item";
 
 type ContactResponse = {
@@ -313,7 +316,35 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
     }
   }
 
+  function handlePrimaryContactAction() {
+    if (!listing) {
+      return;
+    }
+
+    if (listing.type === "give") {
+      void requestContact("pickup");
+      return;
+    }
+
+    setIsActionOpen((current) => {
+      const next = !current;
+
+      if (next && typeof window !== "undefined") {
+        window.requestAnimationFrame(() => {
+          document.getElementById("akcija")?.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+          });
+        });
+      }
+
+      return next;
+    });
+  }
+
   const actionLabel = actionLabelForListing(listing);
+  const priceLabel = formatListingPrice(listing);
+  const isPrimaryContactLoading = pendingContactIntent === "pickup";
   const metricOverride = metricOverrides[listing.id];
   const saveCount = metricOverride?.saveCount ?? listing.saveCount;
   const shareCount = metricOverride?.shareCount ?? listing.shareCount;
@@ -327,7 +358,7 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
   const visibleStatusMessage = statusMessage || ownerPublishedMessage;
 
   return (
-    <main className="px-4 py-8 sm:px-6">
+    <main className="px-4 pb-32 pt-6 sm:px-6 sm:pt-8 md:pb-8">
       <div className="mx-auto max-w-6xl">
         <Link
           href="/oglasi"
@@ -382,10 +413,10 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
                 </span>
               </div>
 
-              <h1 className="mt-5 text-4xl font-black leading-tight text-ink">{listing.title}</h1>
+              <h1 className="mt-5 text-3xl font-black leading-tight text-ink sm:text-4xl">{listing.title}</h1>
               <div className="mt-4 flex flex-wrap gap-3 text-base font-black">
                 <span className="rounded-lg bg-moss px-4 py-2 text-white">
-                  {formatListingPrice(listing)}
+                  {priceLabel}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-lg bg-field px-4 py-2 text-ink/74">
                   <MapPin aria-hidden="true" size={17} />
@@ -394,6 +425,10 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
                 <span className="inline-flex items-center gap-2 rounded-lg bg-field px-4 py-2 text-ink/74">
                   <Tag aria-hidden="true" size={17} />
                   {listing.category}
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-lg bg-field px-4 py-2 text-ink/74">
+                  <CalendarDays aria-hidden="true" size={17} />
+                  {publishedDate}
                 </span>
               </div>
 
@@ -461,48 +496,41 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
                 />
                 <ContactButton
                   id="akcija"
-                  loading={pendingContactIntent === "pickup"}
+                  loading={isPrimaryContactLoading}
                   icon={<Handshake aria-hidden="true" size={17} />}
                   label={actionLabel}
                   tone="soft"
-                  onClick={() => {
-                    if (listing.type === "give") {
-                      void requestContact("pickup");
-                      return;
-                    }
-
-                    setIsActionOpen((current) => !current);
-                  }}
+                  onClick={handlePrimaryContactAction}
                 />
-              <button
-                type="button"
-                onClick={() => handleMetricAction("save")}
-                disabled={isSavingListing}
-                className={`focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg border px-4 text-sm font-black transition disabled:cursor-wait disabled:opacity-70 ${
-                  isSaved
-                    ? "border-moss/20 bg-moss/8 text-mossDark hover:bg-moss/12"
-                    : "border-ink/12 bg-white text-ink hover:bg-field"
-                }`}
-              >
-                <Bookmark aria-hidden="true" size={17} fill={isSaved ? "currentColor" : "none"} />
-                {isSavingListing ? "Spremanje..." : isSaved ? "Spremljeno" : "Spremi"}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleMetricAction("share")}
-                className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-ink/12 bg-white px-4 text-sm font-black text-ink transition hover:bg-field"
-              >
-                <Share2 aria-hidden="true" size={17} />
-                Podijeli
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsReportOpen(true)}
-                className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-clay/20 bg-clay/8 px-4 text-sm font-black text-clay transition hover:bg-clay/12"
-              >
-                <AlertTriangle aria-hidden="true" size={17} />
-                Prijavi oglas
-              </button>
+                <button
+                  type="button"
+                  onClick={() => handleMetricAction("save")}
+                  disabled={isSavingListing}
+                  className={`focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg border px-4 text-sm font-black transition disabled:cursor-wait disabled:opacity-70 ${
+                    isSaved
+                      ? "border-moss/20 bg-moss/8 text-mossDark hover:bg-moss/12"
+                      : "border-ink/12 bg-white text-ink hover:bg-field"
+                  }`}
+                >
+                  <Bookmark aria-hidden="true" size={17} fill={isSaved ? "currentColor" : "none"} />
+                  {isSavingListing ? "Spremanje..." : isSaved ? "Spremljeno" : "Spremi"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleMetricAction("share")}
+                  className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-ink/12 bg-white px-4 text-sm font-black text-ink transition hover:bg-field"
+                >
+                  <Share2 aria-hidden="true" size={17} />
+                  Podijeli
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsReportOpen(true)}
+                  className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-clay/20 bg-clay/8 px-4 text-sm font-black text-clay transition hover:bg-clay/12"
+                >
+                  <AlertTriangle aria-hidden="true" size={17} />
+                  Prijavi oglas
+                </button>
               </div>
             )}
 
@@ -542,13 +570,27 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
 
             <div className="rounded-lg border border-honey/30 bg-honey/16 p-4">
               <p className="font-bold leading-relaxed text-ink/76">
-                Kontakt se u MVP-u odvija izvan aplikacije putem WhatsAppa, emaila ili Facebook
-                linka. Nema internog chata.
+                {safetyNoteText}
+              </p>
+              <p className="mt-2 text-sm font-bold leading-relaxed text-ink/64">
+                Kontakt podaci nisu javno prikazani; kontakt ide kroz postojeći sigurni resolver.
               </p>
             </div>
           </section>
         </div>
       </div>
+
+      {!listing.isOwner ? (
+        <StickyDetailActionBar
+          actionLabel={actionLabel}
+          isSaved={Boolean(isSaved)}
+          isSavingListing={isSavingListing}
+          primaryLoading={isPrimaryContactLoading}
+          onSave={() => handleMetricAction("save")}
+          onShare={() => handleMetricAction("share")}
+          onPrimaryAction={handlePrimaryContactAction}
+        />
+      ) : null}
 
       {isReportOpen ? (
         <ReportDialog
@@ -596,6 +638,72 @@ function ContactButton({
       {loading ? <Loader2 aria-hidden="true" className="animate-spin" size={17} /> : icon}
       {label}
     </button>
+  );
+}
+
+function StickyDetailActionBar({
+  actionLabel,
+  isSaved,
+  isSavingListing,
+  primaryLoading,
+  onSave,
+  onShare,
+  onPrimaryAction
+}: {
+  actionLabel: string;
+  isSaved: boolean;
+  isSavingListing: boolean;
+  primaryLoading: boolean;
+  onSave: () => Promise<void> | void;
+  onShare: () => Promise<void> | void;
+  onPrimaryAction: () => void;
+}) {
+  return (
+    <nav
+      className="sticky-detail-action-bar fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-3 right-3 z-40 md:hidden"
+      aria-label="Brze akcije oglasa"
+    >
+      <div className="grid grid-cols-[3.75rem_4rem_minmax(0,1fr)] gap-2 rounded-lg border border-ink/10 bg-white/95 p-2 shadow-soft backdrop-blur">
+        <button
+          type="button"
+          disabled={isSavingListing}
+          onClick={() => {
+            void onSave();
+          }}
+          className={`focus-ring inline-flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-lg border px-2 text-[11px] font-black leading-none transition disabled:cursor-wait disabled:opacity-70 ${
+            isSaved
+              ? "border-moss/20 bg-moss/8 text-mossDark"
+              : "border-ink/12 bg-white text-ink hover:bg-field"
+          }`}
+        >
+          <Bookmark aria-hidden="true" size={17} fill={isSaved ? "currentColor" : "none"} />
+          {isSavingListing ? "..." : "Spremi"}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            void onShare();
+          }}
+          className="focus-ring inline-flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-lg border border-ink/12 bg-white px-2 text-[11px] font-black leading-none text-ink transition hover:bg-field"
+        >
+          <Share2 aria-hidden="true" size={17} />
+          Podijeli
+        </button>
+        <button
+          type="button"
+          disabled={primaryLoading}
+          onClick={onPrimaryAction}
+          className="focus-ring inline-flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-lg bg-moss px-3 py-2 text-center text-sm font-black leading-tight text-white transition hover:bg-mossDark disabled:cursor-wait disabled:opacity-70"
+        >
+          {primaryLoading ? (
+            <Loader2 aria-hidden="true" className="shrink-0 animate-spin" size={17} />
+          ) : (
+            <Handshake aria-hidden="true" className="shrink-0" size={17} />
+          )}
+          <span className="min-w-0">{actionLabel}</span>
+        </button>
+      </div>
+    </nav>
   );
 }
 
@@ -847,14 +955,48 @@ function ReportDialog({
 }
 
 function LocalListingDetailView({ listingId }: { listingId: string }) {
+  const [isSaved, setIsSaved] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
   const listing = demoListings.find((item) => item.id === listingId);
 
   if (!listing) {
     return <MissingListingState />;
   }
 
+  const currentListing = listing;
+  const actionLabel = actionLabelForListing(listing);
+  const priceLabel = formatListingPrice(listing);
+  const publishedDate = new Intl.DateTimeFormat("hr-HR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  }).format(new Date(listing.createdAt));
+
+  async function handleShare() {
+    const shareUrl = getPublicListingUrl(currentListing.id);
+    const nav = typeof window !== "undefined" ? window.navigator : undefined;
+
+    try {
+      if (nav?.share) {
+        await nav.share({
+          title: currentListing.title,
+          text: `${currentListing.title} - Buvljak`,
+          url: shareUrl
+        });
+        setStatusMessage("Podijeljeno.");
+      } else if (nav?.clipboard) {
+        await nav.clipboard.writeText(shareUrl);
+        setStatusMessage("Link je kopiran.");
+      } else {
+        setStatusMessage("Dijeljenje nije podržano u ovom pregledniku.");
+      }
+    } catch {
+      setStatusMessage("Dijeljenje je prekinuto.");
+    }
+  }
+
   return (
-    <main className="px-4 py-8 sm:px-6">
+    <main className="px-4 pb-32 pt-6 sm:px-6 sm:pt-8 md:pb-8">
       <div className="mx-auto max-w-4xl">
         <Link
           href="/oglasi"
@@ -879,15 +1021,68 @@ function LocalListingDetailView({ listingId }: { listingId: string }) {
                 {formatListingStatus(listing.status)}
               </span>
             </div>
-            <h1 className="mt-5 text-4xl font-black leading-tight text-ink">{listing.title}</h1>
+            <h1 className="mt-5 text-3xl font-black leading-tight text-ink sm:text-4xl">{listing.title}</h1>
             <div className="mt-4 flex flex-wrap gap-3 text-base font-black">
               <span className="rounded-lg bg-moss px-4 py-2 text-white">
-                {formatListingPrice(listing)}
+                {priceLabel}
               </span>
-              <span className="rounded-lg bg-field px-4 py-2 text-ink/74">{listing.city}</span>
-              <span className="rounded-lg bg-field px-4 py-2 text-ink/74">{listing.category}</span>
+              <span className="inline-flex items-center gap-2 rounded-lg bg-field px-4 py-2 text-ink/74">
+                <MapPin aria-hidden="true" size={17} />
+                {listing.city}
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-lg bg-field px-4 py-2 text-ink/74">
+                <Tag aria-hidden="true" size={17} />
+                {listing.category}
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-lg bg-field px-4 py-2 text-ink/74">
+                <CalendarDays aria-hidden="true" size={17} />
+                {publishedDate}
+              </span>
             </div>
             <p className="mt-5 text-base leading-relaxed text-ink/70">{listing.description}</p>
+            <div className="mt-5 grid gap-2 sm:grid-cols-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setStatusMessage("Kontakt flow radi na stvarnim Convex oglasima.");
+                }}
+                className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
+              >
+                <Handshake aria-hidden="true" size={17} />
+                {actionLabel}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const nextSaved = !isSaved;
+                  setIsSaved(nextSaved);
+                  setStatusMessage(nextSaved ? "Oglas spremljen." : "Oglas uklonjen iz spremljenih.");
+                }}
+                className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-ink/12 bg-white px-4 text-sm font-black text-ink transition hover:bg-field"
+              >
+                <Bookmark aria-hidden="true" size={17} fill={isSaved ? "currentColor" : "none"} />
+                {isSaved ? "Spremljeno" : "Spremi"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  void handleShare();
+                }}
+                className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-ink/12 bg-white px-4 text-sm font-black text-ink transition hover:bg-field"
+              >
+                <Share2 aria-hidden="true" size={17} />
+                Podijeli
+              </button>
+            </div>
+            <p className="mt-4 min-h-5 text-sm font-black text-mossDark" aria-live="polite">
+              {statusMessage}
+            </p>
+            <div className="mt-5 rounded-lg border border-honey/30 bg-honey/16 p-4">
+              <p className="font-bold leading-relaxed text-ink/76">{safetyNoteText}</p>
+              <p className="mt-2 text-sm font-bold leading-relaxed text-ink/64">
+                Kontakt podaci nisu javno prikazani; kontakt ide kroz postojeći sigurni resolver.
+              </p>
+            </div>
             <div className="mt-5 rounded-lg border border-honey/30 bg-honey/16 p-4">
               <p className="font-bold leading-relaxed text-ink/76">
                 Ovo je demo prikaz dok Convex nije povezan. Kontakt flow i metrike rade na stvarnim
@@ -897,6 +1092,22 @@ function LocalListingDetailView({ listingId }: { listingId: string }) {
           </div>
         </section>
       </div>
+
+      <StickyDetailActionBar
+        actionLabel={actionLabel}
+        isSaved={isSaved}
+        isSavingListing={false}
+        primaryLoading={false}
+        onSave={() => {
+          const nextSaved = !isSaved;
+          setIsSaved(nextSaved);
+          setStatusMessage(nextSaved ? "Oglas spremljen." : "Oglas uklonjen iz spremljenih.");
+        }}
+        onShare={handleShare}
+        onPrimaryAction={() => {
+          setStatusMessage("Kontakt flow radi na stvarnim Convex oglasima.");
+        }}
+      />
     </main>
   );
 }
