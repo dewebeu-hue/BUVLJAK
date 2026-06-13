@@ -188,7 +188,7 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
       }
 
       if (!canPersist) {
-        setStatusMessage("Spremanje oglasa radi na stvarnim Convex oglasima.");
+        setStatusMessage("Spremanje je dostupno za objavljene oglase.");
         return;
       }
 
@@ -309,7 +309,7 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
     options?: { offerAmount?: number; message?: string }
   ) {
     if (!listing || !canPersist) {
-      setStatusMessage("Kontakt flow radi na stvarnim Convex oglasima.");
+      setStatusMessage("Kontakt će biti dostupan kad oglas bude objavljen.");
       return false;
     }
 
@@ -597,7 +597,7 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
                 {safetyNoteText}
               </p>
               <p className="mt-2 text-sm font-bold leading-relaxed text-ink/64">
-                Kontakt podaci nisu javno prikazani; kontakt ide kroz postojeći sigurni resolver.
+                Kontakt podaci nisu javno prikazani; dogovor se pokreće kroz zaštićeni kontakt flow.
               </p>
             </div>
           </section>
@@ -1198,7 +1198,7 @@ function LocalListingDetailView({ listingId }: { listingId: string }) {
               <button
                 type="button"
                 onClick={() => {
-                  setStatusMessage("Kontakt flow radi na stvarnim Convex oglasima.");
+                  setStatusMessage("Kontakt će biti dostupan kad oglas bude povezan sa stvarnom bazom.");
                 }}
                 className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
               >
@@ -1234,13 +1234,7 @@ function LocalListingDetailView({ listingId }: { listingId: string }) {
             <div className="mt-5 rounded-lg border border-honey/30 bg-honey/16 p-4">
               <p className="font-bold leading-relaxed text-ink/76">{safetyNoteText}</p>
               <p className="mt-2 text-sm font-bold leading-relaxed text-ink/64">
-                Kontakt podaci nisu javno prikazani; kontakt ide kroz postojeći sigurni resolver.
-              </p>
-            </div>
-            <div className="mt-5 rounded-lg border border-honey/30 bg-honey/16 p-4">
-              <p className="font-bold leading-relaxed text-ink/76">
-                Ovo je demo prikaz dok Convex nije povezan. Kontakt flow i metrike rade na stvarnim
-                Convex oglasima.
+                Kontakt podaci nisu javno prikazani; dogovor se pokreće kroz zaštićeni kontakt flow.
               </p>
             </div>
           </div>
@@ -1259,7 +1253,7 @@ function LocalListingDetailView({ listingId }: { listingId: string }) {
         }}
         onShare={handleShare}
         onPrimaryAction={() => {
-          setStatusMessage("Kontakt flow radi na stvarnim Convex oglasima.");
+          setStatusMessage("Kontakt će biti dostupan kad oglas bude povezan sa stvarnom bazom.");
         }}
       />
     </main>

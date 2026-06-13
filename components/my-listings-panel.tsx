@@ -214,13 +214,13 @@ function LocalMyListingsFallback() {
   return (
     <>
       <section className="mt-7 rounded-lg border border-honey/30 bg-honey/16 p-5">
-        <h2 className="text-xl font-black text-ink">Convex još nije povezan</h2>
+        <h2 className="text-xl font-black text-ink">Tvoji oglasi trenutno nisu dostupni</h2>
         <p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/68">
-          Postavi `NEXT_PUBLIC_CONVEX_URL` da bi se ovdje prikazali stvarni korisnikovi oglasi.
+          Kad se poveže stvarna baza oglasa, ovdje ćeš vidjeti svoje aktivne, pauzirane i riješene oglase.
         </p>
       </section>
       <section className="mt-8">
-        <h2 className="text-2xl font-black text-ink">Demo prikaz</h2>
+        <h2 className="text-2xl font-black text-ink">Privremeni prikaz</h2>
         <StatusFilterBar value={statusFilter} onChange={setStatusFilter} />
         {filteredListings.length > 0 ? (
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
