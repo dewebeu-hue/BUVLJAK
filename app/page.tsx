@@ -76,13 +76,16 @@ function LandingPage() {
             priority
             quality={90}
             unoptimized
-            sizes="(max-width: 767px) 118vw, 72vw"
+            sizes="(max-width: 767px) 100vw, 58vw"
           />
         </div>
 
-        <div className="relative z-10 mx-auto flex min-h-[520px] max-w-6xl items-start px-4 pb-44 pt-10 sm:px-6 md:min-h-[620px] md:items-center md:py-12 lg:min-h-[660px]">
+        <div className="relative z-10 mx-auto flex min-h-[500px] max-w-6xl items-start px-4 pb-28 pt-8 sm:px-6 md:min-h-[600px] md:items-center md:py-12 lg:min-h-[620px]">
           <div className="hero-copy max-w-xl text-ink">
-            <h1 className="max-w-xl text-4xl font-black leading-[1.05] text-[#1F2933] sm:text-5xl">
+            <span className="inline-flex rounded-full border border-moss/14 bg-white/76 px-3 py-1 text-sm font-black text-mossDark shadow-sm">
+              Beta za Novu Gradišku i okolicu.
+            </span>
+            <h1 className="mt-5 max-w-xl text-4xl font-black leading-[1.05] text-[#1F2933] sm:text-5xl">
               <span className="sr-only">Prodajem, poklanjam, mijenjam i tražim u tvojoj blizini</span>
               <span className="hero-rolodex-heading" aria-hidden="true">
                 <span className="hero-rolodex-word">
@@ -103,17 +106,17 @@ function LandingPage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/oglasi"
-                className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-honey px-5 text-base font-black text-ink transition hover:bg-[#ffd45f]"
+                className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-moss px-5 text-base font-black text-white shadow-sm transition hover:bg-mossDark"
               >
-                Pogledaj oglase
+                Vidi što se nudi
                 <ArrowRight aria-hidden="true" size={19} />
               </Link>
               <Link
                 href="/novi-oglas"
-                className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-moss/18 bg-white/82 px-5 text-base font-black text-mossDark shadow-sm transition hover:bg-white"
+                className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-moss/18 bg-white/76 px-5 text-base font-black text-mossDark transition hover:bg-white"
               >
                 <Megaphone aria-hidden="true" size={19} />
-                Objavi oglas
+                Objavi za 1 minutu
               </Link>
             </div>
           </div>
