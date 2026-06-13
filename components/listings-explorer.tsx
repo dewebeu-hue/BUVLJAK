@@ -101,15 +101,15 @@ export function ListingsExplorer() {
   }
 
   return (
-    <main className="pb-32">
-      <section className="border-b border-ink/8 bg-[#fbfcf7] px-4 pb-6 pt-6 sm:px-6 sm:py-8">
+    <main className="bg-[#fbfcf7] pb-36">
+      <section className="border-b border-ink/8 bg-[#fcf8f3] px-4 pb-5 pt-5 sm:px-6 sm:py-7">
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <span className="inline-flex rounded-full bg-moss/10 px-3 py-1 text-sm font-black text-mossDark">
+            <div className="max-w-2xl">
+              <span className="inline-flex rounded-full border border-moss/14 bg-white/78 px-3 py-1 text-sm font-black text-mossDark shadow-sm">
                 Nova Gradiška i okolica
               </span>
-              <h1 className="mt-3 text-4xl font-black leading-tight text-ink sm:text-5xl">Aktivni oglasi</h1>
+              <h1 className="mt-3 text-3xl font-black leading-tight text-ink sm:text-5xl">Aktivni oglasi</h1>
               <p className="mt-3 max-w-2xl text-sm font-bold leading-relaxed text-ink/64 sm:text-base">
                 Razgledaj što se nudi u blizini ili pronađi nešto konkretno.
               </p>
@@ -123,13 +123,13 @@ export function ListingsExplorer() {
             </Link>
           </div>
 
-          <div className="mt-6 grid gap-4">
+          <div className="mt-5 grid gap-3 sm:mt-6">
             <label className="relative block">
               <span className="sr-only">Što tražiš?</span>
               <Search
                 aria-hidden="true"
                 size={19}
-                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink/42"
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-moss"
               />
               <input
                 type="search"
@@ -139,11 +139,11 @@ export function ListingsExplorer() {
                   setLimit(PAGE_SIZE);
                 }}
                 placeholder="Što tražiš?"
-                className="focus-ring h-13 w-full rounded-lg border border-ink/12 bg-white py-3 pl-11 pr-4 text-base font-bold text-ink shadow-sm placeholder:text-ink/42"
+                className="focus-ring h-13 w-full rounded-xl border border-ink/12 bg-white py-3 pl-11 pr-4 text-base font-bold text-ink shadow-sm placeholder:text-ink/42"
               />
             </label>
 
-            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0" aria-label="Brzi filteri">
+            <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-2 touch-pan-x sm:mx-0 sm:px-0" aria-label="Brzi filteri">
               {quickFilterOptions.map((filter) => {
                 const isActive = filter.value === quickFilter;
 
@@ -155,10 +155,10 @@ export function ListingsExplorer() {
                       setQuickFilter(filter.value);
                       setLimit(PAGE_SIZE);
                     }}
-                    className={`focus-ring h-11 shrink-0 rounded-full border px-4 text-sm font-black transition ${
+                    className={`focus-ring h-12 shrink-0 snap-start rounded-full border px-5 text-sm font-black transition ${
                       isActive
-                        ? "border-moss bg-moss text-white"
-                        : "border-ink/12 bg-white text-ink/70 hover:bg-field"
+                        ? "border-moss bg-moss text-white shadow-sm"
+                        : "border-ink/12 bg-white text-ink/70 shadow-sm hover:bg-field"
                     }`}
                   >
                     {filter.label}
@@ -175,7 +175,7 @@ export function ListingsExplorer() {
                 aria-expanded={areFiltersOpen}
                 aria-controls="feed-secondary-filters"
                 onClick={() => setAreFiltersOpen((current) => !current)}
-                className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-ink/12 bg-white px-3 text-sm font-black text-ink transition hover:bg-field"
+                className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-ink/12 bg-white px-3 text-sm font-black text-ink shadow-sm transition hover:bg-field"
               >
                 {areFiltersOpen ? <X aria-hidden="true" size={16} /> : <Filter aria-hidden="true" size={16} />}
                 Filteri
@@ -196,7 +196,7 @@ export function ListingsExplorer() {
 
             <div
               id="feed-secondary-filters"
-              className={`${areFiltersOpen ? "grid" : "hidden"} mt-3 gap-3 rounded-lg border border-ink/10 bg-white/84 p-3 shadow-sm sm:grid sm:grid-cols-3`}
+              className={`${areFiltersOpen ? "grid" : "hidden"} mt-3 gap-3 rounded-xl border border-ink/10 bg-white/84 p-3 shadow-sm sm:grid sm:grid-cols-3`}
             >
               <FilterInput
                 label="Grad"
@@ -224,7 +224,7 @@ export function ListingsExplorer() {
         </div>
       </section>
 
-      <section className="px-4 py-8 sm:px-6">
+      <section className="px-4 py-6 sm:px-6 sm:py-8">
         <div className="mx-auto max-w-6xl">
           {!hasConvexUrl ? (
             <ListingsResults
@@ -246,7 +246,7 @@ export function ListingsExplorer() {
 
       <Link
         href="/novi-oglas"
-        className="focus-ring fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4 right-4 z-30 inline-flex h-13 items-center justify-center gap-2 rounded-lg bg-clay px-5 text-base font-black text-white shadow-soft transition hover:bg-[#bd4c31] md:hidden"
+        className="focus-ring fixed bottom-[calc(0.875rem+env(safe-area-inset-bottom))] left-4 right-4 z-30 inline-flex h-13 items-center justify-center gap-2 rounded-xl bg-moss px-5 text-base font-black text-white shadow-soft transition hover:bg-mossDark md:hidden"
       >
         <Plus aria-hidden="true" size={20} />
         + Objavi oglas
@@ -607,7 +607,7 @@ function ListingsResults({
     <>
       {isLoading ? <ListingsSkeleton /> : null}
       {!isLoading && filteredListings.length > 0 ? (
-        <div className="mx-auto grid max-w-xl gap-5 sm:max-w-none sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mx-auto grid max-w-xl gap-4 sm:max-w-3xl sm:grid-cols-2 lg:max-w-4xl">
           {filteredListings.map((listing, index) => {
             const sponsorInsertIndex = filteredListings.length >= 4 ? 2 : filteredListings.length - 1;
 
@@ -617,7 +617,7 @@ function ListingsResults({
                 {feedSponsors.length > 0 && index === sponsorInsertIndex ? (
                   <LocalSponsorStrip
                     sponsors={feedSponsors}
-                    className="sm:col-span-2 lg:col-span-3"
+                    className="sm:col-span-2"
                   />
                 ) : null}
               </Fragment>
@@ -628,12 +628,12 @@ function ListingsResults({
       {!isLoading && filteredListings.length === 0 ? <EmptyListingsState /> : null}
 
       {!isLoading && filteredListings.length > 0 ? (
-        <div className="mt-8 flex justify-center">
+        <div className="mt-7 flex justify-center">
           <button
             type="button"
             onClick={onLoadMore}
             disabled={!canLoadMore}
-            className="focus-ring inline-flex h-12 items-center justify-center rounded-lg border border-ink/12 bg-white px-5 text-base font-black text-ink transition hover:bg-field disabled:cursor-not-allowed disabled:text-ink/35"
+            className="focus-ring inline-flex h-12 items-center justify-center rounded-lg border border-ink/12 bg-white px-5 text-base font-black text-ink shadow-sm transition hover:bg-field disabled:cursor-not-allowed disabled:text-ink/35"
           >
             {canLoadMore ? "Učitaj još oglasa" : "Sve učitano"}
           </button>
@@ -676,13 +676,13 @@ function FilterInput({
 
 function ListingsSkeleton() {
   return (
-    <div className="mx-auto grid max-w-xl gap-5 sm:max-w-none sm:grid-cols-2 lg:grid-cols-3" aria-label="Oglasi se učitavaju">
+    <div className="mx-auto grid max-w-xl gap-4 sm:max-w-3xl sm:grid-cols-2 lg:max-w-4xl" aria-label="Oglasi se učitavaju">
       {Array.from({ length: 6 }, (_, index) => (
         <div
           key={index}
-          className="h-[36rem] animate-pulse rounded-lg border border-ink/10 bg-white shadow-sm"
+          className="h-[34rem] animate-pulse rounded-xl border border-ink/10 bg-white shadow-sm"
         >
-          <div className="aspect-[4/3] rounded-t-lg bg-ink/8" />
+          <div className="aspect-[4/3] rounded-t-xl bg-ink/8" />
           <div className="space-y-4 p-4">
             <div className="h-7 w-28 rounded-full bg-ink/8" />
             <div className="h-7 w-4/5 rounded bg-ink/8" />
@@ -703,14 +703,14 @@ function ListingsSkeleton() {
 
 function EmptyListingsState() {
   return (
-    <div className="rounded-lg border border-dashed border-ink/18 bg-white p-6 text-center">
+    <div className="mx-auto max-w-xl rounded-xl border border-dashed border-moss/24 bg-white p-7 text-center shadow-sm sm:p-8">
       <h2 className="text-xl font-black text-ink">Još nema aktivnih oglasa u tvojoj blizini.</h2>
       <p className="mx-auto mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/64">
         Promijeni filtere ili objavi prvi oglas za svoju ulicu, kvart ili selo.
       </p>
       <Link
         href="/novi-oglas"
-        className="focus-ring mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
+        className="focus-ring mt-5 inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-moss px-5 text-sm font-black text-white transition hover:bg-mossDark"
       >
         <Plus aria-hidden="true" size={18} />
         Objavi prvi oglas
