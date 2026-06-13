@@ -1,9 +1,5 @@
 import type { ReactNode } from "react";
 
-export function NeedsEdit({ children }: { children: ReactNode }) {
-  return <span className="font-bold text-red-600">{children}</span>;
-}
-
 export function LegalPage({
   eyebrow,
   title,
@@ -27,7 +23,8 @@ export function LegalPage({
             {subtitle}
           </p>
           <p className="mt-4 rounded-lg border border-honey/28 bg-honey/14 p-4 text-sm font-bold leading-relaxed text-ink/70">
-            Ova stranica je beta placeholder za lokalno testiranje i nije zamjena za odvjetnički dokument.
+            Ovo su početne beta informacije za lokalno testiranje Buvljak.hr-a i mogu se dopuniti
+            prije šire javne objave. Ne predstavljaju pravni savjet.
           </p>
         </header>
 
@@ -53,7 +50,9 @@ export function LegalSection({
       }`}
     >
       <h2 className="text-2xl font-black leading-tight text-ink">{title}</h2>
-      <div className="mt-4 space-y-3 text-sm font-semibold leading-relaxed text-ink/72 sm:text-base">{children}</div>
+      <div className="mt-4 space-y-3 text-sm font-semibold leading-relaxed text-ink/72 sm:text-base">
+        {children}
+      </div>
     </section>
   );
 }

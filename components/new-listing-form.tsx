@@ -861,7 +861,7 @@ function ConnectedNewListingForm() {
               type="email"
               value={form.contactEmail}
               onChange={(event) => updateForm("contactEmail", event.target.value)}
-              placeholder={defaultEmail || "ime@example.com"}
+              placeholder={defaultEmail || "tvoj@email.hr"}
               className="focus-ring h-12 rounded-lg border border-ink/12 bg-field px-4 text-base font-semibold text-ink"
             />
           </label>
