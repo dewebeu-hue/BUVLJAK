@@ -12,6 +12,13 @@ export type ListingImportSource = "manual" | "facebook_text" | "facebook_url";
 
 export type FeaturedLabel = "Istaknuto" | "Hitno" | "Top oglas";
 
+export type ListingTypeMeta = {
+  label: string;
+  description: string;
+  primaryCtaLabel: string;
+  badgeClassName: string;
+};
+
 export type Listing = {
   id: string;
   type: ListingType;
@@ -58,11 +65,66 @@ export const listingTypeLabels: Record<ListingType, string> = {
   want: "Tražim"
 };
 
+export const listingTypeDescriptions: Record<ListingType, string> = {
+  sell: "Prodaj stvar nekome u blizini i brzo dogovori preuzimanje.",
+  give: "Pokloni stvar koja ti više ne treba, bez kompliciranja.",
+  swap: "Ponudi zamjenu i dogovori što objema stranama odgovara.",
+  want: "Objavi što tražiš i pusti lokalnu mrežu da pomogne."
+};
+
+export const listingTypePrimaryCtaLabels: Record<ListingType, string> = {
+  sell: "Pošalji ponudu",
+  give: "Javi se za preuzimanje",
+  swap: "Predloži zamjenu",
+  want: "Imam nešto za ponuditi"
+};
+
+export const listingTypeBadgeClassNames: Record<ListingType, string> = {
+  sell: "border-moss/20 bg-moss/10 text-mossDark",
+  give: "border-honey/30 bg-honey/16 text-[#72520d]",
+  swap: "border-plum/20 bg-plum/10 text-plum",
+  want: "border-clay/20 bg-clay/10 text-clay"
+};
+
+export const listingTypeMeta: Record<ListingType, ListingTypeMeta> = {
+  sell: {
+    label: listingTypeLabels.sell,
+    description: listingTypeDescriptions.sell,
+    primaryCtaLabel: listingTypePrimaryCtaLabels.sell,
+    badgeClassName: listingTypeBadgeClassNames.sell
+  },
+  give: {
+    label: listingTypeLabels.give,
+    description: listingTypeDescriptions.give,
+    primaryCtaLabel: listingTypePrimaryCtaLabels.give,
+    badgeClassName: listingTypeBadgeClassNames.give
+  },
+  swap: {
+    label: listingTypeLabels.swap,
+    description: listingTypeDescriptions.swap,
+    primaryCtaLabel: listingTypePrimaryCtaLabels.swap,
+    badgeClassName: listingTypeBadgeClassNames.swap
+  },
+  want: {
+    label: listingTypeLabels.want,
+    description: listingTypeDescriptions.want,
+    primaryCtaLabel: listingTypePrimaryCtaLabels.want,
+    badgeClassName: listingTypeBadgeClassNames.want
+  }
+};
+
 export const listingStatusLabels: Record<ListingStatus, string> = {
   active: "Aktivno",
   paused: "Pauzirano",
   resolved: "Riješeno",
   removed: "Uklonjeno"
+};
+
+export const listingStatusBadgeClassNames: Record<ListingStatus, string> = {
+  active: "border-moss/16 bg-moss/8 text-mossDark",
+  paused: "border-honey/24 bg-honey/18 text-[#72520d]",
+  resolved: "border-skywash bg-skywash/70 text-mossDark",
+  removed: "border-clay/20 bg-clay/8 text-clay"
 };
 
 export const contactMethodLabels: Record<ContactMethod, string> = {
@@ -244,7 +306,7 @@ export function formatPrice(price: number | null, type?: ListingType) {
   }
 
   if (type === "swap") {
-    return "Zamjena";
+    return "Mijenjam";
   }
 
   if (type === "want" && price === null) {
@@ -252,7 +314,7 @@ export function formatPrice(price: number | null, type?: ListingType) {
   }
 
   if (price === null) {
-    return "Po dogovoru";
+    return "Cijena po dogovoru";
   }
 
   return new Intl.NumberFormat("hr-HR", {
@@ -268,7 +330,7 @@ export function formatListingPrice(listing: Pick<Listing, "price" | "priceType" 
   }
 
   if (listing.priceType === "swap") {
-    return "Zamjena";
+    return "Mijenjam";
   }
 
   if (listing.priceType === "wanted") {
@@ -276,26 +338,24 @@ export function formatListingPrice(listing: Pick<Listing, "price" | "priceType" 
   }
 
   if (listing.priceType === "negotiable") {
-    return listing.price === null ? "Može dogovor" : `${formatPrice(listing.price)} · Može dogovor`;
+    return listing.price === null
+      ? "Cijena po dogovoru"
+      : `${formatPrice(listing.price)} · Cijena po dogovoru`;
   }
 
   return formatPrice(listing.price, listing.type);
 }
 
+export function formatListingStatus(status: ListingStatus) {
+  return listingStatusLabels[status];
+}
+
 export function actionLabelForListing(listing: Pick<Listing, "allowOffers" | "type">) {
-  if (listing.type === "give") {
-    return "Javi se za preuzimanje";
+  if (listing.type === "sell" && !listing.allowOffers) {
+    return "Pitaj za dogovor";
   }
 
-  if (listing.type === "swap") {
-    return "Predloži zamjenu";
-  }
-
-  if (listing.type === "want") {
-    return "Imam nešto za ponuditi";
-  }
-
-  return listing.allowOffers ? "Pošalji ponudu" : "Pitaj za dogovor";
+  return listingTypePrimaryCtaLabels[listing.type];
 }
 
 export function contactMethodHint(method: ContactMethod) {

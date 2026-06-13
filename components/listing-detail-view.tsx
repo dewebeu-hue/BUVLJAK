@@ -29,24 +29,18 @@ import {
   actionLabelForListing,
   contactMethodHint,
   demoListings,
+  formatListingStatus,
   formatListingPrice,
   fromConvexListing,
-  listingStatusLabels,
+  listingStatusBadgeClassNames,
+  listingTypeBadgeClassNames,
   listingTypeLabels,
   type Listing,
-  type ListingStatus,
-  type ListingType
+  type ListingStatus
 } from "@/lib/listings";
 import { getPublicListingUrl } from "@/lib/public-urls";
 
 const hasConvexUrl = Boolean(process.env.NEXT_PUBLIC_CONVEX_URL);
-
-const typeTone: Record<ListingType, string> = {
-  sell: "border-moss/20 bg-moss/10 text-mossDark",
-  give: "border-honey/30 bg-honey/16 text-[#72520d]",
-  swap: "border-plum/20 bg-plum/10 text-plum",
-  want: "border-clay/20 bg-clay/10 text-clay"
-};
 
 const reportReasons = [
   "Spam",
@@ -378,13 +372,13 @@ function ConnectedListingDetailView({ listingId }: { listingId: string }) {
           <section className="space-y-5">
             <div className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm">
               <div className="flex flex-wrap items-center gap-2">
-                <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-black ${typeTone[listing.type]}`}>
+                <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-black ${listingTypeBadgeClassNames[listing.type]}`}>
                   <Tag aria-hidden="true" size={15} />
                   {listingTypeLabels[listing.type]}
                 </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-honey/24 bg-honey/18 px-3 py-1 text-sm font-black text-[#72520d]">
+                <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-black ${listingStatusBadgeClassNames[listing.status]}`}>
                   <CheckCircle2 aria-hidden="true" size={15} />
-                  {listingStatusLabels[listing.status]}
+                  {formatListingStatus(listing.status)}
                 </span>
               </div>
 
@@ -878,11 +872,11 @@ function LocalListingDetailView({ listingId }: { listingId: string }) {
           </div>
           <div className="p-5">
             <div className="flex flex-wrap items-center gap-2">
-              <span className={`rounded-full border px-3 py-1 text-sm font-black ${typeTone[listing.type]}`}>
+              <span className={`rounded-full border px-3 py-1 text-sm font-black ${listingTypeBadgeClassNames[listing.type]}`}>
                 {listingTypeLabels[listing.type]}
               </span>
-              <span className="rounded-full border border-honey/24 bg-honey/18 px-3 py-1 text-sm font-black text-[#72520d]">
-                {listingStatusLabels[listing.status]}
+              <span className={`rounded-full border px-3 py-1 text-sm font-black ${listingStatusBadgeClassNames[listing.status]}`}>
+                {formatListingStatus(listing.status)}
               </span>
             </div>
             <h1 className="mt-5 text-4xl font-black leading-tight text-ink">{listing.title}</h1>

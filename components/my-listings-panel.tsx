@@ -21,10 +21,12 @@ import type { Id } from "@/convex/_generated/dataModel";
 import {
   adminListings,
   demoListings,
+  formatListingStatus,
   formatListingPrice,
   fromConvexListing,
+  listingStatusBadgeClassNames,
   listingStatusFilterOptions,
-  listingStatusLabels,
+  listingTypeBadgeClassNames,
   listingTypeLabels,
   type Listing,
   type ListingStatus
@@ -303,11 +305,11 @@ function MyListingCard({
   return (
     <article className="rounded-lg border border-ink/10 bg-white p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-full border border-moss/18 bg-moss/10 px-3 py-1 text-xs font-black text-mossDark">
+        <span className={`rounded-full border px-3 py-1 text-xs font-black ${listingTypeBadgeClassNames[listing.type]}`}>
           {listingTypeLabels[listing.type]}
         </span>
-        <span className="rounded-full border border-honey/24 bg-honey/18 px-3 py-1 text-xs font-black text-[#72520d]">
-          {listingStatusLabels[listing.status]}
+        <span className={`rounded-full border px-3 py-1 text-xs font-black ${listingStatusBadgeClassNames[listing.status]}`}>
+          {formatListingStatus(listing.status)}
         </span>
       </div>
       <h2 className="mt-4 text-xl font-black leading-snug text-ink">{listing.title}</h2>

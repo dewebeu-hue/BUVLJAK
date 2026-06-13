@@ -9,24 +9,18 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import {
   actionLabelForListing,
+  formatListingStatus,
   formatListingPrice,
   Listing,
-  listingStatusLabels,
-  listingTypeLabels,
-  ListingType
+  listingStatusBadgeClassNames,
+  listingTypeBadgeClassNames,
+  listingTypeLabels
 } from "@/lib/listings";
 import { getPublicListingUrl } from "@/lib/public-urls";
 
 const hasConvexUrl = Boolean(process.env.NEXT_PUBLIC_CONVEX_URL);
 
-const typeTone: Record<ListingType, string> = {
-  sell: "border-moss/20 bg-moss/10 text-mossDark",
-  give: "border-honey/30 bg-honey/16 text-[#72520d]",
-  swap: "border-plum/20 bg-plum/10 text-plum",
-  want: "border-clay/20 bg-clay/10 text-clay"
-};
-
-const visualTone: Record<ListingType, string> = {
+const visualTone: Record<Listing["type"], string> = {
   sell: "from-moss/28 via-skywash to-honey/28",
   give: "from-honey/38 via-field to-moss/18",
   swap: "from-plum/24 via-skywash to-honey/30",
@@ -222,11 +216,11 @@ function ListingCardSurface({
 
       <div className="space-y-4 p-4">
         <div className="flex flex-wrap items-center gap-2">
-          <span className={`rounded-full border px-3 py-1 text-xs font-black ${typeTone[listing.type]}`}>
+          <span className={`rounded-full border px-3 py-1 text-xs font-black ${listingTypeBadgeClassNames[listing.type]}`}>
             {listingTypeLabels[listing.type]}
           </span>
-          <span className="rounded-full border border-moss/16 bg-moss/8 px-3 py-1 text-xs font-bold text-mossDark">
-            {listingStatusLabels[listing.status]}
+          <span className={`rounded-full border px-3 py-1 text-xs font-bold ${listingStatusBadgeClassNames[listing.status]}`}>
+            {formatListingStatus(listing.status)}
           </span>
         </div>
 
