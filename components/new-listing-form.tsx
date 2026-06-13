@@ -6,6 +6,7 @@ import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
 import {
   AlertCircle,
   ArrowLeft,
+  ArrowRight,
   CheckCircle2,
   FileText,
   ImagePlus,
@@ -15,10 +16,12 @@ import {
   X
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import {
   contactMethodLabels,
+  formatListingPrice,
+  listingTypeDescriptions,
   listingTypeLabels,
   type ContactMethod,
   type ListingType,
@@ -51,10 +54,17 @@ type FormState = {
   contactEmail: string;
   contactPhone: string;
   contactFacebookUrl: string;
+  acceptOffers: boolean;
+  pickupByAgreement: boolean;
+  swapWanted: string;
+  openToSuggestions: boolean;
+  acceptFree: boolean;
+  acceptSwap: boolean;
 };
 
 type CreationMode = "manual" | "facebook";
 type ClerkConvexTokenStatus = "checking" | "available" | "missing";
+type NewListingStep = "type" | "details" | "media" | "deal" | "contact";
 
 type ParsedImportDraft = {
   type: ListingType;
@@ -82,16 +92,22 @@ const initialFormState: FormState = {
   contactMethod: "whatsapp",
   contactEmail: "",
   contactPhone: "",
-  contactFacebookUrl: ""
+  contactFacebookUrl: "",
+  acceptOffers: true,
+  pickupByAgreement: true,
+  swapWanted: "",
+  openToSuggestions: true,
+  acceptFree: false,
+  acceptSwap: false
 };
 
 const categories = ["Namještaj", "Djeca", "Dom", "Vrt i alat", "Kućanski aparati", "Ostalo"];
 
-const listingTypeOptions: Array<{ value: ListingType; label: string }> = [
-  { value: "sell", label: listingTypeLabels.sell },
-  { value: "give", label: listingTypeLabels.give },
-  { value: "swap", label: listingTypeLabels.swap },
-  { value: "want", label: listingTypeLabels.want }
+const listingTypeOptions: Array<{ value: ListingType; label: string; description: string }> = [
+  { value: "sell", label: listingTypeLabels.sell, description: listingTypeDescriptions.sell },
+  { value: "give", label: listingTypeLabels.give, description: listingTypeDescriptions.give },
+  { value: "swap", label: listingTypeLabels.swap, description: listingTypeDescriptions.swap },
+  { value: "want", label: listingTypeLabels.want, description: listingTypeDescriptions.want }
 ];
 
 const contactOptions: Array<{ value: ContactMethod; label: string }> = [
@@ -101,14 +117,6 @@ const contactOptions: Array<{ value: ContactMethod; label: string }> = [
   { value: "none", label: "Bez kontakta, samo želim tekst za objavu" }
 ];
 
-const priceTypeLabels: Record<PriceType, string> = {
-  fixed: "Fiksna cijena",
-  negotiable: "Može dogovor",
-  free: "Poklanjam",
-  swap: "Zamjena",
-  wanted: "Tražim"
-};
-
 function defaultPriceType(type: ListingType): PriceType {
   if (type === "give") return "free";
   if (type === "swap") return "swap";
@@ -116,24 +124,50 @@ function defaultPriceType(type: ListingType): PriceType {
   return "negotiable";
 }
 
-function allowOffersFor(type: ListingType, priceType: PriceType) {
+function allowOffersFor(type: ListingType, priceType: PriceType, acceptOffers = true) {
   if (type === "give" || type === "want") return false;
   if (type === "swap") return true;
-  return priceType === "fixed" || priceType === "negotiable";
+  return acceptOffers && (priceType === "fixed" || priceType === "negotiable");
 }
 
-function priceOptionsFor(type: ListingType): PriceType[] {
-  if (type === "give") return ["free"];
-  if (type === "swap") return ["swap"];
-  if (type === "want") return ["wanted"];
-  return ["fixed", "negotiable"];
-}
+const newListingSteps: Array<{ id: NewListingStep; title: string; eyebrow: string }> = [
+  { id: "type", title: "Što želiš napraviti?", eyebrow: "Odaberi tip oglasa" },
+  { id: "details", title: "Što je predmet?", eyebrow: "Naslov, kategorija i opis" },
+  { id: "media", title: "Slike i lokacija", eyebrow: "Fotke i mjesto preuzimanja" },
+  { id: "deal", title: "Cijena i dogovor", eyebrow: "Uvjeti ovise o tipu oglasa" },
+  { id: "contact", title: "Kontakt", eyebrow: "Pregled prije objave" }
+];
 
 function parsePrice(value: string) {
   if (!value.trim()) return undefined;
   const normalized = value.replace(",", ".").replace(/[^\d.]/g, "");
   const price = Number(normalized);
   return Number.isFinite(price) ? price : undefined;
+}
+
+function buildDescriptionWithDealDetails(form: FormState) {
+  const details: string[] = [];
+
+  if (form.type === "sell") {
+    if (form.priceType === "negotiable") details.push("Cijena je za dogovor.");
+    if (form.acceptOffers) details.push("Primam ponude.");
+  }
+
+  if (form.type === "give" && form.pickupByAgreement) {
+    details.push("Preuzimanje po dogovoru.");
+  }
+
+  if (form.type === "swap") {
+    if (form.swapWanted.trim()) details.push(`Želim zauzvrat: ${form.swapWanted.trim()}`);
+    if (form.openToSuggestions) details.push("Otvoren/a sam za prijedloge.");
+  }
+
+  if (form.type === "want") {
+    if (form.acceptFree) details.push("Može i poklonjeno.");
+    if (form.acceptSwap) details.push("Može i zamjena.");
+  }
+
+  return [form.description.trim(), ...details].filter(Boolean).join("\n\n");
 }
 
 function formatBytes(bytes: number) {
@@ -181,8 +215,16 @@ function ConnectedNewListingForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [clerkConvexTokenStatus, setClerkConvexTokenStatus] =
     useState<ClerkConvexTokenStatus>("checking");
+  const [currentStep, setCurrentStep] = useState(0);
 
-  const priceOptions = useMemo(() => priceOptionsFor(form.type), [form.type]);
+  const activeStep = newListingSteps[currentStep] ?? newListingSteps[0];
+  const isFinalStep = currentStep === newListingSteps.length - 1;
+  const parsedPrice = parsePrice(form.price);
+  const previewPrice = formatListingPrice({
+    type: form.type,
+    price: parsedPrice ?? null,
+    priceType: form.priceType
+  });
 
   useEffect(() => {
     if (!isDevelopment) {
@@ -232,10 +274,25 @@ function ConnectedNewListingForm() {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
+  function goToStep(step: number) {
+    setCurrentStep(Math.max(0, Math.min(step, newListingSteps.length - 1)));
+    setError(null);
+
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        document.getElementById("new-listing-stepper")?.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+      });
+    }
+  }
+
   function switchCreationMode(mode: CreationMode) {
     setCreationMode(mode);
     setError(null);
     setImportError(null);
+    setCurrentStep(0);
 
     if (mode === "manual") {
       setIsImportReview(false);
@@ -251,8 +308,12 @@ function ConnectedNewListingForm() {
       ...current,
       type,
       price: type === "give" || type === "swap" ? "" : current.price,
-      priceType: defaultPriceType(type)
+      priceType: defaultPriceType(type),
+      acceptOffers: type === "sell" ? current.acceptOffers : type === "swap",
+      pickupByAgreement: type === "give" ? true : current.pickupByAgreement,
+      openToSuggestions: type === "swap" ? current.openToSuggestions : true
     }));
+    setError(null);
   }
 
   async function handleImportSubmit() {
@@ -299,6 +360,7 @@ function ConnectedNewListingForm() {
       setImportParserLabel(parsed.usedAi ? "AI parser je predložio polja." : "Fallback parser je predložio polja.");
       setImportParsedAt(Date.now());
       setIsImportReview(true);
+      setCurrentStep(0);
     } catch {
       setImportError("Nismo uspjeli automatski strukturirati oglas. Možeš ga unijeti ručno.");
     } finally {
@@ -355,6 +417,54 @@ function ConnectedNewListingForm() {
     return null;
   }
 
+  function validateStep(step: number) {
+    const stepId = newListingSteps[step]?.id;
+    const price = parsePrice(form.price);
+    const needsPrice = form.priceType === "fixed" || form.priceType === "negotiable";
+
+    if (stepId === "details") {
+      if (form.title.trim().length < 3) return "Naslov treba imati barem 3 znaka.";
+      if (!form.category.trim()) return "Kategorija je obavezna.";
+      if (form.description.trim().length < 10) return "Opis treba imati barem 10 znakova.";
+    }
+
+    if (stepId === "media") {
+      if (!form.city.trim()) return "Grad je obavezan.";
+      if (images.length < 1) return "Dodaj barem jednu sliku.";
+      if (images.length > 5) return "Možeš dodati najviše 5 slika.";
+    }
+
+    if (stepId === "deal" && needsPrice && price === undefined) {
+      return "Cijena je obavezna za ovu vrstu cijene.";
+    }
+
+    if (stepId === "contact") {
+      if (form.contactMethod === "whatsapp" && !form.contactPhone.trim()) return "Upiši WhatsApp broj.";
+      if (form.contactMethod === "email" && !(form.contactEmail.trim() || defaultEmail)) {
+        return "Upiši email adresu.";
+      }
+      if (form.contactMethod === "facebook" && !form.contactFacebookUrl.trim()) {
+        return "Upiši Facebook link.";
+      }
+    }
+
+    return null;
+  }
+
+  function handleNextStep() {
+    const stepError = validateStep(currentStep);
+    if (stepError) {
+      setError(stepError);
+      return;
+    }
+
+    goToStep(currentStep + 1);
+  }
+
+  function handlePreviousStep() {
+    goToStep(currentStep - 1);
+  }
+
   async function compressAndUploadImages() {
     const storageIds: string[] = [];
 
@@ -400,6 +510,11 @@ function ConnectedNewListingForm() {
     event.preventDefault();
     setError(null);
 
+    if (!isFinalStep) {
+      handleNextStep();
+      return;
+    }
+
     const validationError = validate();
     if (validationError) {
       setError(validationError);
@@ -423,7 +538,7 @@ function ConnectedNewListingForm() {
       const createdListingId = await createListing({
         type: form.type,
         title: form.title,
-        description: form.description,
+        description: buildDescriptionWithDealDetails(form),
         city: form.city,
         category: form.category,
         ...(price !== undefined ? { price } : {}),
@@ -434,7 +549,7 @@ function ConnectedNewListingForm() {
           : {}),
         ...(form.contactMethod === "whatsapp" ? { contactPhone: form.contactPhone } : {}),
         ...(form.contactMethod === "facebook" ? { contactFacebookUrl: form.contactFacebookUrl } : {}),
-        allowOffers: allowOffersFor(form.type, form.priceType),
+        allowOffers: allowOffersFor(form.type, form.priceType, form.acceptOffers),
         images: imageStorageIds,
         importSource: isImportReview ? "facebook_text" : "manual",
         ...(isImportReview && form.sourceFacebookUrl.trim()
@@ -597,7 +712,8 @@ function ConnectedNewListingForm() {
 
       {creationMode === "manual" || isImportReview ? (
         <form
-          className="space-y-6 rounded-lg border border-ink/10 bg-white p-4 shadow-sm sm:p-6"
+          id="new-listing-stepper"
+          className="new-listing-stepper space-y-6 rounded-lg border border-ink/10 bg-white p-4 shadow-sm sm:p-6"
           onSubmit={handleSubmit}
         >
       {isImportReview ? (
@@ -653,9 +769,35 @@ function ConnectedNewListingForm() {
         </div>
       ) : null}
 
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-black text-mossDark">
+            Korak {currentStep + 1} od {newListingSteps.length}
+          </p>
+          <p className="text-right text-xs font-black uppercase tracking-[0.12em] text-ink/45">
+            {activeStep.eyebrow}
+          </p>
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-field">
+          <div
+            className="h-full rounded-full bg-moss transition-all"
+            style={{ width: `${((currentStep + 1) / newListingSteps.length) * 100}%` }}
+          />
+        </div>
+        <div className="grid grid-cols-5 gap-1" aria-hidden="true">
+          {newListingSteps.map((step, index) => (
+            <span
+              key={step.id}
+              className={`h-1.5 rounded-full ${index <= currentStep ? "bg-moss" : "bg-field"}`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {activeStep.id === "type" ? (
       <fieldset>
-        <legend className="text-sm font-black text-ink">Tip oglasa</legend>
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <legend className="text-2xl font-black leading-tight text-ink">{activeStep.title}</legend>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {listingTypeOptions.map((option) => (
             <label
               key={option.value}
@@ -669,15 +811,22 @@ function ConnectedNewListingForm() {
                 onChange={() => handleTypeChange(option.value)}
                 className="peer sr-only"
               />
-              <span className="grid h-12 cursor-pointer place-items-center rounded-lg border border-ink/12 bg-field px-3 text-sm font-black text-ink/68 transition peer-checked:border-moss peer-checked:bg-moss peer-checked:text-white">
-                {option.label}
+              <span className="flex min-h-24 cursor-pointer flex-col justify-center rounded-lg border border-ink/12 bg-field px-4 py-3 text-left transition peer-checked:border-moss peer-checked:bg-moss peer-checked:text-white">
+                <span className="text-lg font-black">{option.label}</span>
+                <span className="mt-1 text-sm font-semibold leading-snug text-current opacity-75">
+                  {option.description}
+                </span>
               </span>
             </label>
           ))}
         </div>
       </fieldset>
+      ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      {activeStep.id === "details" ? (
+      <section>
+        <h2 className="text-2xl font-black leading-tight text-ink">{activeStep.title}</h2>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <label className="grid gap-2 sm:col-span-2">
           <span className="text-sm font-black text-ink">Naslov</span>
           <input
@@ -701,16 +850,6 @@ function ConnectedNewListingForm() {
         </label>
 
         <label className="grid gap-2">
-          <span className="text-sm font-black text-ink">Grad</span>
-          <input
-            type="text"
-            value={form.city}
-            onChange={(event) => updateForm("city", event.target.value)}
-            className="focus-ring h-12 rounded-lg border border-ink/12 bg-field px-4 text-base font-semibold text-ink"
-          />
-        </label>
-
-        <label className="grid gap-2">
           <span className="text-sm font-black text-ink">Kategorija</span>
           <select
             value={form.category}
@@ -722,31 +861,20 @@ function ConnectedNewListingForm() {
             ))}
           </select>
         </label>
-      </div>
+        </div>
+      </section>
+      ) : null}
 
-      <fieldset className="space-y-3">
-        <legend className="text-sm font-black text-ink">Cijena</legend>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {priceOptions.map((priceType) => (
-            <label
-              key={priceType}
-              className="flex cursor-pointer items-center gap-3 rounded-lg border border-ink/10 bg-field px-4 py-3"
-            >
-              <input
-                type="radio"
-                name="priceType"
-                value={priceType}
-                checked={form.priceType === priceType}
-                onChange={() => updateForm("priceType", priceType)}
-                className="h-4 w-4 accent-moss"
-              />
-              <span className="font-bold text-ink/76">{priceTypeLabels[priceType]}</span>
-            </label>
-          ))}
+      {activeStep.id === "deal" ? (
+      <fieldset className="space-y-4">
+        <legend className="text-2xl font-black leading-tight text-ink">{activeStep.title}</legend>
+        <div className="rounded-lg bg-field p-4">
+          <p className="text-sm font-black text-ink/58">Trenutni prikaz</p>
+          <p className="mt-1 text-lg font-black text-ink">{previewPrice}</p>
         </div>
         {form.type === "sell" ? (
           <p className="text-sm font-semibold leading-relaxed text-ink/62">
-            Za Buvljak je normalno cjenkanje - zato možeš označiti &quot;Može dogovor&quot;.
+            Za Buvljak je normalno cjenkanje - zato možeš označiti &quot;Cijena je za dogovor&quot;.
           </p>
         ) : null}
         {form.priceType === "fixed" || form.priceType === "negotiable" || form.type === "want" ? (
@@ -764,11 +892,79 @@ function ConnectedNewListingForm() {
             />
           </label>
         ) : null}
+        {form.type === "sell" ? (
+          <div className="grid gap-2 sm:grid-cols-2">
+            <ToggleOption
+              checked={form.priceType === "negotiable"}
+              label="Cijena je za dogovor"
+              onChange={(checked) => updateForm("priceType", checked ? "negotiable" : "fixed")}
+            />
+            <ToggleOption
+              checked={form.acceptOffers}
+              label="Primam ponude"
+              onChange={(checked) => updateForm("acceptOffers", checked)}
+            />
+          </div>
+        ) : null}
+        {form.type === "give" ? (
+          <div className="space-y-3 rounded-lg bg-field p-4">
+            <p className="text-lg font-black text-ink">Poklanjam</p>
+            <ToggleOption
+              checked={form.pickupByAgreement}
+              label="Preuzimanje po dogovoru"
+              onChange={(checked) => updateForm("pickupByAgreement", checked)}
+            />
+          </div>
+        ) : null}
+        {form.type === "swap" ? (
+          <div className="grid gap-3">
+            <label className="grid gap-2">
+              <span className="text-sm font-black text-ink">Što želiš zauzvrat?</span>
+              <textarea
+                rows={3}
+                value={form.swapWanted}
+                onChange={(event) => updateForm("swapWanted", event.target.value)}
+                placeholder="Npr. manji regal, policu ili nešto slično."
+                className="focus-ring resize-y rounded-lg border border-ink/12 bg-field px-4 py-3 text-base font-semibold leading-relaxed text-ink placeholder:text-ink/38"
+              />
+            </label>
+            <ToggleOption
+              checked={form.openToSuggestions}
+              label="Otvoren/a sam za prijedloge"
+              onChange={(checked) => updateForm("openToSuggestions", checked)}
+            />
+          </div>
+        ) : null}
+        {form.type === "want" ? (
+          <div className="grid gap-2 sm:grid-cols-2">
+            <ToggleOption
+              checked={form.acceptFree}
+              label="Može i poklonjeno"
+              onChange={(checked) => updateForm("acceptFree", checked)}
+            />
+            <ToggleOption
+              checked={form.acceptSwap}
+              label="Može i zamjena"
+              onChange={(checked) => updateForm("acceptSwap", checked)}
+            />
+          </div>
+        ) : null}
       </fieldset>
+      ) : null}
 
+      {activeStep.id === "media" ? (
       <fieldset>
-        <legend className="text-sm font-black text-ink">Slike</legend>
-        <p className="mt-1 text-sm font-semibold text-ink/62">
+        <legend className="text-2xl font-black leading-tight text-ink">{activeStep.title}</legend>
+        <label className="mt-4 grid gap-2">
+          <span className="text-sm font-black text-ink">Grad</span>
+          <input
+            type="text"
+            value={form.city}
+            onChange={(event) => updateForm("city", event.target.value)}
+            className="focus-ring h-12 rounded-lg border border-ink/12 bg-field px-4 text-base font-semibold text-ink"
+          />
+        </label>
+        <p className="mt-5 text-sm font-semibold text-ink/62">
           Dodaj 1 do 5 slika. Velike slike se smanjuju prije uploada radi bržeg spremanja.
         </p>
         <label className="focus-ring mt-3 flex min-h-28 cursor-pointer items-center justify-center rounded-lg border border-dashed border-moss/38 bg-moss/8 px-4 text-center text-sm font-black text-mossDark transition hover:bg-moss/12">
@@ -815,9 +1011,12 @@ function ConnectedNewListingForm() {
           </div>
         ) : null}
       </fieldset>
+      ) : null}
 
+      {activeStep.id === "contact" ? (
+      <>
       <fieldset>
-        <legend className="text-sm font-black text-ink">Način kontakta</legend>
+        <legend className="text-2xl font-black leading-tight text-ink">{activeStep.title}</legend>
         <p className="mt-1 text-sm font-semibold text-ink/62">
           Kontakt će se kasnije otvoriti tek nakon klika.
         </p>
@@ -880,25 +1079,76 @@ function ConnectedNewListingForm() {
           </label>
         ) : null}
       </fieldset>
+      <section className="rounded-lg bg-field p-4">
+        <h3 className="text-lg font-black text-ink">Pregled prije objave</h3>
+        <dl className="mt-3 grid gap-3 text-sm font-semibold text-ink/68 sm:grid-cols-2">
+          <div>
+            <dt className="font-black text-ink">Naslov</dt>
+            <dd className="mt-1">{form.title.trim() || "Naslov oglasa"}</dd>
+          </div>
+          <div>
+            <dt className="font-black text-ink">Tip</dt>
+            <dd className="mt-1">{listingTypeLabels[form.type]}</dd>
+          </div>
+          <div>
+            <dt className="font-black text-ink">Cijena/status</dt>
+            <dd className="mt-1">{previewPrice}</dd>
+          </div>
+          <div>
+            <dt className="font-black text-ink">Grad</dt>
+            <dd className="mt-1">{form.city.trim() || "Nova Gradiška"}</dd>
+          </div>
+          <div className="sm:col-span-2">
+            <dt className="font-black text-ink">Kontakt metoda</dt>
+            <dd className="mt-1">{contactOptions.find((method) => method.value === form.contactMethod)?.label}</dd>
+          </div>
+        </dl>
+      </section>
+      </>
+      ) : null}
 
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="flex flex-col-reverse gap-2 border-t border-ink/10 pt-4 sm:flex-row sm:items-center sm:justify-between">
         <button
-          type="submit"
-          disabled={isSubmitting}
-          className="focus-ring inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-moss px-5 text-base font-black text-white transition hover:bg-mossDark disabled:cursor-not-allowed disabled:bg-ink/30 sm:w-auto"
+          type="button"
+          onClick={handlePreviousStep}
+          disabled={currentStep === 0 || isSubmitting}
+          className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-ink/12 bg-white px-5 text-base font-black text-ink transition hover:bg-field disabled:cursor-not-allowed disabled:opacity-45"
         >
-          {isSubmitting ? <Loader2 aria-hidden="true" className="animate-spin" size={18} /> : <Send aria-hidden="true" size={18} />}
-          {isSubmitting ? "Spremam oglas" : isImportReview ? "Potvrdi i objavi" : "Objavi oglas"}
+          <ArrowLeft aria-hidden="true" size={18} />
+          Natrag
         </button>
-        {isImportReview ? (
-          <button
-            type="button"
-            onClick={returnToImportText}
-            className="focus-ring inline-flex h-12 items-center justify-center rounded-lg border border-ink/12 bg-white px-5 text-base font-black text-ink transition hover:bg-field"
-          >
-            Vrati se na tekst
-          </button>
-        ) : null}
+        <div className="flex flex-col gap-2 sm:flex-row">
+          {isImportReview ? (
+            <button
+              type="button"
+              onClick={returnToImportText}
+              disabled={isSubmitting}
+              className="focus-ring inline-flex h-12 items-center justify-center rounded-lg border border-ink/12 bg-white px-5 text-base font-black text-ink transition hover:bg-field disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              Vrati se na tekst
+            </button>
+          ) : null}
+          {isFinalStep ? (
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="focus-ring inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-moss px-5 text-base font-black text-white transition hover:bg-mossDark disabled:cursor-not-allowed disabled:bg-ink/30 sm:w-auto"
+            >
+              {isSubmitting ? <Loader2 aria-hidden="true" className="animate-spin" size={18} /> : <Send aria-hidden="true" size={18} />}
+              {isSubmitting ? "Spremam oglas" : isImportReview ? "Potvrdi i objavi" : "Objavi oglas"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleNextStep}
+              disabled={isSubmitting}
+              className="focus-ring inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-moss px-5 text-base font-black text-white transition hover:bg-mossDark disabled:cursor-not-allowed disabled:bg-ink/30 sm:w-auto"
+            >
+              Dalje
+              <ArrowRight aria-hidden="true" size={18} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex gap-2 rounded-lg bg-moss/8 p-3 text-sm font-bold text-mossDark">
@@ -908,5 +1158,27 @@ function ConnectedNewListingForm() {
         </form>
       ) : null}
     </div>
+  );
+}
+
+function ToggleOption({
+  checked,
+  label,
+  onChange
+}: {
+  checked: boolean;
+  label: string;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-lg border border-ink/10 bg-field px-4 py-3">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="h-5 w-5 accent-moss"
+      />
+      <span className="font-bold text-ink/76">{label}</span>
+    </label>
   );
 }
