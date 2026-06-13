@@ -200,19 +200,19 @@ function ListingCardSurface({
   const statusLabel = formatListingStatus(listing.status);
 
   return (
-    <article className="overflow-hidden rounded-lg border border-ink/10 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft">
-      <Link href={detailsHref} className="focus-ring block">
-        <div className={`relative grid aspect-[4/3] place-items-center bg-gradient-to-br ${visualTone[listing.type]}`}>
+    <article className="group overflow-hidden rounded-xl border border-ink/10 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-moss/18 hover:shadow-soft">
+      <Link href={detailsHref} className="focus-ring block overflow-hidden">
+        <div className={`relative grid aspect-[16/11] place-items-center bg-gradient-to-br ${visualTone[listing.type]}`}>
           {primaryImage ? (
             <div
               role="img"
               aria-label={`Slika oglasa ${listing.title}`}
-              className="h-full w-full bg-cover bg-center"
+              className="h-full w-full bg-cover bg-center transition duration-300 group-hover:scale-[1.02]"
               style={{ backgroundImage: `url(${primaryImage})` }}
             />
           ) : (
-            <div className="grid h-20 w-20 place-items-center rounded-lg border border-white/70 bg-white/70 text-mossDark shadow-sm">
-              <Tag aria-hidden="true" size={32} strokeWidth={1.9} />
+            <div className="grid h-24 w-24 place-items-center rounded-xl border border-white/70 bg-white/78 text-mossDark shadow-sm">
+              <Tag aria-hidden="true" size={34} strokeWidth={1.9} />
             </div>
           )}
           {showFeatured && listing.isFeatured ? (
@@ -224,17 +224,17 @@ function ListingCardSurface({
         </div>
       </Link>
 
-      <div className="space-y-4 p-4">
+      <div className="space-y-4 p-4 sm:p-5">
         <div className="flex flex-wrap items-center gap-2 text-xs font-black">
-          <span className={`rounded-full border px-3 py-1 ${typeMeta.badgeClassName}`}>
+          <span className={`rounded-full border px-2.5 py-1 ${typeMeta.badgeClassName}`}>
             {typeMeta.label}
           </span>
-          <span className={`rounded-full border px-3 py-1 ${listingStatusBadgeClassNames[listing.status]}`}>
+          <span className={`rounded-full border px-2.5 py-1 ${listingStatusBadgeClassNames[listing.status]}`}>
             {statusLabel}
           </span>
         </div>
 
-        <div className="flex items-center justify-between gap-3 text-xs font-bold text-ink/56">
+        <div className="flex items-center justify-between gap-3 text-xs font-bold text-ink/58">
           <span className="inline-flex min-w-0 items-center gap-1.5">
             <MapPin aria-hidden="true" size={15} className="shrink-0 text-moss" />
             <span className="truncate">{listing.city}</span>
@@ -245,45 +245,30 @@ function ListingCardSurface({
         </div>
 
         <div className="space-y-3">
-          <h2 className="text-xl font-black leading-snug text-ink sm:text-2xl">{listing.title}</h2>
+          <h2 className="line-clamp-2 text-xl font-black leading-snug text-ink">{listing.title}</h2>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-lg bg-field px-3 py-2 text-lg font-black leading-none text-ink">
+            <span className="inline-flex min-h-10 items-center rounded-xl bg-field px-3 py-2 text-lg font-black leading-none text-ink">
               {priceLabel}
             </span>
-            <span className="rounded-lg border border-ink/8 bg-white px-3 py-2 text-sm font-bold leading-none text-ink/60">
+            <span className="inline-flex min-h-10 items-center rounded-xl border border-ink/8 bg-white px-3 py-2 text-sm font-bold leading-none text-ink/60">
               {listing.category}
             </span>
           </div>
-          <p className="line-clamp-2 min-h-11 text-sm leading-relaxed text-ink/68">
+          <p className="line-clamp-2 min-h-10 text-sm leading-relaxed text-ink/68">
             {listing.description}
           </p>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2 rounded-lg border border-ink/8 bg-field/70 px-3 py-2 text-xs font-bold text-ink/58" aria-label="Metrike oglasa">
-          <span className="inline-flex items-center gap-1">
-            <Eye aria-hidden="true" size={14} />
-            {listing.viewCount}
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <Bookmark aria-hidden="true" size={14} />
-            {saveCount}
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <Share2 aria-hidden="true" size={14} />
-            {shareCount}
-          </span>
         </div>
 
         <div className="grid gap-2">
           <Link
             href={`${detailsHref}#akcija`}
             aria-label={primaryActionLabel}
-            className={`focus-ring listing-card-primary-action inline-flex h-12 items-center justify-center gap-2 rounded-lg px-4 text-sm font-black shadow-sm transition ${primaryActionTone[listing.type]}`}
+            className={`focus-ring listing-card-primary-action inline-flex h-12 items-center justify-center gap-2 rounded-xl px-4 text-sm font-black shadow-sm transition ${primaryActionTone[listing.type]}`}
           >
             <Handshake aria-hidden="true" size={16} />
             <span className="truncate">{primaryActionLabel}</span>
           </Link>
-          <div className="grid grid-cols-3 gap-2" aria-label="Sekundarne akcije oglasa">
+          <div className="listing-card-secondary-actions grid grid-cols-3 gap-2" aria-label="Sekundarne akcije oglasa">
             <button
               type="button"
               onClick={onSave}
@@ -313,6 +298,21 @@ function ListingCardSurface({
               Detalji
             </Link>
           </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 rounded-lg bg-field/55 px-3 py-2 text-xs font-bold text-ink/50" aria-label="Metrike oglasa">
+          <span className="inline-flex items-center gap-1">
+            <Eye aria-hidden="true" size={14} />
+            {listing.viewCount}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Bookmark aria-hidden="true" size={14} />
+            {saveCount}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Share2 aria-hidden="true" size={14} />
+            {shareCount}
+          </span>
         </div>
 
         <p className="min-h-4 text-xs font-bold text-mossDark" aria-live="polite">
