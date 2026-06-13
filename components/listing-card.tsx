@@ -4,7 +4,7 @@ import { useAuth, useClerk } from "@clerk/nextjs";
 import Link from "next/link";
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { Bookmark, Eye, Handshake, MapPin, Send, Share2, Sparkles, Tag } from "lucide-react";
+import { Bookmark, Eye, Handshake, MapPin, Share2, Sparkles, Tag } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import {
@@ -13,8 +13,7 @@ import {
   formatListingPrice,
   Listing,
   listingStatusBadgeClassNames,
-  listingTypeBadgeClassNames,
-  listingTypeLabels
+  listingTypeMeta
 } from "@/lib/listings";
 import { getPublicListingUrl } from "@/lib/public-urls";
 
@@ -25,6 +24,13 @@ const visualTone: Record<Listing["type"], string> = {
   give: "from-honey/38 via-field to-moss/18",
   swap: "from-plum/24 via-skywash to-honey/30",
   want: "from-clay/24 via-field to-skywash"
+};
+
+const primaryActionTone: Record<Listing["type"], string> = {
+  sell: "bg-moss text-white hover:bg-mossDark",
+  give: "bg-honey text-ink hover:bg-[#ffd45f]",
+  swap: "bg-plum text-white hover:bg-[#6d35d5]",
+  want: "bg-clay text-white hover:bg-[#bd4c31]"
 };
 
 export function ListingCard({
@@ -188,6 +194,10 @@ function ListingCardSurface({
   }).format(new Date(listing.createdAt));
   const primaryImage = listing.imageUrls[0];
   const detailsHref = `/oglasi/${listing.id}`;
+  const typeMeta = listingTypeMeta[listing.type];
+  const priceLabel = formatListingPrice(listing);
+  const primaryActionLabel = actionLabelForListing(listing);
+  const statusLabel = formatListingStatus(listing.status);
 
   return (
     <article className="overflow-hidden rounded-lg border border-ink/10 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft">
@@ -215,34 +225,41 @@ function ListingCardSurface({
       </Link>
 
       <div className="space-y-4 p-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className={`rounded-full border px-3 py-1 text-xs font-black ${listingTypeBadgeClassNames[listing.type]}`}>
-            {listingTypeLabels[listing.type]}
+        <div className="flex flex-wrap items-center gap-2 text-xs font-black">
+          <span className={`rounded-full border px-3 py-1 ${typeMeta.badgeClassName}`}>
+            {typeMeta.label}
           </span>
-          <span className={`rounded-full border px-3 py-1 text-xs font-bold ${listingStatusBadgeClassNames[listing.status]}`}>
-            {formatListingStatus(listing.status)}
+          <span className={`rounded-full border px-3 py-1 ${listingStatusBadgeClassNames[listing.status]}`}>
+            {statusLabel}
           </span>
         </div>
 
-        <div className="space-y-2">
-          <h2 className="text-xl font-black leading-snug text-ink">{listing.title}</h2>
+        <div className="flex items-center justify-between gap-3 text-xs font-bold text-ink/56">
+          <span className="inline-flex min-w-0 items-center gap-1.5">
+            <MapPin aria-hidden="true" size={15} className="shrink-0 text-moss" />
+            <span className="truncate">{listing.city}</span>
+          </span>
+          <time dateTime={listing.createdAt} className="shrink-0">
+            {created}
+          </time>
+        </div>
+
+        <div className="space-y-3">
+          <h2 className="text-xl font-black leading-snug text-ink sm:text-2xl">{listing.title}</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-lg bg-field px-3 py-2 text-lg font-black leading-none text-ink">
+              {priceLabel}
+            </span>
+            <span className="rounded-lg border border-ink/8 bg-white px-3 py-2 text-sm font-bold leading-none text-ink/60">
+              {listing.category}
+            </span>
+          </div>
           <p className="line-clamp-2 min-h-11 text-sm leading-relaxed text-ink/68">
             {listing.description}
           </p>
         </div>
 
-        <div className="grid gap-2 text-sm font-semibold text-ink/70">
-          <span className="inline-flex items-center gap-2">
-            <MapPin aria-hidden="true" size={16} className="text-moss" />
-            {listing.city}
-          </span>
-          <span className="inline-flex items-center justify-between gap-2 rounded-lg bg-field px-3 py-2 text-ink">
-            <span>{listing.category}</span>
-            <span className="text-right font-black">{formatListingPrice(listing)}</span>
-          </span>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2 rounded-lg border border-ink/8 bg-field/70 px-3 py-2 text-xs font-bold text-ink/58">
+        <div className="grid grid-cols-3 gap-2 rounded-lg border border-ink/8 bg-field/70 px-3 py-2 text-xs font-bold text-ink/58" aria-label="Metrike oglasa">
           <span className="inline-flex items-center gap-1">
             <Eye aria-hidden="true" size={14} />
             {listing.viewCount}
@@ -257,47 +274,45 @@ function ListingCardSurface({
           </span>
         </div>
 
-        <div className="flex items-center justify-between text-xs font-bold text-ink/52">
-          <span>Najnovije</span>
-          <time dateTime={listing.createdAt}>{created}</time>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <Link
-            href={detailsHref}
-            className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-moss px-3 text-sm font-black text-white transition hover:bg-mossDark"
-          >
-            <Tag aria-hidden="true" size={16} />
-            Detalji
-          </Link>
+        <div className="grid gap-2">
           <Link
             href={`${detailsHref}#akcija`}
-            className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-moss/16 bg-moss/8 px-3 text-sm font-black text-mossDark transition hover:bg-moss/12"
+            aria-label={primaryActionLabel}
+            className={`focus-ring listing-card-primary-action inline-flex h-12 items-center justify-center gap-2 rounded-lg px-4 text-sm font-black shadow-sm transition ${primaryActionTone[listing.type]}`}
           >
             <Handshake aria-hidden="true" size={16} />
-            <span className="truncate">{actionLabelForListing(listing)}</span>
+            <span className="truncate">{primaryActionLabel}</span>
           </Link>
-          <button
-            type="button"
-            onClick={onSave}
-            disabled={isSaving}
-            className={`focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-black transition disabled:cursor-wait disabled:opacity-70 ${
-              isSaved
-                ? "border-moss/20 bg-moss/8 text-mossDark hover:bg-moss/12"
-                : "border-ink/12 bg-white text-ink hover:bg-field"
-            }`}
-          >
-            <Bookmark aria-hidden="true" size={16} fill={isSaved ? "currentColor" : "none"} />
-            {isSaving ? "Spremanje..." : isSaved ? "Spremljeno" : "Spremi"}
-          </button>
-          <button
-            type="button"
-            onClick={onShare}
-            className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-ink/12 bg-white px-3 text-sm font-black text-ink transition hover:bg-field"
-          >
-            <Send aria-hidden="true" size={16} />
-            Podijeli
-          </button>
+          <div className="grid grid-cols-3 gap-2" aria-label="Sekundarne akcije oglasa">
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={isSaving}
+              className={`focus-ring inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border px-2 text-xs font-black transition disabled:cursor-wait disabled:opacity-70 ${
+                isSaved
+                  ? "border-moss/20 bg-moss/8 text-mossDark hover:bg-moss/12"
+                  : "border-ink/12 bg-white text-ink hover:bg-field"
+              }`}
+            >
+              <Bookmark aria-hidden="true" size={15} fill={isSaved ? "currentColor" : "none"} />
+              {isSaving ? "..." : isSaved ? "Spremljeno" : "Spremi"}
+            </button>
+            <button
+              type="button"
+              onClick={onShare}
+              className="focus-ring inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-ink/12 bg-white px-2 text-xs font-black text-ink transition hover:bg-field"
+            >
+              <Share2 aria-hidden="true" size={15} />
+              Podijeli
+            </button>
+            <Link
+              href={detailsHref}
+              className="focus-ring inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-ink/12 bg-white px-2 text-xs font-black text-ink transition hover:bg-field"
+            >
+              <Tag aria-hidden="true" size={15} />
+              Detalji
+            </Link>
+          </div>
         </div>
 
         <p className="min-h-4 text-xs font-bold text-mossDark" aria-live="polite">

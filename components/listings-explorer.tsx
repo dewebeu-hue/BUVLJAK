@@ -23,16 +23,26 @@ const savedSearchesEnabled = false;
 
 type FeedFilters = {
   search: string;
+  quickFilter: QuickFilterValue;
   type: ListingType | "all";
   city: string;
   category: string;
   maxPrice: string;
 };
 
+type QuickFilterValue = ListingType | "all" | "today" | "free";
+
+const quickFilterOptions: Array<{ value: QuickFilterValue; label: string }> = [
+  ...listingTypeFilterOptions,
+  { value: "today", label: "Novo danas" },
+  { value: "free", label: "Besplatno" }
+];
+
 function readInitialFeedFilters(): FeedFilters {
   if (typeof window === "undefined") {
     return {
       search: "",
+      quickFilter: "all",
       type: "all",
       city: "",
       category: "",
@@ -52,6 +62,7 @@ function readInitialFeedFilters(): FeedFilters {
 
   return {
     search: params.get("q") ?? "",
+    quickFilter: type,
     type,
     city: params.get("city") ?? "",
     category: params.get("category") ?? "",
@@ -62,39 +73,57 @@ function readInitialFeedFilters(): FeedFilters {
 export function ListingsExplorer() {
   const [initialFilters] = useState<FeedFilters>(() => readInitialFeedFilters());
   const [search, setSearch] = useState(initialFilters.search);
-  const [type, setType] = useState<ListingType | "all">(initialFilters.type);
+  const [quickFilter, setQuickFilter] = useState<QuickFilterValue>(initialFilters.quickFilter);
   const [city, setCity] = useState(initialFilters.city);
   const [category, setCategory] = useState(initialFilters.category);
   const [maxPrice, setMaxPrice] = useState(initialFilters.maxPrice);
+  const [areFiltersOpen, setAreFiltersOpen] = useState(false);
   const [limit, setLimit] = useState(PAGE_SIZE);
   const isMounted = useClientMounted();
+  const type = listingTypeFromQuickFilter(quickFilter);
 
   const filters = useMemo<FeedFilters>(
-    () => ({ search, type, city, category, maxPrice }),
-    [category, city, maxPrice, search, type]
+    () => ({ search, quickFilter, type, city, category, maxPrice }),
+    [category, city, maxPrice, quickFilter, search, type]
   );
+  const secondaryFilterCount = countSecondaryFilters(filters);
+
+  function updateSecondaryFilter(setter: (value: string) => void, value: string) {
+    setter(value);
+    setLimit(PAGE_SIZE);
+  }
+
+  function clearSecondaryFilters() {
+    setCity("");
+    setCategory("");
+    setMaxPrice("");
+    setLimit(PAGE_SIZE);
+  }
 
   return (
-    <main className="pb-28">
-      <section className="border-b border-ink/8 bg-[#fbfcf7] px-4 py-8 sm:px-6">
+    <main className="pb-32">
+      <section className="border-b border-ink/8 bg-[#fbfcf7] px-4 pb-6 pt-6 sm:px-6 sm:py-8">
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <span className="inline-flex rounded-full bg-moss/10 px-3 py-1 text-sm font-black text-mossDark">
                 Nova Gradiška i okolica
               </span>
-              <h1 className="mt-3 text-4xl font-black leading-tight text-ink">Aktivni oglasi</h1>
+              <h1 className="mt-3 text-4xl font-black leading-tight text-ink sm:text-5xl">Aktivni oglasi</h1>
+              <p className="mt-3 max-w-2xl text-sm font-bold leading-relaxed text-ink/64 sm:text-base">
+                Razgledaj što se nudi u blizini ili pronađi nešto konkretno.
+              </p>
             </div>
             <Link
               href="/novi-oglas"
               className="focus-ring hidden h-11 items-center justify-center gap-2 rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark md:inline-flex"
             >
               <Plus aria-hidden="true" size={18} />
-              Novi oglas
+              Objavi oglas
             </Link>
           </div>
 
-          <div className="mt-7 grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div className="mt-6 grid gap-4">
             <label className="relative block">
               <span className="sr-only">Što tražiš?</span>
               <Search
@@ -105,22 +134,25 @@ export function ListingsExplorer() {
               <input
                 type="search"
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setLimit(PAGE_SIZE);
+                }}
                 placeholder="Što tražiš?"
-                className="focus-ring h-13 w-full rounded-lg border border-ink/12 bg-white py-3 pl-11 pr-4 text-base font-semibold text-ink placeholder:text-ink/42"
+                className="focus-ring h-13 w-full rounded-lg border border-ink/12 bg-white py-3 pl-11 pr-4 text-base font-bold text-ink shadow-sm placeholder:text-ink/42"
               />
             </label>
 
-            <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Brzi filteri">
-              {listingTypeFilterOptions.map((filter) => {
-                const isActive = filter.value === type;
+            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0" aria-label="Brzi filteri">
+              {quickFilterOptions.map((filter) => {
+                const isActive = filter.value === quickFilter;
 
                 return (
                   <button
                     key={filter.value}
                     type="button"
                     onClick={() => {
-                      setType(filter.value);
+                      setQuickFilter(filter.value);
                       setLimit(PAGE_SIZE);
                     }}
                     className={`focus-ring h-11 shrink-0 rounded-full border px-4 text-sm font-black transition ${
@@ -136,21 +168,56 @@ export function ListingsExplorer() {
             </div>
           </div>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <FilterInput label="Grad" value={city} onChange={setCity} placeholder="npr. Nova Gradiška" />
-            <FilterInput
-              label="Kategorija"
-              value={category}
-              onChange={setCategory}
-              placeholder="npr. Namještaj"
-            />
-            <FilterInput
-              label="Cijena do"
-              value={maxPrice}
-              onChange={setMaxPrice}
-              placeholder="npr. 100"
-              type="number"
-            />
+          <div className="mt-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                aria-expanded={areFiltersOpen}
+                aria-controls="feed-secondary-filters"
+                onClick={() => setAreFiltersOpen((current) => !current)}
+                className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-ink/12 bg-white px-3 text-sm font-black text-ink transition hover:bg-field"
+              >
+                {areFiltersOpen ? <X aria-hidden="true" size={16} /> : <Filter aria-hidden="true" size={16} />}
+                Filteri
+                {secondaryFilterCount > 0 ? (
+                  <span className="rounded-full bg-moss px-2 py-0.5 text-xs text-white">{secondaryFilterCount}</span>
+                ) : null}
+              </button>
+              {secondaryFilterCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={clearSecondaryFilters}
+                  className="focus-ring inline-flex h-10 items-center justify-center rounded-lg px-3 text-sm font-black text-ink/58 transition hover:bg-white"
+                >
+                  Očisti
+                </button>
+              ) : null}
+            </div>
+
+            <div
+              id="feed-secondary-filters"
+              className={`${areFiltersOpen ? "grid" : "hidden"} mt-3 gap-3 rounded-lg border border-ink/10 bg-white/84 p-3 shadow-sm sm:grid sm:grid-cols-3`}
+            >
+              <FilterInput
+                label="Grad"
+                value={city}
+                onChange={(value) => updateSecondaryFilter(setCity, value)}
+                placeholder="npr. Nova Gradiška"
+              />
+              <FilterInput
+                label="Kategorija"
+                value={category}
+                onChange={(value) => updateSecondaryFilter(setCategory, value)}
+                placeholder="npr. Namještaj"
+              />
+              <FilterInput
+                label="Cijena do"
+                value={maxPrice}
+                onChange={(value) => updateSecondaryFilter(setMaxPrice, value)}
+                placeholder="npr. 100"
+                type="number"
+              />
+            </div>
           </div>
 
           {savedSearchesEnabled ? <SavedSearchPrompt filters={filters} /> : null}
@@ -179,10 +246,10 @@ export function ListingsExplorer() {
 
       <Link
         href="/novi-oglas"
-        className="focus-ring fixed bottom-4 left-4 right-4 z-30 inline-flex h-13 items-center justify-center gap-2 rounded-lg bg-clay px-5 text-base font-black text-white shadow-soft transition hover:bg-[#bd4c31] md:hidden"
+        className="focus-ring fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4 right-4 z-30 inline-flex h-13 items-center justify-center gap-2 rounded-lg bg-clay px-5 text-base font-black text-white shadow-soft transition hover:bg-[#bd4c31] md:hidden"
       >
         <Plus aria-hidden="true" size={20} />
-        + Novi oglas
+        + Objavi oglas
       </Link>
     </main>
   );
@@ -191,10 +258,57 @@ export function ListingsExplorer() {
 function hasSearchIntent(filters: FeedFilters) {
   return Boolean(
     filters.search.trim() ||
-      filters.type !== "all" ||
+      filters.quickFilter !== "all" ||
       filters.city.trim() ||
       filters.category.trim() ||
       filters.maxPrice.trim()
+  );
+}
+
+function isListingTypeFilter(value: QuickFilterValue): value is ListingType {
+  return value === "sell" || value === "give" || value === "swap" || value === "want";
+}
+
+function listingTypeFromQuickFilter(value: QuickFilterValue): ListingType | "all" {
+  if (isListingTypeFilter(value)) {
+    return value;
+  }
+
+  if (value === "free") {
+    return "give";
+  }
+
+  return "all";
+}
+
+function countSecondaryFilters(filters: FeedFilters) {
+  return [filters.city, filters.category, filters.maxPrice].filter((value) => value.trim()).length;
+}
+
+function listingMatchesQuickFilter(listing: Listing, quickFilter: QuickFilterValue) {
+  if (quickFilter === "all") {
+    return true;
+  }
+
+  if (isListingTypeFilter(quickFilter)) {
+    return listing.type === quickFilter;
+  }
+
+  if (quickFilter === "free") {
+    return listing.type === "give" || listing.priceType === "free" || listing.price === 0;
+  }
+
+  return isCreatedToday(listing.createdAt);
+}
+
+function isCreatedToday(createdAt: string) {
+  const created = new Date(createdAt);
+  const today = new Date();
+
+  return (
+    created.getFullYear() === today.getFullYear() &&
+    created.getMonth() === today.getMonth() &&
+    created.getDate() === today.getDate()
   );
 }
 
@@ -475,7 +589,7 @@ function ListingsResults({
         `${listing.title} ${listing.description} ${listing.city} ${listing.category}`
           .toLowerCase()
           .includes(normalizedSearch);
-      const matchesType = filters.type === "all" || listing.type === filters.type;
+      const matchesQuickFilter = listingMatchesQuickFilter(listing, filters.quickFilter);
       const matchesCity = !normalizedCity || listing.city.toLowerCase().includes(normalizedCity);
       const matchesCategory =
         !normalizedCategory || listing.category.toLowerCase().includes(normalizedCategory);
@@ -485,7 +599,7 @@ function ListingsResults({
         listing.price === null ||
         listing.price <= parsedMaxPrice;
 
-      return matchesSearch && matchesType && matchesCity && matchesCategory && matchesPrice;
+      return matchesSearch && matchesQuickFilter && matchesCity && matchesCategory && matchesPrice;
     });
   }, [filters, listings]);
 
@@ -493,7 +607,7 @@ function ListingsResults({
     <>
       {isLoading ? <ListingsSkeleton /> : null}
       {!isLoading && filteredListings.length > 0 ? (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mx-auto grid max-w-xl gap-5 sm:max-w-none sm:grid-cols-2 lg:grid-cols-3">
           {filteredListings.map((listing, index) => {
             const sponsorInsertIndex = filteredListings.length >= 4 ? 2 : filteredListings.length - 1;
 
@@ -513,16 +627,18 @@ function ListingsResults({
       ) : null}
       {!isLoading && filteredListings.length === 0 ? <EmptyListingsState /> : null}
 
-      <div className="mt-8 flex justify-center">
-        <button
-          type="button"
-          onClick={onLoadMore}
-          disabled={!canLoadMore}
-          className="focus-ring inline-flex h-12 items-center justify-center rounded-lg border border-ink/12 bg-white px-5 text-base font-black text-ink transition hover:bg-field disabled:cursor-not-allowed disabled:text-ink/35"
-        >
-          {canLoadMore ? "Učitaj još oglasa" : "Sve učitano"}
-        </button>
-      </div>
+      {!isLoading && filteredListings.length > 0 ? (
+        <div className="mt-8 flex justify-center">
+          <button
+            type="button"
+            onClick={onLoadMore}
+            disabled={!canLoadMore}
+            className="focus-ring inline-flex h-12 items-center justify-center rounded-lg border border-ink/12 bg-white px-5 text-base font-black text-ink transition hover:bg-field disabled:cursor-not-allowed disabled:text-ink/35"
+          >
+            {canLoadMore ? "Učitaj još oglasa" : "Sve učitano"}
+          </button>
+        </div>
+      ) : null}
     </>
   );
 }
@@ -560,7 +676,7 @@ function FilterInput({
 
 function ListingsSkeleton() {
   return (
-    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" aria-label="Oglasi se učitavaju">
+    <div className="mx-auto grid max-w-xl gap-5 sm:max-w-none sm:grid-cols-2 lg:grid-cols-3" aria-label="Oglasi se učitavaju">
       {Array.from({ length: 6 }, (_, index) => (
         <div
           key={index}
@@ -588,7 +704,7 @@ function ListingsSkeleton() {
 function EmptyListingsState() {
   return (
     <div className="rounded-lg border border-dashed border-ink/18 bg-white p-6 text-center">
-      <h2 className="text-xl font-black text-ink">Još nema oglasa za ovaj odabir.</h2>
+      <h2 className="text-xl font-black text-ink">Još nema aktivnih oglasa u tvojoj blizini.</h2>
       <p className="mx-auto mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/64">
         Promijeni filtere ili objavi prvi oglas za svoju ulicu, kvart ili selo.
       </p>
@@ -597,7 +713,7 @@ function EmptyListingsState() {
         className="focus-ring mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
       >
         <Plus aria-hidden="true" size={18} />
-        Objavi oglas
+        Objavi prvi oglas
       </Link>
     </div>
   );

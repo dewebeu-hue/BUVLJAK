@@ -339,8 +339,8 @@ export function formatListingPrice(listing: Pick<Listing, "price" | "priceType" 
 
   if (listing.priceType === "negotiable") {
     return listing.price === null
-      ? "Cijena po dogovoru"
-      : `${formatPrice(listing.price)} · Cijena po dogovoru`;
+      ? "Cijena za dogovor"
+      : `${formatPrice(listing.price)} · Cijena za dogovor`;
   }
 
   return formatPrice(listing.price, listing.type);
