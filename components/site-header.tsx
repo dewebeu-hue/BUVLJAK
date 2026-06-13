@@ -4,7 +4,6 @@ import {
   Show,
   SignInButton,
   SignOutButton,
-  SignUpButton,
   UserButton,
   useUser
 } from "@clerk/nextjs";
@@ -69,7 +68,7 @@ export function SiteHeader() {
               width={190}
               height={56}
               priority
-              className="block h-10 w-auto max-w-[150px] sm:h-11 sm:max-w-[190px]"
+              className="block h-10 w-auto max-w-[132px] sm:h-11 sm:max-w-[190px]"
             />
             <span className="block text-xs font-semibold text-ink/62">
               Beta · Nova Gradiška i okolica
@@ -103,7 +102,31 @@ export function SiteHeader() {
 
         <HeaderAuth pathname={pathname} />
 
-        <div className="sm:hidden">
+        <div className="flex shrink-0 items-center gap-2 sm:hidden">
+          <Show when="signed-out">
+            <SignInButton
+              mode="modal"
+              fallbackRedirectUrl={postLoginPath}
+              forceRedirectUrl={postLoginPath}
+            >
+              <button
+                type="button"
+                className="public-mobile-post-cta focus-ring inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-moss px-3 text-sm font-black text-white shadow-sm transition hover:bg-mossDark"
+              >
+                <PlusCircle aria-hidden="true" size={16} />
+                Objavi
+              </button>
+            </SignInButton>
+          </Show>
+          <Show when="signed-in">
+            <Link
+              href="/novi-oglas"
+              className="public-mobile-post-cta focus-ring inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-moss px-3 text-sm font-black text-white shadow-sm transition hover:bg-mossDark"
+            >
+              <PlusCircle aria-hidden="true" size={16} />
+              Objavi
+            </Link>
+          </Show>
           <label
             htmlFor={mobileMenuToggleId}
             aria-label="Otvori izbornik"
@@ -247,18 +270,6 @@ function HeaderAuth({ pathname }: { pathname: string }) {
             Prijava
           </button>
         </SignInButton>
-        <SignUpButton
-          mode="modal"
-          fallbackRedirectUrl={postLoginPath}
-          forceRedirectUrl={postLoginPath}
-        >
-          <button
-            type="button"
-            className="focus-ring hidden h-10 items-center gap-2 rounded-lg border border-ink/12 bg-white px-3 text-sm font-black text-ink transition hover:bg-field md:inline-flex"
-          >
-            Registracija
-          </button>
-        </SignUpButton>
         <SignInButton
           mode="modal"
           fallbackRedirectUrl={postLoginPath}
@@ -266,7 +277,7 @@ function HeaderAuth({ pathname }: { pathname: string }) {
         >
           <button
             type="button"
-            className="focus-ring hidden h-10 items-center gap-2 rounded-lg bg-moss px-3 text-sm font-black text-white transition hover:bg-mossDark md:inline-flex"
+            className="public-desktop-post-cta focus-ring inline-flex h-10 items-center gap-2 rounded-lg bg-moss px-3 text-sm font-black text-white transition hover:bg-mossDark"
           >
             <PlusCircle aria-hidden="true" size={16} />
             Objavi oglas
