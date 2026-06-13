@@ -4,7 +4,6 @@ import { currentUser } from "@clerk/nextjs/server";
 import {
   ArrowRight,
   BadgeCheck,
-  Bookmark,
   CheckCircle2,
   CircleDollarSign,
   Gift,
@@ -17,41 +16,66 @@ import { ListingsExplorer } from "@/components/listings-explorer";
 const actionCards = [
   {
     title: "Prodajem",
-    text: "Oglas za stvari koje čekaju novog vlasnika.",
+    text: "Objavi stvar koju više ne koristiš.",
+    cta: "Objavi prodaju",
     icon: CircleDollarSign,
-    tone: "bg-moss text-white"
+    tone: "border-moss/16 bg-moss/12 text-mossDark",
+    href: "/novi-oglas"
   },
   {
     title: "Poklanjam",
-    text: "Brzo ponudi ono što nekome u blizini može trebati.",
+    text: "Pokloni nekome iz blizine.",
+    cta: "Pokloni stvar",
     icon: Gift,
-    tone: "bg-honey text-ink"
+    tone: "border-honey/34 bg-honey/22 text-ink",
+    href: "/novi-oglas"
   },
   {
     title: "Mijenjam",
-    text: "Dogovori zamjenu bez dugih razgovora i profila.",
+    text: "Predloži zamjenu kao na pravom buvljaku.",
+    cta: "Predloži zamjenu",
     icon: Repeat2,
-    tone: "bg-plum text-white"
+    tone: "border-plum/16 bg-plum/12 text-plum",
+    href: "/novi-oglas"
   },
   {
     title: "Tražim",
-    text: "Napiši što ti treba i pusti lokalnu mrežu da radi.",
+    text: "Napiši što ti treba i prati ponude.",
+    cta: "Dodaj potragu",
     icon: Search,
-    tone: "bg-clay text-white"
+    tone: "border-clay/16 bg-clay/12 text-clay",
+    href: "/novi-oglas"
   }
 ];
 
 const howItWorks = [
-  "Objavi ili pronađi oglas",
-  "Podijeli ga u Facebook/WhatsApp grupu",
-  "Kontaktiraj direktno, bez chata u aplikaciji"
+  {
+    title: "Objavi ili pronađi oglas",
+    text: "Kreni od stvari koju imaš ili od onoga što tražiš u blizini."
+  },
+  {
+    title: "Pošalji ponudu ili kontaktiraj",
+    text: "Javi se kratko i dogovori detalje bez dodatnog chata u aplikaciji."
+  },
+  {
+    title: "Dogovori preuzimanje direktno",
+    text: "Preuzimanje, cijena i vrijeme ostaju stvar dogovora između ljudi."
+  }
 ];
 
 const whyItems = [
-  "lokalni feed aktivnih oglasa",
-  "jednostavni filteri",
-  "oglasi se mogu označiti kao riješeni",
-  "bez nepotrebnog chata i kompliciranih profila"
+  {
+    title: "Lokalno i jednostavno",
+    text: "Fokus je na Novoj Gradiški i okolici, bez kompliciranih profila."
+  },
+  {
+    title: "Bez beskonačnog skrolanja",
+    text: "Aktivni oglasi su pregledniji od poruka koje se izgube u grupi."
+  },
+  {
+    title: "Dogovor direktno između ljudi",
+    text: "Buvljak olakšava prvi kontakt, a dogovor nastavljaš izravno."
+  }
 ];
 
 export default async function HomePage() {
@@ -123,28 +147,36 @@ function LandingPage() {
         </div>
       </section>
 
-      <section className="bg-[#fbfcf7] px-4 py-10 sm:px-6">
-        <div className="mx-auto grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="bg-[#fbfcf7] px-4 py-12 sm:px-6">
+        <div className="mx-auto max-w-6xl">
+          <div className="max-w-2xl">
+            <h2 className="text-2xl font-black text-ink sm:text-3xl">Što želiš napraviti?</h2>
+            <p className="mt-3 text-base font-bold leading-relaxed text-ink/66">
+              Odaberi najbližu radnju i složi oglas bez osjećaja velikog oglasnika.
+            </p>
+          </div>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {actionCards.map((card) => {
             const Icon = card.icon;
             return (
               <Link
                 key={card.title}
-                href="/oglasi"
-                className="focus-ring group rounded-lg border border-ink/10 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft"
+                href={card.href}
+                className="focus-ring group flex h-full flex-col rounded-lg border border-ink/10 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-moss/24 hover:shadow-soft"
               >
-                <span className={`grid h-12 w-12 place-items-center rounded-lg ${card.tone}`}>
+                <span className={`grid h-12 w-12 place-items-center rounded-lg border ${card.tone}`}>
                   <Icon aria-hidden="true" size={23} />
                 </span>
                 <h2 className="mt-5 text-xl font-black text-ink">{card.title}</h2>
-                <p className="mt-2 min-h-12 text-sm leading-relaxed text-ink/66">{card.text}</p>
-                <span className="mt-4 inline-flex items-center gap-2 text-sm font-black text-mossDark">
-                  Otvori feed
+                <p className="mt-2 min-h-11 text-sm font-bold leading-relaxed text-ink/66">{card.text}</p>
+                <span className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-moss/16 bg-field px-3 text-sm font-black text-mossDark transition group-hover:border-moss/34 group-hover:bg-moss group-hover:text-white">
+                  {card.cta}
                   <ArrowRight aria-hidden="true" size={16} className="transition group-hover:translate-x-0.5" />
                 </span>
               </Link>
             );
           })}
+          </div>
         </div>
       </section>
 
@@ -153,11 +185,12 @@ function LandingPage() {
           <h2 className="text-3xl font-black text-ink">Kako radi</h2>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             {howItWorks.map((step, index) => (
-              <div key={step} className="rounded-lg border border-moss/12 bg-white p-5">
+              <div key={step.title} className="rounded-lg border border-moss/12 bg-white p-5">
                 <span className="grid h-10 w-10 place-items-center rounded-lg bg-moss text-base font-black text-white">
                   {index + 1}
                 </span>
-                <p className="mt-4 text-lg font-black leading-snug text-ink">{step}</p>
+                <h3 className="mt-4 text-lg font-black leading-snug text-ink">{step.title}</h3>
+                <p className="mt-2 text-sm font-bold leading-relaxed text-ink/64">{step.text}</p>
               </div>
             ))}
           </div>
@@ -173,11 +206,14 @@ function LandingPage() {
               pregled kad samo želiš vidjeti što je aktivno u blizini.
             </p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-3">
             {whyItems.map((item) => (
-              <div key={item} className="flex gap-3 rounded-lg border border-ink/10 bg-white p-4">
+              <div key={item.title} className="rounded-lg border border-ink/10 bg-white p-4">
+                <div className="flex items-center gap-3">
                 <CheckCircle2 aria-hidden="true" className="mt-0.5 shrink-0 text-moss" size={20} />
-                <span className="font-bold leading-relaxed text-ink/78">{item}</span>
+                  <h3 className="font-black leading-snug text-ink">{item.title}</h3>
+                </div>
+                <p className="mt-3 text-sm font-bold leading-relaxed text-ink/64">{item.text}</p>
               </div>
             ))}
           </div>
@@ -185,20 +221,13 @@ function LandingPage() {
       </section>
 
       <section className="px-4 pb-16 sm:px-6">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 rounded-lg border border-honey/30 bg-honey/16 p-5 text-ink sm:flex-row sm:items-center sm:justify-between">
+        <div className="mx-auto max-w-6xl rounded-lg border border-ink/8 bg-white/72 p-4 text-ink shadow-sm">
           <div className="flex gap-3">
-            <BadgeCheck aria-hidden="true" className="mt-1 shrink-0 text-mossDark" size={22} />
-            <p className="font-bold leading-relaxed">
-              Buvljak je beta alat. Dogovor i razmjena odvijaju se direktno između korisnika.
+            <BadgeCheck aria-hidden="true" className="mt-0.5 shrink-0 text-mossDark" size={20} />
+            <p className="text-sm font-bold leading-relaxed text-ink/72">
+              Buvljak.hr ne sudjeluje u plaćanju ni dostavi. Dogovor obavljaš direktno s drugom osobom.
             </p>
           </div>
-          <Link
-            href="/oglasi"
-            className="focus-ring inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-ink px-4 text-sm font-black text-white transition hover:bg-mossDark"
-          >
-            <Bookmark aria-hidden="true" size={17} />
-            Kreni u pregled
-          </Link>
         </div>
       </section>
     </main>
