@@ -70,10 +70,7 @@ export default function PrivacyPolicyPage() {
             "Facebook/Meta samo kada korisnik odabere Facebook prijavu ili spremi/otvori Facebook kontakt link"
           ]}
         />
-        <p>
-          U kodu nisu pronađeni Google Analytics, Vercel Analytics, Meta Pixel, Microsoft Clarity, Hotjar,
-          PostHog, Sentry ni drugi marketing ili tracking scriptovi.
-        </p>
+        <p>U kodu nisu pronađeni dodatni analitički ili marketinški alati za praćenje korisnika.</p>
       </LegalSection>
 
       <LegalSection title="5. Kolačići i slične tehnologije" tone="notice">
@@ -104,8 +101,8 @@ export default function PrivacyPolicyPage() {
 
       <LegalSection title="7. Plaćanja, dostava i chat">
         <p>
-          Buvljak.hr u MVP-u nema Stripe, online plaćanja, escrow, dostavu kroz platformu ni interni chat.
-          Platforma ne prikuplja podatke o karticama, IBAN-u ni plaćanjima kroz aplikaciju.
+          Buvljak.hr u MVP-u nema online plaćanja, obradu plaćanja, dostavu kroz platformu ni interni
+          chat. Platforma ne prikuplja podatke o karticama, IBAN-u ni plaćanjima kroz aplikaciju.
         </p>
         <p>Buvljak.hr ne prodaje osobne podatke korisnika.</p>
       </LegalSection>

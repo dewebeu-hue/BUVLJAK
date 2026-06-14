@@ -85,7 +85,7 @@ export default function TermsPage() {
 
       <LegalSection title="7. Dogovor između korisnika" tone="notice">
         <p>
-          Buvljak.hr nije kupac, prodavatelj, posrednik u plaćanju, dostavljač, escrow agent ni jamac
+          Buvljak.hr nije kupac, prodavatelj, posrednik u plaćanju, dostavljač ni jamac
           transakcije.
         </p>
         <p>
@@ -93,7 +93,7 @@ export default function TermsPage() {
           između korisnika izvan platforme.
         </p>
         <p>
-          Buvljak.hr u beta verziji nema Stripe, online plaćanja, proviziju, escrow, dostavu kroz
+          Buvljak.hr u beta verziji nema online plaćanja, proviziju, zaštitu plaćanja, dostavu kroz
           platformu ni interni chat.
         </p>
       </LegalSection>

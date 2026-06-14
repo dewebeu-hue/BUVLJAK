@@ -12,6 +12,7 @@ const DEFAULT_MATCH_LIMIT = 20;
 const MAX_MATCH_LIMIT = 50;
 const MAX_EMAILS_PER_RUN = 50;
 const LISTINGS_PER_EMAIL = 5;
+const DEFAULT_PUBLIC_APP_URL = "https://buvljak.hr";
 
 type QueryCtx = GenericQueryCtx<DataModel>;
 type MutationCtx = GenericMutationCtx<DataModel>;
@@ -691,7 +692,9 @@ function getSavedSearchUrl(search: ReturnType<typeof publicSearchPayload>) {
     params.set("maxPrice", String(search.maxPrice));
   }
 
-  return `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/oglasi${
+  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL ?? DEFAULT_PUBLIC_APP_URL).replace(/\/+$/, "");
+
+  return `${baseUrl}/oglasi${
     params.toString() ? `?${params.toString()}` : ""
   }`;
 }

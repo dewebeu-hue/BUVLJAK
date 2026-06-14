@@ -522,7 +522,7 @@ export const getBetaReadiness = query({
             ? ("pass" as const)
             : ("fail" as const)
       },
-      { label: "Nema Stripe/plaćanja u MVP-u", status: "pass" as const },
+      { label: "Nema online plaćanja u MVP-u", status: "pass" as const },
       { label: "Nema Facebook scrapinga", status: "pass" as const },
       { label: "OG preview route radi", status: "pass" as const },
       { label: "Pravila i privatnost postoje", status: "pass" as const },

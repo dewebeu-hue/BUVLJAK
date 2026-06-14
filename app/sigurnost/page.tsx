@@ -44,7 +44,7 @@ export default function SafetyPage() {
           ]}
         />
         <p className="mt-3">
-          Buvljak.hr u MVP-u nema escrow, zaštitu plaćanja, online plaćanje ni dostavu kroz platformu.
+          Buvljak.hr u MVP-u nema zaštitu plaćanja, online plaćanje ni dostavu kroz platformu.
         </p>
       </LegalSection>
     </LegalPage>
