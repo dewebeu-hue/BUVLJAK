@@ -110,7 +110,7 @@ export default function PrivacyPolicyPage() {
         <p>Buvljak.hr ne prodaje osobne podatke korisnika.</p>
       </LegalSection>
 
-      <LegalSection title="8. Prava korisnika">
+      <LegalSection title="8. Kako ostvariti svoja prava">
         <p>Korisnik može zatražiti:</p>
         <LegalList
           items={[
@@ -123,11 +123,16 @@ export default function PrivacyPolicyPage() {
           ]}
         />
         <p>
-          Zahtjevi se šalju na{" "}
+          Zahtjev se šalje na{" "}
           <a href="mailto:deweb.eu@gmail.com" className="font-black text-mossDark underline">
             deweb.eu@gmail.com
-          </a>
-          .
+          </a>{" "}
+          s email adrese kojom koristiš Buvljak.hr, kako bismo lakše provjerili da zahtjev dolazi od
+          stvarnog korisnika računa.
+        </p>
+        <p>
+          Za brisanje računa ili osjetljivije izmjene možemo zatražiti dodatnu provjeru identiteta prije
+          provedbe zahtjeva.
         </p>
       </LegalSection>
 
@@ -142,6 +147,10 @@ export default function PrivacyPolicyPage() {
         <p>
           Neki podaci mogu ostati sačuvani ako su potrebni za sigurnost, sprječavanje zloupotrebe,
           rješavanje prijava, administrativnu evidenciju ili zakonske obveze.
+        </p>
+        <p>
+          Javno objavljeni oglasi koje su indeksirale tražilice ili podijelili drugi korisnici mogu neko
+          vrijeme ostati vidljivi izvan izravne kontrole Buvljak.hr-a.
         </p>
       </LegalSection>
 

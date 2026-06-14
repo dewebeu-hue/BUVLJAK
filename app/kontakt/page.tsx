@@ -47,6 +47,20 @@ export default function ContactPage() {
         </p>
       </LegalSection>
 
+      <LegalSection title="Zahtjev za privatnost i podatke">
+        <p>
+          Za pristup, ispravak ili brisanje svojih podataka pošalji zahtjev na{" "}
+          <a href="mailto:deweb.eu@gmail.com" className="font-black text-mossDark underline">
+            deweb.eu@gmail.com
+          </a>{" "}
+          s email adrese kojom koristiš Buvljak.hr.
+        </p>
+        <p>
+          Za brisanje računa ili podataka može biti potrebna dodatna provjera identiteta prije obrade
+          zahtjeva.
+        </p>
+      </LegalSection>
+
       <LegalSection title="Hitne i ozbiljne situacije" tone="notice">
         <p className="flex gap-3">
           <ShieldAlert aria-hidden="true" size={22} className="mt-0.5 shrink-0 text-clay" />
