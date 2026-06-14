@@ -179,9 +179,9 @@ export function NewListingForm() {
   if (!hasConvexUrl) {
     return (
       <div className="mt-6 rounded-lg border border-honey/30 bg-honey/16 p-5">
-        <h2 className="text-xl font-black text-ink">Convex još nije povezan</h2>
+        <h2 className="text-xl font-black text-ink">Objava trenutno nije dostupna</h2>
         <p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/68">
-          Za stvarno spremanje oglasa postavi `NEXT_PUBLIC_CONVEX_URL` i pokreni Convex dev.
+          Oglase ćeš moći objaviti čim uključimo beta spremanje za Novu Gradišku i okolicu.
         </p>
       </div>
     );
@@ -594,7 +594,7 @@ function ConnectedNewListingForm() {
           ) : null}
           {clerkConvexTokenStatus === "available" && !convexAuth.isLoading && !convexAuth.isAuthenticated ? (
             <p>
-              Convex auth config/env is not active. Check npx convex dev and CLERK_JWT_ISSUER_DOMAIN in Convex env.
+              Lokalna auth konfiguracija nije aktivna.
             </p>
           ) : null}
         </div>

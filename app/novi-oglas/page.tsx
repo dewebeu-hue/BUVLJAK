@@ -33,7 +33,7 @@ export default function NewListingPage() {
             </div>
             <div className="mt-5 grid aspect-[4/3] place-items-center rounded-lg border border-dashed border-ink/18 bg-field">
               <span className="px-4 text-center text-sm font-black text-ink/45">
-                Slike se komprimiraju prije uploada u Convex storage.
+                Slike se smanjuju prije spremanja kako bi objava bila brža.
               </span>
             </div>
           </div>

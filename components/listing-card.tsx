@@ -273,7 +273,7 @@ function ListingCardSurface({
               type="button"
               onClick={onSave}
               disabled={isSaving}
-              className={`focus-ring inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border px-2 text-xs font-black transition disabled:cursor-wait disabled:opacity-70 ${
+              className={`focus-ring inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border px-2 text-xs font-black transition disabled:cursor-wait disabled:opacity-70 ${
                 isSaved
                   ? "border-moss/20 bg-moss/8 text-mossDark hover:bg-moss/12"
                   : "border-ink/12 bg-white text-ink hover:bg-field"
@@ -285,14 +285,14 @@ function ListingCardSurface({
             <button
               type="button"
               onClick={onShare}
-              className="focus-ring inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-ink/12 bg-white px-2 text-xs font-black text-ink transition hover:bg-field"
+              className="focus-ring inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border border-ink/12 bg-white px-2 text-xs font-black text-ink transition hover:bg-field"
             >
               <Share2 aria-hidden="true" size={15} />
               Podijeli
             </button>
             <Link
               href={detailsHref}
-              className="focus-ring inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-ink/12 bg-white px-2 text-xs font-black text-ink transition hover:bg-field"
+              className="focus-ring inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border border-ink/12 bg-white px-2 text-xs font-black text-ink transition hover:bg-field"
             >
               <Tag aria-hidden="true" size={15} />
               Detalji

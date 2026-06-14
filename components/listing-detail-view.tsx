@@ -1198,7 +1198,7 @@ function LocalListingDetailView({ listingId }: { listingId: string }) {
               <button
                 type="button"
                 onClick={() => {
-                  setStatusMessage("Kontakt će biti dostupan kad oglas bude povezan sa stvarnom bazom.");
+                  setStatusMessage("Kontakt trenutno nije dostupan za ovaj prikaz oglasa.");
                 }}
                 className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
               >
@@ -1253,7 +1253,7 @@ function LocalListingDetailView({ listingId }: { listingId: string }) {
         }}
         onShare={handleShare}
         onPrimaryAction={() => {
-          setStatusMessage("Kontakt će biti dostupan kad oglas bude povezan sa stvarnom bazom.");
+          setStatusMessage("Kontakt trenutno nije dostupan za ovaj prikaz oglasa.");
         }}
       />
     </main>
