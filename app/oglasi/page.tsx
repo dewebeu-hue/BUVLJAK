@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { ListingsExplorer } from "@/components/listings-explorer";
 import { getAppBaseUrl, getDefaultOgImageUrl } from "@/lib/public-urls";
 
@@ -28,5 +29,19 @@ export const metadata: Metadata = {
 };
 
 export default function ListingsPage() {
-  return <ListingsExplorer />;
+  return (
+    <Suspense fallback={<ListingsPageFallback />}>
+      <ListingsExplorer />
+    </Suspense>
+  );
+}
+
+function ListingsPageFallback() {
+  return (
+    <main className="bg-[#fbfcf7] px-4 py-6 sm:px-6">
+      <div className="mx-auto max-w-6xl">
+        <div className="h-44 animate-pulse rounded-xl border border-ink/10 bg-white shadow-sm" />
+      </div>
+    </main>
+  );
 }

@@ -2,6 +2,7 @@
 
 import { Show, SignInButton } from "@clerk/nextjs";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Fragment, type FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { Bell, BookmarkPlus, CheckCircle2, Filter, Plus, Search, X } from "lucide-react";
@@ -31,6 +32,9 @@ type FeedFilters = {
 };
 
 type QuickFilterValue = ListingType | "all" | "today" | "free";
+type SearchParamsReader = {
+  get: (name: string) => string | null;
+};
 
 const quickFilterOptions: Array<{ value: QuickFilterValue; label: string }> = [
   ...listingTypeFilterOptions,
@@ -38,19 +42,7 @@ const quickFilterOptions: Array<{ value: QuickFilterValue; label: string }> = [
   { value: "free", label: "Besplatno" }
 ];
 
-function readInitialFeedFilters(): FeedFilters {
-  if (typeof window === "undefined") {
-    return {
-      search: "",
-      quickFilter: "all",
-      type: "all",
-      city: "",
-      category: "",
-      maxPrice: ""
-    };
-  }
-
-  const params = new URLSearchParams(window.location.search);
+function readFeedFiltersFromParams(params: SearchParamsReader): FeedFilters {
   const typeParam = params.get("type");
   const type =
     typeParam === "sell" ||
@@ -71,7 +63,31 @@ function readInitialFeedFilters(): FeedFilters {
 }
 
 export function ListingsExplorer() {
-  const [initialFilters] = useState<FeedFilters>(() => readInitialFeedFilters());
+  const searchParams = useSearchParams();
+  const searchParamsKey = searchParams.toString();
+  const initialFilters = useMemo(
+    () => readFeedFiltersFromParams(new URLSearchParams(searchParamsKey)),
+    [searchParamsKey]
+  );
+
+  return (
+    <ListingsExplorerContent
+      key={searchParamsKey || "all"}
+      initialFilters={initialFilters}
+      searchParamsKey={searchParamsKey}
+    />
+  );
+}
+
+function ListingsExplorerContent({
+  initialFilters,
+  searchParamsKey
+}: {
+  initialFilters: FeedFilters;
+  searchParamsKey: string;
+}) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [search, setSearch] = useState(initialFilters.search);
   const [quickFilter, setQuickFilter] = useState<QuickFilterValue>(initialFilters.quickFilter);
   const [city, setCity] = useState(initialFilters.city);
@@ -87,6 +103,31 @@ export function ListingsExplorer() {
     [category, city, maxPrice, quickFilter, search, type]
   );
   const secondaryFilterCount = countSecondaryFilters(filters);
+
+  function updateQuickFilter(nextFilter: QuickFilterValue) {
+    setQuickFilter(nextFilter);
+    setLimit(PAGE_SIZE);
+
+    if (nextFilter !== "all" && !isListingTypeFilter(nextFilter)) {
+      return;
+    }
+
+    const nextParams = new URLSearchParams(searchParamsKey);
+
+    syncTextParam(nextParams, "q", search);
+    syncTextParam(nextParams, "city", city);
+    syncTextParam(nextParams, "category", category);
+    syncTextParam(nextParams, "maxPrice", maxPrice);
+
+    if (isListingTypeFilter(nextFilter)) {
+      nextParams.set("type", nextFilter);
+    } else {
+      nextParams.delete("type");
+    }
+
+    const nextQuery = nextParams.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+  }
 
   function updateSecondaryFilter(setter: (value: string) => void, value: string) {
     setter(value);
@@ -152,8 +193,7 @@ export function ListingsExplorer() {
                     key={filter.value}
                     type="button"
                     onClick={() => {
-                      setQuickFilter(filter.value);
-                      setLimit(PAGE_SIZE);
+                      updateQuickFilter(filter.value);
                     }}
                     className={`focus-ring h-12 shrink-0 snap-start rounded-full border px-5 text-sm font-black transition ${
                       isActive
@@ -283,6 +323,16 @@ function listingTypeFromQuickFilter(value: QuickFilterValue): ListingType | "all
 
 function countSecondaryFilters(filters: FeedFilters) {
   return [filters.city, filters.category, filters.maxPrice].filter((value) => value.trim()).length;
+}
+
+function syncTextParam(params: URLSearchParams, key: string, value: string) {
+  const normalizedValue = value.trim();
+
+  if (normalizedValue) {
+    params.set(key, normalizedValue);
+  } else {
+    params.delete(key);
+  }
 }
 
 function listingMatchesQuickFilter(listing: Listing, quickFilter: QuickFilterValue) {
