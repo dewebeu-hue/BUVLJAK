@@ -23,6 +23,14 @@ export default function CookiesPage() {
           Slične tehnologije mogu uključivati privremenu pohranu u pregledniku, primjerice sessionStorage,
           kada je to potrebno za stabilan rad aplikacije.
         </p>
+        <p>
+          <a
+            href="#postavke-kolacica"
+            className="focus-ring inline-flex h-11 items-center rounded-lg border border-ink/12 bg-white px-4 text-sm font-black text-ink transition hover:bg-field"
+          >
+            Postavke kolačića
+          </a>
+        </p>
       </LegalSection>
 
       <LegalSection title="2. Koje kolačiće koristi Buvljak.hr" tone="notice">
@@ -40,12 +48,19 @@ export default function CookiesPage() {
         />
       </LegalSection>
 
-      <LegalSection title="3. Preference i lokalna pohrana">
-        <p>
-          U trenutnom kodu nije pronađena trajna localStorage pohrana za korisničke preference. Ako se u
-          budućnosti dodaju postavke koje se pamte u pregledniku, ova obavijest će se dopuniti.
-        </p>
-      </LegalSection>
+      <div id="postavke-kolacica">
+        <LegalSection title="3. Postavke kolačića">
+          <p>
+            Trenutno se koriste samo nužni kolačići potrebni za rad aplikacije. Analitika, marketing i
+            dodatne preference nisu uključeni, pa Buvljak.hr ne sprema poseban izbor privole.
+          </p>
+          <CookieSettingsSummary />
+          <p>
+            U trenutnom kodu nije pronađena trajna localStorage pohrana za korisničke preference. Ako se u
+            budućnosti dodaju postavke koje se pamte u pregledniku, ova obavijest će se dopuniti.
+          </p>
+        </LegalSection>
+      </div>
 
       <LegalSection title="4. Analitika i marketing">
         <p>
@@ -87,5 +102,47 @@ export default function CookiesPage() {
         <p>Zadnja izmjena: 14.06.2026.</p>
       </LegalSection>
     </LegalPage>
+  );
+}
+
+function CookieSettingsSummary() {
+  const rows = [
+    {
+      label: "Nužni kolačići",
+      status: "Uvijek uključeni",
+      description: "Potrebni su za prijavu, sigurnost i osnovni rad aplikacije."
+    },
+    {
+      label: "Analitika",
+      status: "Ne koristi se",
+      description: "Nema analytics skripti koje bi tražile privolu."
+    },
+    {
+      label: "Marketing",
+      status: "Ne koristi se",
+      description: "Nema marketing pixela ni oglasnog praćenja."
+    },
+    {
+      label: "Preferencije",
+      status: "Ne sprema se poseban izbor",
+      description: "Trenutno nema dodatnih postavki kolačića za uključivanje ili isključivanje."
+    }
+  ];
+
+  return (
+    <div className="grid gap-3">
+      {rows.map((row) => (
+        <div
+          key={row.label}
+          className="rounded-lg border border-ink/10 bg-field px-4 py-3"
+        >
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <span className="font-black text-ink">{row.label}</span>
+            <span className="text-sm font-black text-mossDark">{row.status}</span>
+          </div>
+          <p className="mt-1 text-sm font-semibold leading-relaxed text-ink/62">{row.description}</p>
+        </div>
+      ))}
+    </div>
   );
 }
