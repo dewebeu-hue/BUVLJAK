@@ -17,6 +17,9 @@ export function SiteFooter() {
           <Link href="/pravila-privatnosti" className="transition hover:text-mossDark">
             Pravila privatnosti
           </Link>
+          <Link href="/kolacici" className="transition hover:text-mossDark">
+            Kolačići
+          </Link>
           <Link href="/kontakt" className="transition hover:text-mossDark">
             Kontakt
           </Link>
