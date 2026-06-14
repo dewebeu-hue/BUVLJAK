@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { AiListingAssistant } from "@/components/ai-listing-assistant";
 import { api } from "@/convex/_generated/api";
 import {
   contactMethodLabels,
@@ -795,32 +796,38 @@ function ConnectedNewListingForm() {
       </div>
 
       {activeStep.id === "type" ? (
-      <fieldset>
-        <legend className="text-2xl font-black leading-tight text-ink">{activeStep.title}</legend>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {listingTypeOptions.map((option) => (
-            <label
-              key={option.value}
-              className="focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-moss"
-            >
-              <input
-                type="radio"
-                name="type"
-                value={option.value}
-                checked={form.type === option.value}
-                onChange={() => handleTypeChange(option.value)}
-                className="peer sr-only"
-              />
-              <span className="flex min-h-24 cursor-pointer flex-col justify-center rounded-lg border border-ink/12 bg-field px-4 py-3 text-left transition peer-checked:border-moss peer-checked:bg-moss peer-checked:text-white">
-                <span className="text-lg font-black">{option.label}</span>
-                <span className="mt-1 text-sm font-semibold leading-snug text-current opacity-75">
-                  {option.description}
-                </span>
-              </span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
+        <>
+          <fieldset>
+            <legend className="text-2xl font-black leading-tight text-ink">{activeStep.title}</legend>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {listingTypeOptions.map((option) => (
+                <label
+                  key={option.value}
+                  className="focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-moss"
+                >
+                  <input
+                    type="radio"
+                    name="type"
+                    value={option.value}
+                    checked={form.type === option.value}
+                    onChange={() => handleTypeChange(option.value)}
+                    className="peer sr-only"
+                  />
+                  <span className="flex min-h-24 cursor-pointer flex-col justify-center rounded-lg border border-ink/12 bg-field px-4 py-3 text-left transition peer-checked:border-moss peer-checked:bg-moss peer-checked:text-white">
+                    <span className="text-lg font-black">{option.label}</span>
+                    <span className="mt-1 text-sm font-semibold leading-snug text-current opacity-75">
+                      {option.description}
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          {creationMode === "manual" ? (
+            <AiListingAssistant isDisabled={isSubmitting} onManualContinue={() => goToStep(1)} />
+          ) : null}
+        </>
       ) : null}
 
       {activeStep.id === "details" ? (
