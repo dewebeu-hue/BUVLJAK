@@ -788,7 +788,7 @@ function AdminServicesToggleCard() {
   const settings = useQuery(api.monetization.getMonetizationSettings) as
     | AdminServicesSettings
     | undefined;
-  const setServicesEnabled = useMutation(api.monetization.setServicesEnabled);
+  const updateSettings = useMutation(api.monetization.updateMonetizationSettings);
   const [isSaving, setIsSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const isEnabled = Boolean(settings?.servicesEnabled);
@@ -802,7 +802,7 @@ function AdminServicesToggleCard() {
     setStatusMessage("");
 
     try {
-      await setServicesEnabled({ enabled: nextEnabled });
+      await updateSettings({ servicesEnabled: nextEnabled });
       setStatusMessage("Postavka za Usluge i pomoć je spremljena.");
     } catch {
       setStatusMessage("Samo admin može mijenjati beta module.");

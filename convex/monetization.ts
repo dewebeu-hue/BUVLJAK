@@ -156,45 +156,6 @@ export const updateMonetizationSettings = mutation({
   }
 });
 
-export const setServicesEnabled = mutation({
-  args: {
-    enabled: v.boolean()
-  },
-  handler: async (ctx, args) => {
-    const admin = await requireAdmin(ctx);
-    const settings = await getLatestSettingsDoc(ctx);
-    const current = withDefaults(settings);
-    const now = Date.now();
-
-    if (settings) {
-      await ctx.db.patch(settings._id, {
-        servicesEnabled: args.enabled,
-        updatedAt: now,
-        ...(admin ? { updatedBy: admin._id } : {})
-      });
-    } else {
-      await ctx.db.insert("monetizationSettings", {
-        localSponsorsEnabled: current.localSponsorsEnabled,
-        featuredListingsEnabled: current.featuredListingsEnabled,
-        showPricingOnLanding: current.showPricingOnLanding,
-        pricingPageVisible: current.pricingPageVisible,
-        servicesEnabled: args.enabled,
-        proPlansEnabled: current.proPlansEnabled,
-        paymentsEnabled: current.paymentsEnabled,
-        createdAt: now,
-        updatedAt: now,
-        ...(admin ? { updatedBy: admin._id } : {})
-      });
-    }
-
-    return {
-      ...current,
-      servicesEnabled: args.enabled,
-      updatedAt: now
-    };
-  }
-});
-
 export const createLocalSponsor = mutation({
   args: {
     name: v.string(),
