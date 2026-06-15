@@ -517,6 +517,7 @@ export const getBetaReadiness = query({
           !latestSettings ||
           (!latestSettings.localSponsorsEnabled &&
             !latestSettings.featuredListingsEnabled &&
+            !(latestSettings.showPricingOnLanding ?? latestSettings.pricingPageVisible ?? false) &&
             !latestSettings.proPlansEnabled &&
             !latestSettings.paymentsEnabled)
             ? ("pass" as const)

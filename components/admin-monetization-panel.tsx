@@ -10,7 +10,7 @@ const hasConvexUrl = Boolean(process.env.NEXT_PUBLIC_CONVEX_URL);
 type MonetizationKey =
   | "localSponsorsEnabled"
   | "featuredListingsEnabled"
-  | "pricingPageVisible"
+  | "showPricingOnLanding"
   | "proPlansEnabled"
   | "paymentsEnabled";
 
@@ -37,7 +37,7 @@ const flagItems: Array<{
     icon: Sparkles
   },
   {
-    key: "pricingPageVisible",
+    key: "showPricingOnLanding",
     label: "Prikaži Pretplate na landingu",
     description:
       "Kada je uključeno, korisnici vide tab/stranicu Pretplate s beta paketima. Online plaćanje nije uključeno u MVP-u.",
@@ -60,7 +60,7 @@ const flagItems: Array<{
 const defaultSettings: MonetizationSettings = {
   localSponsorsEnabled: false,
   featuredListingsEnabled: false,
-  pricingPageVisible: false,
+  showPricingOnLanding: false,
   proPlansEnabled: false,
   paymentsEnabled: false
 };
@@ -252,7 +252,7 @@ function previewCopy(settings: MonetizationSettings) {
   const visible = [
     settings.localSponsorsEnabled ? "lokalni sponzori u feedu" : null,
     settings.featuredListingsEnabled ? "istaknuti oglasi i beta CTA za vlasnike" : null,
-    settings.pricingPageVisible ? "tab i stranica Pretplate" : null,
+    settings.showPricingOnLanding ? "tab i stranica Pretplate" : null,
     settings.proPlansEnabled ? "stranica s pro paketima" : null
   ].filter(Boolean);
 

@@ -9,7 +9,7 @@ import { pricingPlans } from "@/lib/pricing";
 const hasConvexUrl = Boolean(process.env.NEXT_PUBLIC_CONVEX_URL);
 
 type MonetizationSettings = {
-  pricingPageVisible: boolean;
+  showPricingOnLanding: boolean;
 };
 
 export function PricingPage() {
@@ -35,7 +35,7 @@ function ConnectedPricingPage() {
     );
   }
 
-  if (!settings.pricingPageVisible) {
+  if (!settings.showPricingOnLanding) {
     return <PricingUnavailable />;
   }
 

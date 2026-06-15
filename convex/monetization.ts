@@ -8,6 +8,7 @@ import { requireAdmin as requireAdminAccess } from "./adminAuth";
 const DEFAULT_MONETIZATION_SETTINGS = {
   localSponsorsEnabled: false,
   featuredListingsEnabled: false,
+  showPricingOnLanding: false,
   pricingPageVisible: false,
   proPlansEnabled: false,
   paymentsEnabled: false
@@ -41,13 +42,18 @@ async function getLatestSettingsDoc(ctx: ConvexCtx) {
 }
 
 function withDefaults(settings: Doc<"monetizationSettings"> | null) {
+  const showPricingOnLanding = settings
+    ? settings.showPricingOnLanding ?? settings.pricingPageVisible ?? false
+    : false;
+
   return {
     ...DEFAULT_MONETIZATION_SETTINGS,
     ...(settings
       ? {
           localSponsorsEnabled: settings.localSponsorsEnabled,
           featuredListingsEnabled: settings.featuredListingsEnabled,
-          pricingPageVisible: settings.pricingPageVisible ?? false,
+          showPricingOnLanding,
+          pricingPageVisible: showPricingOnLanding,
           proPlansEnabled: settings.proPlansEnabled,
           paymentsEnabled: settings.paymentsEnabled,
           updatedAt: settings.updatedAt
@@ -103,6 +109,7 @@ export const updateMonetizationSettings = mutation({
   args: {
     localSponsorsEnabled: v.optional(v.boolean()),
     featuredListingsEnabled: v.optional(v.boolean()),
+    showPricingOnLanding: v.optional(v.boolean()),
     pricingPageVisible: v.optional(v.boolean()),
     proPlansEnabled: v.optional(v.boolean()),
     paymentsEnabled: v.optional(v.boolean())
@@ -112,10 +119,13 @@ export const updateMonetizationSettings = mutation({
     const settings = await getLatestSettingsDoc(ctx);
     const current = withDefaults(settings);
     const now = Date.now();
+    const showPricingOnLanding =
+      args.showPricingOnLanding ?? args.pricingPageVisible ?? current.showPricingOnLanding;
     const next = {
       localSponsorsEnabled: args.localSponsorsEnabled ?? current.localSponsorsEnabled,
       featuredListingsEnabled: args.featuredListingsEnabled ?? current.featuredListingsEnabled,
-      pricingPageVisible: args.pricingPageVisible ?? current.pricingPageVisible,
+      showPricingOnLanding,
+      pricingPageVisible: showPricingOnLanding,
       proPlansEnabled: args.proPlansEnabled ?? current.proPlansEnabled,
       paymentsEnabled: args.paymentsEnabled ?? current.paymentsEnabled,
       updatedAt: now

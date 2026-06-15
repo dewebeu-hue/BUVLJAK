@@ -41,7 +41,7 @@ const mobileMenuLinks = [
 ];
 
 type PublicMonetizationSettings = {
-  pricingPageVisible: boolean;
+  showPricingOnLanding: boolean;
 };
 
 export function SiteHeader() {
@@ -51,7 +51,7 @@ export function SiteHeader() {
     | PublicMonetizationSettings
     | undefined;
   const showSignedInMobileMenu = isLoaded && isSignedIn;
-  const showPricingLink = Boolean(monetizationSettings?.pricingPageVisible);
+  const showPricingLink = Boolean(monetizationSettings?.showPricingOnLanding);
   const visibleNavItems = showPricingLink
     ? [...navItems, { href: "/pretplate", label: "Pretplate", icon: PackageCheck }]
     : navItems;
