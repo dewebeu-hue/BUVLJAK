@@ -1,7 +1,6 @@
 "use client";
 
 import { useAuth, useUser } from "@clerk/nextjs";
-import imageCompression from "browser-image-compression";
 import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
 import {
   AlertCircle,
@@ -19,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { AiListingAssistant } from "@/components/ai-listing-assistant";
 import { api } from "@/convex/_generated/api";
+import { formatImageBytes, uploadListingImageToConvexStorage } from "@/lib/listing-images";
 import {
   contactMethodLabels,
   formatListingPrice,
@@ -169,11 +169,6 @@ function buildDescriptionWithDealDetails(form: FormState) {
   }
 
   return [form.description.trim(), ...details].filter(Boolean).join("\n\n");
-}
-
-function formatBytes(bytes: number) {
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export function NewListingForm() {
@@ -470,36 +465,17 @@ function ConnectedNewListingForm() {
     const storageIds: string[] = [];
 
     for (const image of images) {
-      const compressed = await imageCompression(image.file, {
-        maxSizeMB: 0.45,
-        maxWidthOrHeight: 1600,
-        useWebWorker: true,
-        initialQuality: 0.82
-      });
-      let uploadUrl: string;
-
-      try {
-        uploadUrl = await generateUploadUrl({});
-      } catch {
-        throw new Error(imageUploadPrepareErrorMessage);
-      }
-
-      const response = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": compressed.type || image.file.type || "image/jpeg" },
-        body: compressed
+      const upload = await uploadListingImageToConvexStorage({
+        file: image.file,
+        generateUploadUrl,
+        prepareErrorMessage: imageUploadPrepareErrorMessage
       });
 
-      if (!response.ok) {
-        throw new Error("Upload slike nije uspio.");
-      }
-
-      const result = (await response.json()) as { storageId: string };
-      storageIds.push(result.storageId);
+      storageIds.push(upload.storageId);
 
       setImages((current) =>
         current.map((item) =>
-          item.id === image.id ? { ...item, compressedSize: compressed.size } : item
+          item.id === image.id ? { ...item, compressedSize: upload.compressedSize } : item
         )
       );
     }
@@ -1001,8 +977,8 @@ function ConnectedNewListingForm() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-black text-ink">{image.file.name}</p>
                   <p className="mt-1 text-xs font-bold text-ink/58">
-                    {formatBytes(image.originalSize)}
-                    {image.compressedSize ? ` -> ${formatBytes(image.compressedSize)}` : ""}
+                    {formatImageBytes(image.originalSize)}
+                    {image.compressedSize ? ` -> ${formatImageBytes(image.compressedSize)}` : ""}
                   </p>
                 </div>
                 <button

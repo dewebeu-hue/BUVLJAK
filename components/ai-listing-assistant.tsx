@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation } from "convex/react";
 import {
   AlertCircle,
   Camera,
@@ -11,42 +12,57 @@ import {
   X
 } from "lucide-react";
 import { type ChangeEvent, useEffect, useRef, useState } from "react";
+import { api } from "@/convex/_generated/api";
+import {
+  formatImageBytes,
+  isSupportedAiImage,
+  uploadListingImageToConvexStorage
+} from "@/lib/listing-images";
 
 const MAX_AI_IMAGES = 3;
+const aiImageUploadErrorMessage = "Slike trenutno nije moguće pripremiti. Možeš nastaviti ručno.";
+
+type AssistantImageStatus = "ready" | "preparing" | "uploaded" | "error";
 
 type AssistantImage = {
   id: string;
   file: File;
   previewUrl: string;
+  status: AssistantImageStatus;
+  storageId?: string;
+  compressedSize?: number;
+  error?: string;
 };
 
-type AssistantState = "idle" | "loading" | "preview";
+type AssistantState = "idle" | "uploading" | "prepared";
 
 type AiListingAssistantProps = {
   onManualContinue: () => void;
   isDisabled?: boolean;
 };
 
-const resultSlots = [
-  "Predloženi naslov",
-  "Predloženi opis",
-  "Kategorija",
-  "Stanje",
-  "Okvirna cijena",
-  "Preporuka cijene",
-  "Tekst za Facebook",
-  "Pouzdanost prijedloga"
-];
+function getImageStatusLabel(status: AssistantImageStatus) {
+  if (status === "preparing") return "Priprema...";
+  if (status === "error") return "Greška";
+  return "Spremno";
+}
+
+function getImageStatusClassName(status: AssistantImageStatus) {
+  if (status === "preparing") return "bg-honey/20 text-[#72520d]";
+  if (status === "error") return "bg-clay/10 text-clay";
+  return "bg-moss/10 text-mossDark";
+}
 
 export function AiListingAssistant({
   onManualContinue,
   isDisabled = false
 }: AiListingAssistantProps) {
+  const generateUploadUrl = useMutation(api.listings.generateListingImageUploadUrl);
   const [images, setImages] = useState<AssistantImage[]>([]);
   const [assistantState, setAssistantState] = useState<AssistantState>("idle");
   const [message, setMessage] = useState("");
+  const [uploadedStorageIds, setUploadedStorageIds] = useState<string[]>([]);
   const imagesRef = useRef<AssistantImage[]>([]);
-  const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
     imagesRef.current = images;
@@ -55,33 +71,30 @@ export function AiListingAssistant({
   useEffect(() => {
     return () => {
       imagesRef.current.forEach((image) => URL.revokeObjectURL(image.previewUrl));
-
-      if (timerRef.current) {
-        window.clearTimeout(timerRef.current);
-      }
     };
   }, []);
 
   function handleImagesChange(event: ChangeEvent<HTMLInputElement>) {
     const selectedFiles = Array.from(event.target.files ?? []);
     const availableSlots = MAX_AI_IMAGES - images.length;
-    const validImages = selectedFiles.filter((file) => file.type.startsWith("image/"));
+    const validImages = selectedFiles.filter(isSupportedAiImage);
 
     setMessage("");
     setAssistantState("idle");
+    setUploadedStorageIds([]);
 
     if (selectedFiles.length === 0) {
       return;
     }
 
     if (availableSlots <= 0) {
-      setMessage("Možeš dodati najviše 3 slike za AI prijedlog.");
+      setMessage("Za AI prijedlog možeš dodati najviše 3 slike.");
       event.target.value = "";
       return;
     }
 
     if (validImages.length === 0) {
-      setMessage("Dodaj fotografiju predmeta u podržanom slikovnom formatu.");
+      setMessage("Podržane su JPG, PNG i WEBP slike.");
       event.target.value = "";
       return;
     }
@@ -89,19 +102,24 @@ export function AiListingAssistant({
     const nextImages = validImages.slice(0, availableSlots).map((file) => ({
       id: `${file.name}-${file.lastModified}-${crypto.randomUUID()}`,
       file,
-      previewUrl: URL.createObjectURL(file)
+      previewUrl: URL.createObjectURL(file),
+      status: "ready" as const
     }));
 
     setImages((current) => [...current, ...nextImages]);
 
     if (validImages.length > availableSlots || selectedFiles.length > availableSlots) {
-      setMessage("Dodane su prve 3 slike. Za AI prijedlog je dovoljno 1 do 3 fotografije.");
+      setMessage("Za AI prijedlog možeš dodati najviše 3 slike.");
+    } else if (validImages.length !== selectedFiles.length) {
+      setMessage("Podržane su JPG, PNG i WEBP slike.");
     }
 
     event.target.value = "";
   }
 
   function removeImage(id: string) {
+    const removedImage = imagesRef.current.find((image) => image.id === id);
+
     setImages((current) => {
       const image = current.find((item) => item.id === id);
 
@@ -111,27 +129,89 @@ export function AiListingAssistant({
 
       return current.filter((item) => item.id !== id);
     });
+
+    if (removedImage?.storageId) {
+      setUploadedStorageIds((current) => current.filter((storageId) => storageId !== removedImage.storageId));
+    } else {
+      setUploadedStorageIds([]);
+    }
+
     setAssistantState("idle");
     setMessage("");
   }
 
-  function handleSuggestClick() {
+  async function handleSuggestClick() {
     if (images.length < 1) {
       setMessage("Dodaj barem jednu sliku predmeta prije AI prijedloga.");
       return;
     }
 
-    setAssistantState("loading");
-    setMessage("Slike ostaju samo u pregledniku. AI analiza se povezuje u sljedećem koraku.");
-
-    if (timerRef.current) {
-      window.clearTimeout(timerRef.current);
+    if (images.length > MAX_AI_IMAGES) {
+      setMessage("Za AI prijedlog možeš dodati najviše 3 slike.");
+      return;
     }
 
-    timerRef.current = window.setTimeout(() => {
-      setAssistantState("preview");
-      setMessage("UI je spreman za budući AI prijedlog. Možeš nastaviti ručno.");
-    }, 700);
+    setAssistantState("uploading");
+    setMessage("Pripremamo slike za AI analizu.");
+    setImages((current) =>
+      current.map((image) => ({
+        ...image,
+        status: image.storageId ? "uploaded" : "preparing",
+        error: undefined
+      }))
+    );
+
+    const storageIds: string[] = [];
+
+    try {
+      for (const image of images) {
+        if (image.storageId) {
+          storageIds.push(image.storageId);
+          continue;
+        }
+
+        const upload = await uploadListingImageToConvexStorage({
+          file: image.file,
+          generateUploadUrl,
+          prepareErrorMessage: aiImageUploadErrorMessage,
+          uploadErrorMessage: aiImageUploadErrorMessage
+        });
+
+        storageIds.push(upload.storageId);
+
+        setImages((current) =>
+          current.map((item) =>
+            item.id === image.id
+              ? {
+                  ...item,
+                  status: "uploaded",
+                  storageId: upload.storageId,
+                  compressedSize: upload.compressedSize
+                }
+              : item
+          )
+        );
+      }
+
+      setUploadedStorageIds(storageIds);
+      setAssistantState("prepared");
+      setMessage("Slike su pripremljene za AI analizu.");
+    } catch {
+      setAssistantState("idle");
+      setUploadedStorageIds([]);
+      setImages((current) =>
+        current.map((image) =>
+          image.status === "preparing"
+            ? {
+                ...image,
+                status: "error",
+                error: "Slika nije pripremljena."
+              }
+            : image
+        )
+      );
+      setMessage(aiImageUploadErrorMessage);
+    }
   }
 
   return (
@@ -148,7 +228,7 @@ export function AiListingAssistant({
             Slikaj predmet i predloži oglas
           </h2>
           <p className="mt-2 text-sm font-semibold leading-relaxed text-ink/68">
-            Dodaj 1-3 fotografije predmeta, a Buvljak će ti predložiti naslov, opis i okvirnu cijenu.
+            Dodaj 1-3 fotografije predmeta. Slike ćemo smanjiti i pripremiti za budući AI prijedlog.
           </p>
         </div>
       </div>
@@ -171,18 +251,20 @@ export function AiListingAssistant({
         <label className="focus-ring flex min-h-28 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-moss/38 bg-white px-4 text-center text-sm font-black text-mossDark transition hover:bg-field">
           <input
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp"
             capture="environment"
             multiple
             className="sr-only"
             onChange={handleImagesChange}
-            disabled={isDisabled || assistantState === "loading" || images.length >= MAX_AI_IMAGES}
+            disabled={isDisabled || assistantState === "uploading" || images.length >= MAX_AI_IMAGES}
           />
           <span className="grid h-10 w-10 place-items-center rounded-lg bg-moss/10">
             <Camera aria-hidden="true" size={20} />
           </span>
           <span>Slikaj ili dodaj slike predmeta</span>
-          <span className="text-xs font-bold text-ink/52">1 do 3 slike, samo lokalni pregled u ovom koraku</span>
+          <span className="text-xs font-bold text-ink/52">
+            JPG, PNG ili WEBP. Upload kreće tek kad klikneš Predloži oglas.
+          </span>
         </label>
 
         {images.length > 0 ? (
@@ -197,11 +279,31 @@ export function AiListingAssistant({
                     onClick={() => removeImage(image.id)}
                     className="focus-ring absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-lg bg-white/92 text-ink shadow-sm"
                     aria-label="Ukloni sliku za AI prijedlog"
+                    disabled={assistantState === "uploading"}
                   >
                     <X aria-hidden="true" size={16} />
                   </button>
                 </div>
-                <p className="mt-2 truncate text-xs font-black text-ink/62">{image.file.name}</p>
+                <div className="mt-2 flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-black text-ink/72">{image.file.name}</p>
+                    <p className="mt-0.5 text-xs font-bold text-ink/50">
+                      {formatImageBytes(image.file.size)}
+                      {image.compressedSize ? ` -> ${formatImageBytes(image.compressedSize)}` : ""}
+                    </p>
+                    {image.error ? <p className="mt-1 text-xs font-black text-clay">{image.error}</p> : null}
+                  </div>
+                  <span
+                    className={`inline-flex h-7 shrink-0 items-center rounded-full px-2 text-[11px] font-black ${getImageStatusClassName(
+                      image.status
+                    )}`}
+                  >
+                    {image.status === "preparing" ? (
+                      <Loader2 aria-hidden="true" className="mr-1 animate-spin" size={12} />
+                    ) : null}
+                    {getImageStatusLabel(image.status)}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
@@ -209,10 +311,13 @@ export function AiListingAssistant({
       </div>
 
       {message ? (
-        <div className="mt-4 flex gap-2 rounded-lg border border-ink/8 bg-white p-3 text-sm font-black text-ink/66" aria-live="polite">
-          {assistantState === "loading" ? (
+        <div
+          className="mt-4 flex gap-2 rounded-lg border border-ink/8 bg-white p-3 text-sm font-black text-ink/66"
+          aria-live="polite"
+        >
+          {assistantState === "uploading" ? (
             <Loader2 aria-hidden="true" className="mt-0.5 shrink-0 animate-spin text-moss" size={17} />
-          ) : assistantState === "preview" ? (
+          ) : assistantState === "prepared" ? (
             <CheckCircle2 aria-hidden="true" className="mt-0.5 shrink-0 text-mossDark" size={17} />
           ) : (
             <AlertCircle aria-hidden="true" className="mt-0.5 shrink-0 text-clay" size={17} />
@@ -221,48 +326,19 @@ export function AiListingAssistant({
         </div>
       ) : null}
 
-      {assistantState === "loading" ? (
-        <div className="mt-4 rounded-lg border border-ink/10 bg-white p-4">
-          <div className="flex items-center gap-2 text-sm font-black text-mossDark">
-            <Loader2 aria-hidden="true" className="animate-spin" size={17} />
-            Analiziram predmet...
-          </div>
-          <div className="mt-4 grid gap-2">
-            <div className="h-4 w-3/4 animate-pulse rounded-full bg-field" />
-            <div className="h-4 w-full animate-pulse rounded-full bg-field" />
-            <div className="h-4 w-2/3 animate-pulse rounded-full bg-field" />
-          </div>
-        </div>
-      ) : null}
-
-      {assistantState === "preview" ? (
+      {assistantState === "prepared" ? (
         <div className="mt-4 rounded-lg border border-ink/10 bg-white p-4 shadow-sm">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h3 className="text-lg font-black text-ink">Pregled AI prijedloga</h3>
+              <h3 className="text-lg font-black text-ink">Slike su spremne</h3>
               <p className="mt-1 text-sm font-semibold leading-relaxed text-ink/62">
-                Ovdje će se prikazati prijedlog nakon povezivanja sigurnog server-side AI actiona.
+                AI prijedlog bit će povezan u sljedećem koraku. Ovdje još ne prikazujemo stvarni AI rezultat.
               </p>
             </div>
-            <span className="inline-flex h-8 items-center rounded-full bg-field px-3 text-xs font-black text-ink/54">
-              Priprema
+            <span className="inline-flex h-8 items-center rounded-full bg-moss/10 px-3 text-xs font-black text-mossDark">
+              {uploadedStorageIds.length} / {images.length} spremljeno
             </span>
           </div>
-
-          <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-            {resultSlots.map((slot) => (
-              <div
-                key={slot}
-                className={slot === "Predloženi opis" || slot === "Tekst za Facebook" ? "sm:col-span-2" : undefined}
-              >
-                <dt className="text-xs font-black uppercase tracking-[0.1em] text-ink/45">{slot}</dt>
-                <dd className="mt-2 rounded-lg bg-field p-3">
-                  <span className="block h-3 w-3/4 rounded-full bg-ink/10" />
-                  <span className="sr-only">Mjesto za budući AI prijedlog</span>
-                </dd>
-              </div>
-            ))}
-          </dl>
 
           <div className="mt-4 flex flex-col gap-2 sm:flex-row">
             <button
@@ -289,20 +365,20 @@ export function AiListingAssistant({
         <button
           type="button"
           onClick={handleSuggestClick}
-          disabled={isDisabled || assistantState === "loading"}
+          disabled={isDisabled || assistantState === "uploading"}
           className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-moss px-5 text-base font-black text-white transition hover:bg-mossDark disabled:cursor-not-allowed disabled:bg-ink/30"
         >
-          {assistantState === "loading" ? (
+          {assistantState === "uploading" ? (
             <Loader2 aria-hidden="true" className="animate-spin" size={18} />
           ) : (
             <ImagePlus aria-hidden="true" size={18} />
           )}
-          {assistantState === "loading" ? "Analiziram predmet" : "Predloži oglas"}
+          {assistantState === "uploading" ? "Pripremam slike" : "Predloži oglas"}
         </button>
         <button
           type="button"
           onClick={onManualContinue}
-          disabled={isDisabled}
+          disabled={isDisabled || assistantState === "uploading"}
           className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-ink/12 bg-white px-5 text-base font-black text-ink transition hover:bg-field disabled:cursor-not-allowed disabled:opacity-50"
         >
           <PencilLine aria-hidden="true" size={18} />
