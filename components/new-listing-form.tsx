@@ -16,7 +16,10 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
-import { AiListingAssistant } from "@/components/ai-listing-assistant";
+import {
+  AiListingAssistant,
+  type AiListingDraftSuggestion
+} from "@/components/ai-listing-assistant";
 import { api } from "@/convex/_generated/api";
 import { formatImageBytes, uploadListingImageToConvexStorage } from "@/lib/listing-images";
 import {
@@ -310,6 +313,59 @@ function ConnectedNewListingForm() {
       openToSuggestions: type === "swap" ? current.openToSuggestions : true
     }));
     setError(null);
+  }
+
+  function handleApplyAiSuggestion(suggestion: AiListingDraftSuggestion) {
+    setForm((current) => {
+      const category = categories.includes(suggestion.suggestedCategory)
+        ? suggestion.suggestedCategory
+        : "Ostalo";
+      let price = current.price;
+      let priceType = current.priceType;
+      let acceptOffers = current.acceptOffers;
+
+      if (current.type === "sell") {
+        price =
+          suggestion.recommendedPrice !== null
+            ? String(suggestion.recommendedPrice)
+            : current.price;
+        priceType = suggestion.shouldAllowOffers ? "negotiable" : "fixed";
+        acceptOffers = suggestion.shouldAllowOffers;
+      }
+
+      if (current.type === "give") {
+        price = "";
+        priceType = "free";
+        acceptOffers = false;
+      }
+
+      if (current.type === "swap") {
+        price = "";
+        priceType = "swap";
+        acceptOffers = true;
+      }
+
+      if (current.type === "want") {
+        price =
+          suggestion.recommendedPrice !== null
+            ? String(suggestion.recommendedPrice)
+            : current.price;
+        priceType = "wanted";
+        acceptOffers = false;
+      }
+
+      return {
+        ...current,
+        title: suggestion.suggestedTitle || current.title,
+        description: suggestion.suggestedDescription || current.description,
+        category,
+        price,
+        priceType,
+        acceptOffers
+      };
+    });
+    setError(null);
+    goToStep(1);
   }
 
   async function handleImportSubmit() {
@@ -801,7 +857,15 @@ function ConnectedNewListingForm() {
           </fieldset>
 
           {creationMode === "manual" ? (
-            <AiListingAssistant isDisabled={isSubmitting} onManualContinue={() => goToStep(1)} />
+            <AiListingAssistant
+              listingType={form.type}
+              existingTitle={form.title}
+              existingDescription={form.description}
+              existingCategory={form.category}
+              isDisabled={isSubmitting}
+              onApplySuggestion={handleApplyAiSuggestion}
+              onManualContinue={() => goToStep(1)}
+            />
           ) : null}
         </>
       ) : null}

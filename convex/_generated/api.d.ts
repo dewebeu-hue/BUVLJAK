@@ -10,6 +10,7 @@
 
 import type * as admin from "../admin.js";
 import type * as adminAuth from "../adminAuth.js";
+import type * as aiListingAssistant from "../aiListingAssistant.js";
 import type * as authDebug from "../authDebug.js";
 import type * as contact from "../contact.js";
 import type * as facebookImports from "../facebookImports.js";
@@ -31,6 +32,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
   adminAuth: typeof adminAuth;
+  aiListingAssistant: typeof aiListingAssistant;
   authDebug: typeof authDebug;
   contact: typeof contact;
   facebookImports: typeof facebookImports;
