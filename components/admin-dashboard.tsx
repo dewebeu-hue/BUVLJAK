@@ -785,16 +785,16 @@ function AdminReadinessSection() {
 }
 
 function AdminServicesToggleCard() {
-  const settings = useQuery(api.monetization.getMonetizationSettings) as
+  const featureFlags = useQuery(api.features.getAdminFeatureFlags) as
     | AdminServicesSettings
     | undefined;
-  const updateSettings = useMutation(api.monetization.updateMonetizationSettings);
+  const adminSetServicesEnabled = useMutation(api.features.adminSetServicesEnabled);
   const [isSaving, setIsSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
-  const isEnabled = Boolean(settings?.servicesEnabled);
+  const isEnabled = Boolean(featureFlags?.servicesEnabled);
 
   async function toggleServices(nextEnabled: boolean) {
-    if (!settings || isSaving) {
+    if (!featureFlags || isSaving) {
       return;
     }
 
@@ -802,7 +802,7 @@ function AdminServicesToggleCard() {
     setStatusMessage("");
 
     try {
-      await updateSettings({ servicesEnabled: nextEnabled });
+      await adminSetServicesEnabled({ enabled: nextEnabled });
       setStatusMessage("Postavka za Usluge i pomoć je spremljena.");
     } catch {
       setStatusMessage("Samo admin može mijenjati beta module.");
@@ -840,7 +840,7 @@ function AdminServicesToggleCard() {
           role="switch"
           aria-checked={isEnabled}
           onClick={() => toggleServices(!isEnabled)}
-          disabled={settings === undefined || isSaving}
+          disabled={featureFlags === undefined || isSaving}
           className={`focus-ring relative h-8 w-14 shrink-0 rounded-full border transition disabled:cursor-not-allowed disabled:opacity-55 ${
             isEnabled ? "border-moss bg-moss" : "border-ink/14 bg-white"
           }`}
@@ -860,7 +860,7 @@ function AdminServicesToggleCard() {
           {statusMessage}
         </p>
       ) : null}
-      {settings === undefined ? (
+      {featureFlags === undefined ? (
         <p className="mt-3 text-xs font-black text-ink/52">Učitavanje postavke...</p>
       ) : null}
     </div>

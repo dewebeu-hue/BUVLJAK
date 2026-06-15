@@ -88,6 +88,13 @@ export default defineSchema({
     updatedBy: v.optional(v.id("users"))
   }).index("by_updatedAt", ["updatedAt"]),
 
+  featureFlags: defineTable({
+    servicesEnabled: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    updatedBy: v.optional(v.id("users"))
+  }).index("by_updatedAt", ["updatedAt"]),
+
   localSponsors: defineTable({
     name: v.string(),
     headline: v.string(),

@@ -39,8 +39,10 @@ type SearchParamsReader = {
   get: (name: string) => string | null;
 };
 type PublicMonetizationSettings = {
-  servicesEnabled: boolean;
   featuredListingsEnabled: boolean;
+};
+type PublicFeatureFlags = {
+  servicesEnabled: boolean;
 };
 
 const itemQuickFilterOptions: Array<{ value: QuickFilterValue; label: string }> = [
@@ -110,15 +112,18 @@ function ConnectedListingsExplorer({
   const settings = useQuery(api.monetization.getMonetizationSettings) as
     | PublicMonetizationSettings
     | undefined;
+  const featureFlags = useQuery(api.features.getPublicFeatureFlags) as
+    | PublicFeatureFlags
+    | undefined;
 
   return (
     <ListingsExplorerContent
       key={searchParamsKey || "all"}
       initialFilters={initialFilters}
       searchParamsKey={searchParamsKey}
-      servicesEnabled={Boolean(settings?.servicesEnabled)}
+      servicesEnabled={Boolean(featureFlags?.servicesEnabled)}
       showFeatured={Boolean(settings?.featuredListingsEnabled)}
-      isServicesSettingLoading={settings === undefined}
+      isServicesSettingLoading={featureFlags === undefined}
     />
   );
 }
@@ -908,9 +913,9 @@ function ServicesEmptyState() {
       <span className="mx-auto grid h-12 w-12 place-items-center rounded-lg bg-moss/10 text-mossDark">
         <Filter aria-hidden="true" size={22} />
       </span>
-      <h2 className="mt-4 text-xl font-black text-ink">Još nema objavljenih usluga.</h2>
+      <h2 className="mt-4 text-xl font-black text-ink">Usluge i pomoć još su u beta pripremi.</h2>
       <p className="mx-auto mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/64">
-        Uskoro ćeš ovdje moći pronaći košnju, drva, kućne radove i lokalnu pomoć.
+        Uskoro ćeš ovdje moći pronaći košnju, drva, kućne radove, prijevoz i lokalnu pomoć.
       </p>
       <p className="mx-auto mt-4 max-w-2xl rounded-lg border border-honey/24 bg-honey/14 p-3 text-sm font-bold leading-relaxed text-ink/70">
         Buvljak.hr ne zapošljava, ne posreduje pri zapošljavanju i ne sudjeluje u plaćanju.
