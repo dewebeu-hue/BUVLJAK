@@ -17,6 +17,8 @@ CLERK_JWT_ISSUER_DOMAIN=
 RESEND_API_KEY=
 CONTACT_FROM_EMAIL=
 OPENAI_API_KEY=
+OPENAI_MODEL=
+AI_LISTING_ASSISTANT_ENABLED=
 ```
 
 Admin pristup nije konfiguriran preko env varijable. Dopusten je samo za Clerk korisnika s emailom `deweb.eu@gmail.com`.
@@ -67,7 +69,8 @@ Rucno provjeri:
 - Provjeri Clerk production keys.
 - Provjeri Convex production deployment i `NEXT_PUBLIC_CONVEX_URL`.
 - Provjeri Resend sender domenu ili sender email ako se koriste email obavijesti.
-- Provjeri OpenAI key ako zelis AI pomoc za Facebook tekst.
+- Provjeri OpenAI key ako zelis AI pomoc za Facebook tekst i AI prijedlog oglasa.
+- `AI_LISTING_ASSISTANT_ENABLED=false` ili `0` gasi AI prijedlog oglasa bez uklanjanja UI-ja.
 - Provjeri da admin pristup radi samo za `deweb.eu@gmail.com`.
 
 ## Convex
