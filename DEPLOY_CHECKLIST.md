@@ -64,19 +64,22 @@ Rucno provjeri:
 ## Vercel
 
 - Povezi GitHub repo s Vercel projektom.
-- Dodaj sve potrebne env varijable u Vercel Project Settings.
-- Postavi `NEXT_PUBLIC_APP_URL` na produkcijski URL.
+- U Vercel Project Settings postavi samo frontend/public i Next.js varijable koje aplikacija treba u browseru ili Next runtimeu:
+  `NEXT_PUBLIC_CONVEX_URL`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `NEXT_PUBLIC_VERCEL_URL`.
 - Provjeri Clerk production keys.
 - Provjeri Convex production deployment i `NEXT_PUBLIC_CONVEX_URL`.
 - Provjeri Resend sender domenu ili sender email ako se koriste email obavijesti.
-- Provjeri OpenAI key ako zelis AI pomoc za Facebook tekst i AI prijedlog oglasa.
-- `AI_LISTING_ASSISTANT_ENABLED=false` ili `0` gasi AI prijedlog oglasa bez uklanjanja UI-ja.
 - Provjeri da admin pristup radi samo za `deweb.eu@gmail.com`.
 
 ## Convex
 
 - Provjeri da Clerk JWT issuer konfiguracija odgovara produkcijskom Clerk projektu.
 - Deployaj Convex funkcije na produkcijski deployment.
+- U Convex Dashboardu, na odgovarajucem deploymentu, postavi server-side tajne i flagove:
+  `OPENAI_API_KEY`, `OPENAI_MODEL`, `AI_LISTING_ASSISTANT_ENABLED`, `RESEND_API_KEY`, `CONTACT_FROM_EMAIL`.
+- `OPENAI_API_KEY` nikad ne smije biti `NEXT_PUBLIC_` varijabla i ne smije biti dostupan frontend bundleu.
+- `AI_LISTING_ASSISTANT_ENABLED=false` ili `0` gasi AI prijedlog oglasa bez uklanjanja UI-ja.
+- Ako `OPENAI_MODEL` nije postavljen, Convex action koristi server-side fallback model.
 - Provjeri da public listing queryji ne vracaju privatne kontakt podatke.
 - Provjeri da contact resolver radi samo nakon korisnickog klika i rate limita.
 
