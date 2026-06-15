@@ -209,6 +209,14 @@ export function SiteHeader() {
                   Moji oglasi
                 </Link>
                 <Link
+                  href="/moj-racun"
+                  onClick={closeMobileMenu}
+                  className="focus-ring flex h-11 items-center gap-3 rounded-lg border border-ink/12 bg-white px-3 text-sm font-black text-ink transition hover:bg-field"
+                >
+                  <UserRound aria-hidden="true" size={18} />
+                  Moj račun
+                </Link>
+                <Link
                   href="/novi-oglas"
                   onClick={closeMobileMenu}
                   className="focus-ring flex h-11 items-center gap-3 rounded-lg bg-moss px-3 text-sm font-black text-white transition hover:bg-mossDark"
@@ -327,6 +335,18 @@ function HeaderAuth({ pathname }: { pathname: string }) {
         >
           <UserRound aria-hidden="true" size={16} />
           Moji oglasi
+        </Link>
+        <Link
+          href="/moj-racun"
+          aria-current={pathname === "/moj-racun" ? "page" : undefined}
+          className={`focus-ring hidden h-10 items-center gap-2 rounded-lg px-3 text-sm font-black transition lg:inline-flex ${
+            pathname === "/moj-racun"
+              ? "bg-moss/10 text-mossDark"
+              : "border border-ink/12 bg-white text-ink hover:bg-field"
+          }`}
+        >
+          <UserRound aria-hidden="true" size={16} />
+          Moj račun
         </Link>
         <Link
           href="/novi-oglas"

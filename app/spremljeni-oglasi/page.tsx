@@ -7,7 +7,7 @@ export default function SavedListingsPage() {
     <main className="px-4 py-8 sm:px-6">
       <div className="mx-auto max-w-6xl">
         <span className="inline-flex rounded-full bg-moss/10 px-3 py-1 text-sm font-black text-mossDark">
-          Korisnički profil
+          Spremljeni oglasi
         </span>
         <div className="mt-3 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
