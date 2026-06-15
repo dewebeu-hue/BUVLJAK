@@ -10,6 +10,7 @@ const hasConvexUrl = Boolean(process.env.NEXT_PUBLIC_CONVEX_URL);
 type MonetizationKey =
   | "localSponsorsEnabled"
   | "featuredListingsEnabled"
+  | "pricingPageVisible"
   | "proPlansEnabled"
   | "paymentsEnabled";
 
@@ -36,6 +37,13 @@ const flagItems: Array<{
     icon: Sparkles
   },
   {
+    key: "pricingPageVisible",
+    label: "Prikaži Pretplate na landingu",
+    description:
+      "Kada je uključeno, korisnici vide tab/stranicu Pretplate s beta paketima. Online plaćanje nije uključeno u MVP-u.",
+    icon: PackageCheck
+  },
+  {
     key: "proPlansEnabled",
     label: "Pro paketi",
     description: "Otvara stranicu s paketima, bez plaćanja i bez checkouta.",
@@ -52,6 +60,7 @@ const flagItems: Array<{
 const defaultSettings: MonetizationSettings = {
   localSponsorsEnabled: false,
   featuredListingsEnabled: false,
+  pricingPageVisible: false,
   proPlansEnabled: false,
   paymentsEnabled: false
 };
@@ -130,7 +139,7 @@ function MonetizationPanelShell({
         <div>
           <h2 className="text-xl font-black text-ink">Monetizacija</h2>
           <p className="mt-2 max-w-3xl text-sm font-semibold leading-relaxed text-ink/64">
-            Skriveni prekidači za lokalne sponzore, isticanje oglasa, pro pakete i buduća plaćanja.
+            Skriveni prekidači za lokalne sponzore, isticanje oglasa, Pretplate, pro pakete i buduća plaćanja.
           </p>
         </div>
         <span className="inline-flex h-9 items-center rounded-full bg-field px-3 text-xs font-black text-ink/64">
@@ -243,6 +252,7 @@ function previewCopy(settings: MonetizationSettings) {
   const visible = [
     settings.localSponsorsEnabled ? "lokalni sponzori u feedu" : null,
     settings.featuredListingsEnabled ? "istaknuti oglasi i beta CTA za vlasnike" : null,
+    settings.pricingPageVisible ? "tab i stranica Pretplate" : null,
     settings.proPlansEnabled ? "stranica s pro paketima" : null
   ].filter(Boolean);
 

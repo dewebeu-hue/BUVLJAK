@@ -8,6 +8,7 @@ import { requireAdmin as requireAdminAccess } from "./adminAuth";
 const DEFAULT_MONETIZATION_SETTINGS = {
   localSponsorsEnabled: false,
   featuredListingsEnabled: false,
+  pricingPageVisible: false,
   proPlansEnabled: false,
   paymentsEnabled: false
 };
@@ -46,6 +47,7 @@ function withDefaults(settings: Doc<"monetizationSettings"> | null) {
       ? {
           localSponsorsEnabled: settings.localSponsorsEnabled,
           featuredListingsEnabled: settings.featuredListingsEnabled,
+          pricingPageVisible: settings.pricingPageVisible ?? false,
           proPlansEnabled: settings.proPlansEnabled,
           paymentsEnabled: settings.paymentsEnabled,
           updatedAt: settings.updatedAt
@@ -101,6 +103,7 @@ export const updateMonetizationSettings = mutation({
   args: {
     localSponsorsEnabled: v.optional(v.boolean()),
     featuredListingsEnabled: v.optional(v.boolean()),
+    pricingPageVisible: v.optional(v.boolean()),
     proPlansEnabled: v.optional(v.boolean()),
     paymentsEnabled: v.optional(v.boolean())
   },
@@ -112,6 +115,7 @@ export const updateMonetizationSettings = mutation({
     const next = {
       localSponsorsEnabled: args.localSponsorsEnabled ?? current.localSponsorsEnabled,
       featuredListingsEnabled: args.featuredListingsEnabled ?? current.featuredListingsEnabled,
+      pricingPageVisible: args.pricingPageVisible ?? current.pricingPageVisible,
       proPlansEnabled: args.proPlansEnabled ?? current.proPlansEnabled,
       paymentsEnabled: args.paymentsEnabled ?? current.paymentsEnabled,
       updatedAt: now

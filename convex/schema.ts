@@ -78,6 +78,7 @@ export default defineSchema({
   monetizationSettings: defineTable({
     localSponsorsEnabled: v.boolean(),
     featuredListingsEnabled: v.boolean(),
+    pricingPageVisible: v.optional(v.boolean()),
     proPlansEnabled: v.boolean(),
     paymentsEnabled: v.boolean(),
     createdAt: v.number(),

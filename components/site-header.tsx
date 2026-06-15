@@ -7,6 +7,7 @@ import {
   UserButton,
   useUser
 } from "@clerk/nextjs";
+import { useQuery } from "convex/react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -17,6 +18,7 @@ import {
   LogIn,
   LogOut,
   Menu,
+  PackageCheck,
   PlusCircle,
   Repeat2,
   ScrollText,
@@ -24,6 +26,7 @@ import {
   UserRound,
   X
 } from "lucide-react";
+import { api } from "@/convex/_generated/api";
 
 const navItems = [{ href: "/oglasi", label: "Oglasi", icon: ScrollText }];
 const postLoginPath = "/";
@@ -37,10 +40,24 @@ const mobileMenuLinks = [
   { href: "/oglasi?type=want", label: "Tražim", icon: Search }
 ];
 
+type PublicMonetizationSettings = {
+  pricingPageVisible: boolean;
+};
+
 export function SiteHeader() {
   const pathname = usePathname();
   const { isLoaded, isSignedIn } = useUser();
+  const monetizationSettings = useQuery(api.monetization.getMonetizationSettings) as
+    | PublicMonetizationSettings
+    | undefined;
   const showSignedInMobileMenu = isLoaded && isSignedIn;
+  const showPricingLink = Boolean(monetizationSettings?.pricingPageVisible);
+  const visibleNavItems = showPricingLink
+    ? [...navItems, { href: "/pretplate", label: "Pretplate", icon: PackageCheck }]
+    : navItems;
+  const visibleMobileMenuLinks = showPricingLink
+    ? [...mobileMenuLinks, { href: "/pretplate", label: "Pretplate", icon: PackageCheck }]
+    : mobileMenuLinks;
 
   function closeMobileMenu() {
     const mobileMenuToggle = document.getElementById(mobileMenuToggleId);
@@ -77,7 +94,7 @@ export function SiteHeader() {
         </Link>
 
         <nav aria-label="Glavna navigacija" className="hidden items-center gap-1 sm:flex">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const Icon = item.icon;
             const isActive =
               pathname === item.href || (item.href === "/oglasi" && pathname.startsWith("/oglasi"));
@@ -155,7 +172,7 @@ export function SiteHeader() {
           className="absolute inset-x-3 top-full z-[46] rounded-lg border border-ink/10 bg-white p-3 shadow-soft"
         >
           <nav aria-label="Mobilna navigacija" className="grid gap-1.5">
-            {mobileMenuLinks.map((item) => {
+            {visibleMobileMenuLinks.map((item) => {
               const Icon = item.icon;
 
               return (
