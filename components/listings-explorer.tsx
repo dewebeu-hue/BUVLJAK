@@ -30,11 +30,15 @@ type FeedFilters = {
   city: string;
   category: string;
   maxPrice: string;
+  serviceCategory: string;
+  serviceAvailability: string;
+  serviceDealType: ServiceDealType;
 };
 
 type ContentType = "items" | "services";
 type ServiceFilterValue = "service_offer" | "service_help";
-type QuickFilterValue = ListingType | "all" | "today" | "free" | ServiceFilterValue;
+type ServiceDealType = "all" | "negotiable" | "hourly" | "job" | "free_help";
+type QuickFilterValue = ListingType | "all" | ServiceFilterValue;
 type SearchParamsReader = {
   get: (name: string) => string | null;
 };
@@ -45,15 +49,18 @@ type PublicFeatureFlags = {
   servicesEnabled: boolean;
 };
 
-const itemQuickFilterOptions: Array<{ value: QuickFilterValue; label: string }> = [
-  ...listingTypeFilterOptions,
-  { value: "today", label: "Novo danas" },
-  { value: "free", label: "Besplatno" }
-];
+const itemQuickFilterOptions: Array<{ value: QuickFilterValue; label: string }> = [...listingTypeFilterOptions];
 const serviceQuickFilterOptions: Array<{ value: QuickFilterValue; label: string }> = [
   { value: "all", label: "Sve" },
   { value: "service_offer", label: "Nudim uslugu" },
   { value: "service_help", label: "Tražim pomoć" }
+];
+const serviceDealOptions: Array<{ value: ServiceDealType; label: string }> = [
+  { value: "all", label: "Sve" },
+  { value: "negotiable", label: "Po dogovoru" },
+  { value: "hourly", label: "Po satu" },
+  { value: "job", label: "Po poslu" },
+  { value: "free_help", label: "Besplatna pomoć" }
 ];
 
 function readFeedFiltersFromParams(params: SearchParamsReader): FeedFilters {
@@ -66,15 +73,19 @@ function readFeedFiltersFromParams(params: SearchParamsReader): FeedFilters {
     typeParam === "want"
       ? typeParam
       : "all";
+  const serviceQuickFilter = serviceQuickFilterFromParam(params.get("service"));
 
   return {
     content,
     search: params.get("q") ?? "",
-    quickFilter: content === "services" ? "all" : type,
+    quickFilter: content === "services" ? serviceQuickFilter : type,
     type,
     city: params.get("city") ?? "",
-    category: params.get("category") ?? "",
-    maxPrice: params.get("maxPrice") ?? ""
+    category: content === "items" ? params.get("category") ?? "" : "",
+    maxPrice: content === "items" ? params.get("maxPrice") ?? "" : "",
+    serviceCategory: content === "services" ? params.get("serviceCategory") ?? "" : "",
+    serviceAvailability: content === "services" ? params.get("availability") ?? "" : "",
+    serviceDealType: content === "services" ? serviceDealTypeFromParam(params.get("dealType")) : "all"
   };
 }
 
@@ -149,16 +160,42 @@ function ListingsExplorerContent({
   const [city, setCity] = useState(initialFilters.city);
   const [category, setCategory] = useState(initialFilters.category);
   const [maxPrice, setMaxPrice] = useState(initialFilters.maxPrice);
+  const [serviceCategory, setServiceCategory] = useState(initialFilters.serviceCategory);
+  const [serviceAvailability, setServiceAvailability] = useState(initialFilters.serviceAvailability);
+  const [serviceDealType, setServiceDealType] = useState<ServiceDealType>(initialFilters.serviceDealType);
   const [areFiltersOpen, setAreFiltersOpen] = useState(false);
   const [limit, setLimit] = useState(PAGE_SIZE);
   const isMounted = useClientMounted();
   const type = listingTypeFromQuickFilter(quickFilter);
   const isServicesContent = servicesEnabled && contentType === "services";
   const activeQuickFilterOptions = isServicesContent ? serviceQuickFilterOptions : itemQuickFilterOptions;
+  const filterPanelColumns = isServicesContent ? "md:grid-cols-2 lg:grid-cols-4" : "md:grid-cols-3";
 
   const filters = useMemo<FeedFilters>(
-    () => ({ content: contentType, search, quickFilter, type, city, category, maxPrice }),
-    [category, city, contentType, maxPrice, quickFilter, search, type]
+    () => ({
+      content: contentType,
+      search,
+      quickFilter,
+      type,
+      city,
+      category,
+      maxPrice,
+      serviceCategory,
+      serviceAvailability,
+      serviceDealType
+    }),
+    [
+      category,
+      city,
+      contentType,
+      maxPrice,
+      quickFilter,
+      search,
+      serviceAvailability,
+      serviceCategory,
+      serviceDealType,
+      type
+    ]
   );
   const secondaryFilterCount = countSecondaryFilters(filters);
 
@@ -170,6 +207,7 @@ function ListingsExplorerContent({
     const nextParams = new URLSearchParams(searchParamsKey);
     nextParams.set("content", "items");
     nextParams.delete("type");
+    clearServiceFilterParams(nextParams);
     const nextQuery = nextParams.toString();
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
   }, [contentType, isServicesSettingLoading, pathname, router, searchParamsKey, servicesEnabled]);
@@ -182,14 +220,23 @@ function ListingsExplorerContent({
     setContentType(nextContentType);
     setQuickFilter("all");
     setLimit(PAGE_SIZE);
+    if (nextContentType === "services") {
+      setCategory("");
+      setMaxPrice("");
+    } else {
+      setServiceCategory("");
+      setServiceAvailability("");
+      setServiceDealType("all");
+    }
 
     const nextParams = new URLSearchParams(searchParamsKey);
     nextParams.set("content", nextContentType);
     nextParams.delete("type");
+    nextParams.delete("service");
+    clearItemFilterParams(nextParams);
+    clearServiceFilterParams(nextParams);
     syncTextParam(nextParams, "q", search);
     syncTextParam(nextParams, "city", city);
-    syncTextParam(nextParams, "category", category);
-    syncTextParam(nextParams, "maxPrice", maxPrice);
 
     const nextQuery = nextParams.toString();
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
@@ -199,7 +246,22 @@ function ListingsExplorerContent({
     setQuickFilter(nextFilter);
     setLimit(PAGE_SIZE);
 
+    const nextParams = new URLSearchParams(searchParamsKey);
+
+    syncTextParam(nextParams, "q", search);
+    syncTextParam(nextParams, "city", city);
+
     if (contentType === "services") {
+      nextParams.set("content", "services");
+      nextParams.delete("type");
+      clearItemFilterParams(nextParams);
+      syncServiceQuickFilterParam(nextParams, nextFilter);
+      syncTextParam(nextParams, "serviceCategory", serviceCategory);
+      syncTextParam(nextParams, "availability", serviceAvailability);
+      syncServiceDealTypeParam(nextParams, serviceDealType);
+
+      const nextQuery = nextParams.toString();
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
       return;
     }
 
@@ -207,10 +269,9 @@ function ListingsExplorerContent({
       return;
     }
 
-    const nextParams = new URLSearchParams(searchParamsKey);
-
-    syncTextParam(nextParams, "q", search);
-    syncTextParam(nextParams, "city", city);
+    nextParams.set("content", "items");
+    nextParams.delete("service");
+    clearServiceFilterParams(nextParams);
     syncTextParam(nextParams, "category", category);
     syncTextParam(nextParams, "maxPrice", maxPrice);
 
@@ -231,9 +292,24 @@ function ListingsExplorerContent({
 
   function clearSecondaryFilters() {
     setCity("");
-    setCategory("");
-    setMaxPrice("");
+    const nextParams = new URLSearchParams(searchParamsKey);
+    nextParams.delete("city");
+
+    if (isServicesContent) {
+      setServiceCategory("");
+      setServiceAvailability("");
+      setServiceDealType("all");
+      clearServiceFilterParams(nextParams);
+    } else {
+      setCategory("");
+      setMaxPrice("");
+      clearItemFilterParams(nextParams);
+    }
+
     setLimit(PAGE_SIZE);
+
+    const nextQuery = nextParams.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
   }
 
   return (
@@ -357,27 +433,61 @@ function ListingsExplorerContent({
 
             <div
               id="feed-secondary-filters"
-              className={`${areFiltersOpen ? "grid" : "hidden"} mt-3 gap-3 rounded-xl border border-ink/10 bg-white/84 p-3 shadow-sm sm:grid sm:grid-cols-3`}
+              className={`${areFiltersOpen ? "grid" : "hidden"} mt-3 gap-3 rounded-xl border border-ink/10 bg-white/84 p-3 shadow-sm md:grid ${filterPanelColumns}`}
             >
-              <FilterInput
-                label="Grad"
-                value={city}
-                onChange={(value) => updateSecondaryFilter(setCity, value)}
-                placeholder="npr. Nova Gradiška"
-              />
-              <FilterInput
-                label="Kategorija"
-                value={category}
-                onChange={(value) => updateSecondaryFilter(setCategory, value)}
-                placeholder="npr. Namještaj"
-              />
-              <FilterInput
-                label="Cijena do"
-                value={maxPrice}
-                onChange={(value) => updateSecondaryFilter(setMaxPrice, value)}
-                placeholder="npr. 100"
-                type="number"
-              />
+              {isServicesContent ? (
+                <>
+                  <FilterInput
+                    label="Grad ili područje"
+                    value={city}
+                    onChange={(value) => updateSecondaryFilter(setCity, value)}
+                    placeholder="npr. Nova Gradiška"
+                  />
+                  <FilterInput
+                    label="Kategorija usluge"
+                    value={serviceCategory}
+                    onChange={(value) => updateSecondaryFilter(setServiceCategory, value)}
+                    placeholder="npr. Košnja, drva, kućni radovi"
+                  />
+                  <FilterInput
+                    label="Kada treba?"
+                    value={serviceAvailability}
+                    onChange={(value) => updateSecondaryFilter(setServiceAvailability, value)}
+                    placeholder="npr. ovaj tjedan"
+                  />
+                  <FilterSelect
+                    label="Način dogovora"
+                    value={serviceDealType}
+                    onChange={(value) => {
+                      setServiceDealType(value);
+                      setLimit(PAGE_SIZE);
+                    }}
+                    options={serviceDealOptions}
+                  />
+                </>
+              ) : (
+                <>
+                  <FilterInput
+                    label="Grad"
+                    value={city}
+                    onChange={(value) => updateSecondaryFilter(setCity, value)}
+                    placeholder="npr. Nova Gradiška"
+                  />
+                  <FilterInput
+                    label="Kategorija"
+                    value={category}
+                    onChange={(value) => updateSecondaryFilter(setCategory, value)}
+                    placeholder="npr. Namještaj"
+                  />
+                  <FilterInput
+                    label="Cijena do"
+                    value={maxPrice}
+                    onChange={(value) => updateSecondaryFilter(setMaxPrice, value)}
+                    placeholder="npr. 100"
+                    type="number"
+                  />
+                </>
+              )}
             </div>
           </div>
 
@@ -428,8 +538,11 @@ function hasSearchIntent(filters: FeedFilters) {
     filters.search.trim() ||
       filters.quickFilter !== "all" ||
       filters.city.trim() ||
-      filters.category.trim() ||
-      filters.maxPrice.trim()
+      (filters.content === "services"
+        ? filters.serviceCategory.trim() ||
+          filters.serviceAvailability.trim() ||
+          filters.serviceDealType !== "all"
+        : filters.category.trim() || filters.maxPrice.trim())
   );
 }
 
@@ -446,15 +559,17 @@ function listingTypeFromQuickFilter(value: QuickFilterValue): ListingType | "all
     return value;
   }
 
-  if (value === "free") {
-    return "give";
-  }
-
   return "all";
 }
 
 function countSecondaryFilters(filters: FeedFilters) {
-  return [filters.city, filters.category, filters.maxPrice].filter((value) => value.trim()).length;
+  const textFilterCount =
+    filters.content === "services"
+      ? [filters.city, filters.serviceCategory, filters.serviceAvailability].filter((value) => value.trim())
+          .length
+      : [filters.city, filters.category, filters.maxPrice].filter((value) => value.trim()).length;
+
+  return textFilterCount + (filters.content === "services" && filters.serviceDealType !== "all" ? 1 : 0);
 }
 
 function syncTextParam(params: URLSearchParams, key: string, value: string) {
@@ -467,6 +582,59 @@ function syncTextParam(params: URLSearchParams, key: string, value: string) {
   }
 }
 
+function clearItemFilterParams(params: URLSearchParams) {
+  params.delete("category");
+  params.delete("maxPrice");
+}
+
+function clearServiceFilterParams(params: URLSearchParams) {
+  params.delete("service");
+  params.delete("serviceCategory");
+  params.delete("availability");
+  params.delete("dealType");
+}
+
+function serviceQuickFilterFromParam(value: string | null): QuickFilterValue {
+  if (value === "offer") {
+    return "service_offer";
+  }
+
+  if (value === "help") {
+    return "service_help";
+  }
+
+  return "all";
+}
+
+function syncServiceQuickFilterParam(params: URLSearchParams, value: QuickFilterValue) {
+  if (value === "service_offer") {
+    params.set("service", "offer");
+    return;
+  }
+
+  if (value === "service_help") {
+    params.set("service", "help");
+    return;
+  }
+
+  params.delete("service");
+}
+
+function serviceDealTypeFromParam(value: string | null): ServiceDealType {
+  return value === "negotiable" || value === "hourly" || value === "job" || value === "free_help"
+    ? value
+    : "all";
+}
+
+function syncServiceDealTypeParam(params: URLSearchParams, value: ServiceDealType) {
+  if (value === "all") {
+    params.delete("dealType");
+    return;
+  }
+
+  params.set("dealType", value);
+}
+
 function listingMatchesQuickFilter(listing: Listing, quickFilter: QuickFilterValue) {
   if (quickFilter === "all") {
     return true;
@@ -476,26 +644,11 @@ function listingMatchesQuickFilter(listing: Listing, quickFilter: QuickFilterVal
     return listing.type === quickFilter;
   }
 
-  if (quickFilter === "free") {
-    return listing.type === "give" || listing.priceType === "free" || listing.price === 0;
-  }
-
   if (isServiceFilter(quickFilter)) {
     return true;
   }
 
-  return isCreatedToday(listing.createdAt);
-}
-
-function isCreatedToday(createdAt: string) {
-  const created = new Date(createdAt);
-  const today = new Date();
-
-  return (
-    created.getFullYear() === today.getFullYear() &&
-    created.getMonth() === today.getMonth() &&
-    created.getDate() === today.getDate()
-  );
+  return true;
 }
 
 function SavedSearchPrompt({ filters }: { filters: FeedFilters }) {
@@ -701,7 +854,10 @@ function filtersKey(filters: FeedFilters) {
     filters.type,
     filters.city,
     filters.category,
-    filters.maxPrice
+    filters.maxPrice,
+    filters.serviceCategory,
+    filters.serviceAvailability,
+    filters.serviceDealType
   ].join("|");
 }
 
@@ -862,6 +1018,38 @@ function FilterInput({
   );
 }
 
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options
+}: {
+  label: string;
+  value: ServiceDealType;
+  onChange: (value: ServiceDealType) => void;
+  options: Array<{ value: ServiceDealType; label: string }>;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-2 inline-flex items-center gap-2 text-sm font-black text-ink">
+        <Filter aria-hidden="true" size={16} className="text-moss" />
+        {label}
+      </span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value as ServiceDealType)}
+        className="focus-ring h-12 w-full rounded-lg border border-ink/12 bg-white px-4 text-sm font-bold text-ink"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 function ListingsSkeleton() {
   return (
     <div className="mx-auto grid max-w-xl gap-4 sm:max-w-3xl sm:grid-cols-2 lg:max-w-4xl" aria-label="Oglasi se učitavaju">
@@ -909,7 +1097,7 @@ function EmptyListingsState() {
 
 function ServicesEmptyState() {
   return (
-    <div className="mx-auto max-w-xl rounded-xl border border-dashed border-moss/24 bg-white p-7 text-center shadow-sm sm:p-8">
+    <div className="mx-auto mb-24 max-w-xl rounded-xl border border-dashed border-moss/24 bg-white p-7 text-center shadow-sm sm:p-8 md:mb-0">
       <span className="mx-auto grid h-12 w-12 place-items-center rounded-lg bg-moss/10 text-mossDark">
         <Filter aria-hidden="true" size={22} />
       </span>
