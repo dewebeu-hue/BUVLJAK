@@ -10,11 +10,15 @@ const DEFAULT_MONETIZATION_SETTINGS = {
   featuredListingsEnabled: false,
   showPricingOnLanding: false,
   pricingPageVisible: false,
+  servicesEnabled: false,
   proPlansEnabled: false,
   paymentsEnabled: false
 };
 
 type ConvexCtx = GenericQueryCtx<DataModel> | GenericMutationCtx<DataModel>;
+type MonetizationSettingsWithServices = Doc<"monetizationSettings"> & {
+  servicesEnabled?: boolean;
+};
 
 function cleanOptional(value?: string) {
   const cleaned = value?.trim();
@@ -45,6 +49,7 @@ function withDefaults(settings: Doc<"monetizationSettings"> | null) {
   const showPricingOnLanding = settings
     ? settings.showPricingOnLanding ?? settings.pricingPageVisible ?? false
     : false;
+  const settingsWithServices = settings as MonetizationSettingsWithServices | null;
 
   return {
     ...DEFAULT_MONETIZATION_SETTINGS,
@@ -54,6 +59,7 @@ function withDefaults(settings: Doc<"monetizationSettings"> | null) {
           featuredListingsEnabled: settings.featuredListingsEnabled,
           showPricingOnLanding,
           pricingPageVisible: showPricingOnLanding,
+          servicesEnabled: settingsWithServices?.servicesEnabled ?? false,
           proPlansEnabled: settings.proPlansEnabled,
           paymentsEnabled: settings.paymentsEnabled,
           updatedAt: settings.updatedAt
@@ -111,6 +117,7 @@ export const updateMonetizationSettings = mutation({
     featuredListingsEnabled: v.optional(v.boolean()),
     showPricingOnLanding: v.optional(v.boolean()),
     pricingPageVisible: v.optional(v.boolean()),
+    servicesEnabled: v.optional(v.boolean()),
     proPlansEnabled: v.optional(v.boolean()),
     paymentsEnabled: v.optional(v.boolean())
   },
@@ -126,6 +133,7 @@ export const updateMonetizationSettings = mutation({
       featuredListingsEnabled: args.featuredListingsEnabled ?? current.featuredListingsEnabled,
       showPricingOnLanding,
       pricingPageVisible: showPricingOnLanding,
+      servicesEnabled: args.servicesEnabled ?? current.servicesEnabled,
       proPlansEnabled: args.proPlansEnabled ?? current.proPlansEnabled,
       paymentsEnabled: args.paymentsEnabled ?? current.paymentsEnabled,
       updatedAt: now

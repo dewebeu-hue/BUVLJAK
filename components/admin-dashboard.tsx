@@ -22,7 +22,8 @@ import {
   Sparkles,
   Trash2,
   UserCog,
-  Users
+  Users,
+  Wrench
 } from "lucide-react";
 import { AdminMonetizationPanel } from "@/components/admin-monetization-panel";
 import { AdminSearchNotificationsPanel } from "@/components/admin-search-notifications-panel";
@@ -92,6 +93,10 @@ type AdminUser = {
   listingsCount: number;
   activeListingsCount: number;
   createdAt: number;
+};
+type AdminServicesSettings = {
+  servicesEnabled: boolean;
+  updatedAt?: number;
 };
 
 const tabs: Array<{ id: AdminTab; label: string; icon: typeof BarChart3 }> = [
@@ -724,6 +729,7 @@ function AdminReadinessSection() {
   return (
     <section className="mt-7">
       <AdminSectionHeader title="Beta readiness" description="Jednostavna checklist provjera prije zatvorene bete." />
+      <AdminServicesToggleCard />
       <div className="mt-4 rounded-lg border border-ink/10 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -775,6 +781,89 @@ function AdminReadinessSection() {
         </div>
       </div>
     </section>
+  );
+}
+
+function AdminServicesToggleCard() {
+  const settings = useQuery(api.monetization.getMonetizationSettings) as
+    | AdminServicesSettings
+    | undefined;
+  const updateSettings = useMutation(api.monetization.updateMonetizationSettings);
+  const [isSaving, setIsSaving] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
+  const isEnabled = Boolean(settings?.servicesEnabled);
+
+  async function toggleServices() {
+    if (!settings || isSaving) {
+      return;
+    }
+
+    setIsSaving(true);
+    setStatusMessage("");
+
+    try {
+      await updateSettings({ servicesEnabled: !isEnabled });
+      setStatusMessage("Postavka za Usluge i pomoć je spremljena.");
+    } catch {
+      setStatusMessage("Samo admin može mijenjati beta module.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <div className="mt-4 rounded-lg border border-moss/16 bg-white p-5 shadow-sm">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex gap-3">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-moss/10 text-mossDark">
+            <Wrench aria-hidden="true" size={21} />
+          </span>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-lg font-black text-ink">Prikaži Usluge i pomoć</h3>
+              <span
+                className={`rounded-full px-2.5 py-1 text-xs font-black ${
+                  isEnabled ? "bg-moss/10 text-mossDark" : "bg-ink/8 text-ink/52"
+                }`}
+              >
+                {isEnabled ? "Uključeno" : "Skriveno"}
+              </span>
+            </div>
+            <p className="mt-2 max-w-3xl text-sm font-semibold leading-relaxed text-ink/64">
+              Kada je uključeno, korisnici na oglasniku vide preklopnik Stvari / Usluge i pomoć.
+              Modul je beta i ne predstavlja posredovanje pri zapošljavanju.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={isEnabled}
+          onClick={toggleServices}
+          disabled={settings === undefined || isSaving}
+          className={`focus-ring relative h-8 w-14 shrink-0 rounded-full border transition disabled:cursor-not-allowed disabled:opacity-55 ${
+            isEnabled ? "border-moss bg-moss" : "border-ink/14 bg-white"
+          }`}
+        >
+          <span
+            className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow-sm transition ${
+              isEnabled ? "left-7" : "left-1"
+            }`}
+          />
+          <span className="sr-only">
+            {isEnabled ? "Isključi" : "Uključi"} Usluge i pomoć
+          </span>
+        </button>
+      </div>
+      {statusMessage ? (
+        <p className="mt-3 text-sm font-black text-mossDark" aria-live="polite">
+          {statusMessage}
+        </p>
+      ) : null}
+      {settings === undefined ? (
+        <p className="mt-3 text-xs font-black text-ink/52">Učitavanje postavke...</p>
+      ) : null}
+    </div>
   );
 }
 

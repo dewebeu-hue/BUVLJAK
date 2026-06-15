@@ -3,7 +3,7 @@
 import { Show, SignInButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Fragment, type FormEvent, useMemo, useState } from "react";
+import { Fragment, type FormEvent, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { Bell, BookmarkPlus, CheckCircle2, Filter, Plus, Search, X } from "lucide-react";
 import { ListingCard } from "@/components/listing-card";
@@ -23,6 +23,7 @@ const PAGE_SIZE = 20;
 const savedSearchesEnabled = false;
 
 type FeedFilters = {
+  content: ContentType;
   search: string;
   quickFilter: QuickFilterValue;
   type: ListingType | "all";
@@ -31,18 +32,30 @@ type FeedFilters = {
   maxPrice: string;
 };
 
-type QuickFilterValue = ListingType | "all" | "today" | "free";
+type ContentType = "items" | "services";
+type ServiceFilterValue = "service_offer" | "service_help";
+type QuickFilterValue = ListingType | "all" | "today" | "free" | ServiceFilterValue;
 type SearchParamsReader = {
   get: (name: string) => string | null;
 };
+type PublicMonetizationSettings = {
+  servicesEnabled: boolean;
+  featuredListingsEnabled: boolean;
+};
 
-const quickFilterOptions: Array<{ value: QuickFilterValue; label: string }> = [
+const itemQuickFilterOptions: Array<{ value: QuickFilterValue; label: string }> = [
   ...listingTypeFilterOptions,
   { value: "today", label: "Novo danas" },
   { value: "free", label: "Besplatno" }
 ];
+const serviceQuickFilterOptions: Array<{ value: QuickFilterValue; label: string }> = [
+  { value: "all", label: "Sve" },
+  { value: "service_offer", label: "Nudim uslugu" },
+  { value: "service_help", label: "Tražim pomoć" }
+];
 
 function readFeedFiltersFromParams(params: SearchParamsReader): FeedFilters {
+  const content = params.get("content") === "services" ? "services" : "items";
   const typeParam = params.get("type");
   const type =
     typeParam === "sell" ||
@@ -53,8 +66,9 @@ function readFeedFiltersFromParams(params: SearchParamsReader): FeedFilters {
       : "all";
 
   return {
+    content,
     search: params.get("q") ?? "",
-    quickFilter: type,
+    quickFilter: content === "services" ? "all" : type,
     type,
     city: params.get("city") ?? "",
     category: params.get("category") ?? "",
@@ -70,24 +84,61 @@ export function ListingsExplorer() {
     [searchParamsKey]
   );
 
-  return (
-    <ListingsExplorerContent
-      key={searchParamsKey || "all"}
-      initialFilters={initialFilters}
-      searchParamsKey={searchParamsKey}
-    />
-  );
+  if (!hasConvexUrl) {
+    return (
+      <ListingsExplorerContent
+        key={searchParamsKey || "all"}
+        initialFilters={initialFilters}
+        searchParamsKey={searchParamsKey}
+        servicesEnabled={false}
+        showFeatured={false}
+        isServicesSettingLoading={false}
+      />
+    );
+  }
+
+  return <ConnectedListingsExplorer initialFilters={initialFilters} searchParamsKey={searchParamsKey} />;
 }
 
-function ListingsExplorerContent({
+function ConnectedListingsExplorer({
   initialFilters,
   searchParamsKey
 }: {
   initialFilters: FeedFilters;
   searchParamsKey: string;
 }) {
+  const settings = useQuery(api.monetization.getMonetizationSettings) as
+    | PublicMonetizationSettings
+    | undefined;
+
+  return (
+    <ListingsExplorerContent
+      key={searchParamsKey || "all"}
+      initialFilters={initialFilters}
+      searchParamsKey={searchParamsKey}
+      servicesEnabled={Boolean(settings?.servicesEnabled)}
+      showFeatured={Boolean(settings?.featuredListingsEnabled)}
+      isServicesSettingLoading={settings === undefined}
+    />
+  );
+}
+
+function ListingsExplorerContent({
+  initialFilters,
+  searchParamsKey,
+  servicesEnabled,
+  showFeatured,
+  isServicesSettingLoading
+}: {
+  initialFilters: FeedFilters;
+  searchParamsKey: string;
+  servicesEnabled: boolean;
+  showFeatured: boolean;
+  isServicesSettingLoading: boolean;
+}) {
   const router = useRouter();
   const pathname = usePathname();
+  const [contentType, setContentType] = useState<ContentType>(initialFilters.content);
   const [search, setSearch] = useState(initialFilters.search);
   const [quickFilter, setQuickFilter] = useState<QuickFilterValue>(initialFilters.quickFilter);
   const [city, setCity] = useState(initialFilters.city);
@@ -97,16 +148,55 @@ function ListingsExplorerContent({
   const [limit, setLimit] = useState(PAGE_SIZE);
   const isMounted = useClientMounted();
   const type = listingTypeFromQuickFilter(quickFilter);
+  const isServicesContent = servicesEnabled && contentType === "services";
+  const activeQuickFilterOptions = isServicesContent ? serviceQuickFilterOptions : itemQuickFilterOptions;
 
   const filters = useMemo<FeedFilters>(
-    () => ({ search, quickFilter, type, city, category, maxPrice }),
-    [category, city, maxPrice, quickFilter, search, type]
+    () => ({ content: contentType, search, quickFilter, type, city, category, maxPrice }),
+    [category, city, contentType, maxPrice, quickFilter, search, type]
   );
   const secondaryFilterCount = countSecondaryFilters(filters);
+
+  useEffect(() => {
+    if (isServicesSettingLoading || servicesEnabled || contentType !== "services") {
+      return;
+    }
+
+    const nextParams = new URLSearchParams(searchParamsKey);
+    nextParams.set("content", "items");
+    nextParams.delete("type");
+    const nextQuery = nextParams.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+  }, [contentType, isServicesSettingLoading, pathname, router, searchParamsKey, servicesEnabled]);
+
+  function updateContentType(nextContentType: ContentType) {
+    if (nextContentType === "services" && !servicesEnabled) {
+      return;
+    }
+
+    setContentType(nextContentType);
+    setQuickFilter("all");
+    setLimit(PAGE_SIZE);
+
+    const nextParams = new URLSearchParams(searchParamsKey);
+    nextParams.set("content", nextContentType);
+    nextParams.delete("type");
+    syncTextParam(nextParams, "q", search);
+    syncTextParam(nextParams, "city", city);
+    syncTextParam(nextParams, "category", category);
+    syncTextParam(nextParams, "maxPrice", maxPrice);
+
+    const nextQuery = nextParams.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+  }
 
   function updateQuickFilter(nextFilter: QuickFilterValue) {
     setQuickFilter(nextFilter);
     setLimit(PAGE_SIZE);
+
+    if (contentType === "services") {
+      return;
+    }
 
     if (nextFilter !== "all" && !isListingTypeFilter(nextFilter)) {
       return;
@@ -184,8 +274,34 @@ function ListingsExplorerContent({
               />
             </label>
 
+            {servicesEnabled ? (
+              <div className="grid grid-cols-2 gap-1 rounded-xl border border-ink/10 bg-white p-1 shadow-sm">
+                {[
+                  { value: "items" as const, label: "Stvari" },
+                  { value: "services" as const, label: "Usluge i pomoć" }
+                ].map((option) => {
+                  const isActive = option.value === contentType;
+
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => updateContentType(option.value)}
+                      className={`focus-ring min-h-11 rounded-lg px-3 text-sm font-black transition ${
+                        isActive
+                          ? "bg-moss text-white shadow-sm"
+                          : "text-ink/68 hover:bg-field hover:text-ink"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+
             <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-2 touch-pan-x sm:mx-0 sm:px-0" aria-label="Brzi filteri">
-              {quickFilterOptions.map((filter) => {
+              {activeQuickFilterOptions.map((filter) => {
                 const isActive = filter.value === quickFilter;
 
                 return (
@@ -260,13 +376,15 @@ function ListingsExplorerContent({
             </div>
           </div>
 
-          {savedSearchesEnabled ? <SavedSearchPrompt filters={filters} /> : null}
+          {savedSearchesEnabled && contentType === "items" ? <SavedSearchPrompt filters={filters} /> : null}
         </div>
       </section>
 
       <section className="px-4 py-6 sm:px-6 sm:py-8">
         <div className="mx-auto max-w-6xl">
-          {!hasConvexUrl ? (
+          {isServicesContent ? (
+            <ServicesEmptyState />
+          ) : !hasConvexUrl ? (
             <ListingsResults
               listings={demoListings}
               filters={filters}
@@ -277,9 +395,14 @@ function ListingsExplorerContent({
               feedSponsors={[]}
             />
           ) : null}
-          {hasConvexUrl && !isMounted ? <ListingsSkeleton /> : null}
-          {hasConvexUrl && isMounted ? (
-            <ConnectedListingsResults filters={filters} limit={limit} setLimit={setLimit} />
+          {hasConvexUrl && !isServicesContent && !isMounted ? <ListingsSkeleton /> : null}
+          {hasConvexUrl && !isServicesContent && isMounted ? (
+            <ConnectedListingsResults
+              filters={filters}
+              limit={limit}
+              setLimit={setLimit}
+              showFeatured={showFeatured}
+            />
           ) : null}
         </div>
       </section>
@@ -307,6 +430,10 @@ function hasSearchIntent(filters: FeedFilters) {
 
 function isListingTypeFilter(value: QuickFilterValue): value is ListingType {
   return value === "sell" || value === "give" || value === "swap" || value === "want";
+}
+
+function isServiceFilter(value: QuickFilterValue): value is ServiceFilterValue {
+  return value === "service_offer" || value === "service_help";
 }
 
 function listingTypeFromQuickFilter(value: QuickFilterValue): ListingType | "all" {
@@ -346,6 +473,10 @@ function listingMatchesQuickFilter(listing: Listing, quickFilter: QuickFilterVal
 
   if (quickFilter === "free") {
     return listing.type === "give" || listing.priceType === "free" || listing.price === 0;
+  }
+
+  if (isServiceFilter(quickFilter)) {
+    return true;
   }
 
   return isCreatedToday(listing.createdAt);
@@ -560,6 +691,7 @@ function SavedSearchField({
 
 function filtersKey(filters: FeedFilters) {
   return [
+    filters.content,
     filters.search,
     filters.type,
     filters.city,
@@ -571,11 +703,13 @@ function filtersKey(filters: FeedFilters) {
 function ConnectedListingsResults({
   filters,
   limit,
-  setLimit
+  setLimit,
+  showFeatured
 }: {
   filters: FeedFilters;
   limit: number;
   setLimit: (next: number | ((current: number) => number)) => void;
+  showFeatured: boolean;
 }) {
   const maxPriceNumber = Number(filters.maxPrice);
   const queryArgs = {
@@ -588,7 +722,6 @@ function ConnectedListingsResults({
       : {})
   };
   const convexListings = useQuery(api.listings.listActiveListings, queryArgs);
-  const monetizationSettings = useQuery(api.monetization.getMonetizationSettings);
   const feedSponsors = useQuery(api.monetization.listVisibleLocalSponsors, {
     placement: "feed"
   }) as PublicLocalSponsor[] | undefined;
@@ -604,7 +737,7 @@ function ConnectedListingsResults({
       isLoading={convexListings === undefined}
       canLoadMore={convexListings !== undefined && rawListings.length >= limit}
       onLoadMore={() => setLimit((current) => current + PAGE_SIZE)}
-      showFeatured={Boolean(monetizationSettings?.featuredListingsEnabled)}
+      showFeatured={showFeatured}
       feedSponsors={feedSponsors ?? []}
     />
   );
@@ -765,6 +898,31 @@ function EmptyListingsState() {
         <Plus aria-hidden="true" size={18} />
         Objavi prvi oglas
       </Link>
+    </div>
+  );
+}
+
+function ServicesEmptyState() {
+  return (
+    <div className="mx-auto max-w-xl rounded-xl border border-dashed border-moss/24 bg-white p-7 text-center shadow-sm sm:p-8">
+      <span className="mx-auto grid h-12 w-12 place-items-center rounded-lg bg-moss/10 text-mossDark">
+        <Filter aria-hidden="true" size={22} />
+      </span>
+      <h2 className="mt-4 text-xl font-black text-ink">Još nema objavljenih usluga.</h2>
+      <p className="mx-auto mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/64">
+        Uskoro ćeš ovdje moći pronaći košnju, drva, kućne radove i lokalnu pomoć.
+      </p>
+      <p className="mx-auto mt-4 max-w-2xl rounded-lg border border-honey/24 bg-honey/14 p-3 text-sm font-bold leading-relaxed text-ink/70">
+        Buvljak.hr ne zapošljava, ne posreduje pri zapošljavanju i ne sudjeluje u plaćanju.
+        Korisnici se sami dogovaraju oko uvjeta, termina i cijene.
+      </p>
+      <button
+        type="button"
+        disabled
+        className="mt-5 inline-flex h-12 cursor-not-allowed items-center justify-center rounded-lg border border-ink/12 bg-field px-5 text-sm font-black text-ink/54"
+      >
+        Objava usluga uskoro
+      </button>
     </div>
   );
 }

@@ -80,6 +80,7 @@ export default defineSchema({
     featuredListingsEnabled: v.boolean(),
     showPricingOnLanding: v.optional(v.boolean()),
     pricingPageVisible: v.optional(v.boolean()),
+    servicesEnabled: v.optional(v.boolean()),
     proPlansEnabled: v.boolean(),
     paymentsEnabled: v.boolean(),
     createdAt: v.number(),
