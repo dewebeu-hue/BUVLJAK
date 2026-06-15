@@ -788,12 +788,12 @@ function AdminServicesToggleCard() {
   const settings = useQuery(api.monetization.getMonetizationSettings) as
     | AdminServicesSettings
     | undefined;
-  const updateSettings = useMutation(api.monetization.updateMonetizationSettings);
+  const setServicesEnabled = useMutation(api.monetization.setServicesEnabled);
   const [isSaving, setIsSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const isEnabled = Boolean(settings?.servicesEnabled);
 
-  async function toggleServices() {
+  async function toggleServices(nextEnabled: boolean) {
     if (!settings || isSaving) {
       return;
     }
@@ -802,7 +802,7 @@ function AdminServicesToggleCard() {
     setStatusMessage("");
 
     try {
-      await updateSettings({ servicesEnabled: !isEnabled });
+      await setServicesEnabled({ enabled: nextEnabled });
       setStatusMessage("Postavka za Usluge i pomoć je spremljena.");
     } catch {
       setStatusMessage("Samo admin može mijenjati beta module.");
@@ -826,7 +826,7 @@ function AdminServicesToggleCard() {
                   isEnabled ? "bg-moss/10 text-mossDark" : "bg-ink/8 text-ink/52"
                 }`}
               >
-                {isEnabled ? "Uključeno" : "Skriveno"}
+                {isEnabled ? "Uključeno" : "Isključeno"}
               </span>
             </div>
             <p className="mt-2 max-w-3xl text-sm font-semibold leading-relaxed text-ink/64">
@@ -839,7 +839,7 @@ function AdminServicesToggleCard() {
           type="button"
           role="switch"
           aria-checked={isEnabled}
-          onClick={toggleServices}
+          onClick={() => toggleServices(!isEnabled)}
           disabled={settings === undefined || isSaving}
           className={`focus-ring relative h-8 w-14 shrink-0 rounded-full border transition disabled:cursor-not-allowed disabled:opacity-55 ${
             isEnabled ? "border-moss bg-moss" : "border-ink/14 bg-white"
