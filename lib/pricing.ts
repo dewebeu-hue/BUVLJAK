@@ -13,9 +13,12 @@ export type PricingPlan = {
   priceLabel: string;
   eyebrow: string;
   summary: string;
+  badge?: string;
+  helperText?: string;
   features: string[];
   ctaLabel: string;
   ctaHref?: string;
+  ctaNote?: string;
   isPrimary?: boolean;
 };
 
@@ -25,13 +28,13 @@ export const pricingPlans: PricingPlan[] = [
     name: "Besplatno",
     priceLabel: "0 €",
     eyebrow: "Za obične oglase",
-    summary: "Za prodaju, poklanjanje, zamjenu i potragu u blizini.",
+    summary: "Za povremene oglase u blizini.",
     features: [
       `do ${FREE_DAILY_LISTING_LIMIT} nova obična oglasa dnevno`,
       `do ${FREE_ACTIVE_LISTING_LIMIT} aktivnih oglasa`,
       `${FREE_AI_DAILY_LIMIT} AI prijedlog dnevno`,
       `do ${FREE_AI_WEEKLY_LIMIT} AI prijedloga tjedno`,
-      "spremanje oglasa ako je dostupno",
+      "spremanje oglasa",
       "direktan kontakt izvan platforme"
     ],
     ctaLabel: "Objavi oglas",
@@ -39,23 +42,28 @@ export const pricingPlans: PricingPlan[] = [
   },
   {
     id: "featured_week",
-    name: "Istakni oglas",
+    name: "Beta isticanje oglasa",
     priceLabel: `${FEATURED_WEEK_PRICE_EUR.toLocaleString("hr-HR", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     })} € / ${FEATURED_WEEK_DAYS} dana`,
-    eyebrow: "Beta isticanje",
-    summary: "Za oglase koje želiš jače istaknuti kada feature bude aktivan.",
+    eyebrow: "Istaknuti oglas",
+    summary: "Za važnije oglase koje želiš dodatno pogurati.",
+    badge: "Najbolje za skuplje stvari",
+    helperText: "npr. peć, bicikl, namještaj, alat, mobitel",
     features: [
       `1 istaknuti oglas na ${FEATURED_WEEK_DAYS} dana`,
       "oznaka “Istaknuto”",
-      "bolja vidljivost u feedu kada feature bude aktivan",
-      `do ${FREE_DAILY_LISTING_LIMIT} nova obična oglasa dnevno tijekom tog perioda`,
-      `do ${FEATURED_ACTIVE_LISTING_LIMIT} aktivnih oglasa`,
-      `${FEATURED_WEEK_AI_CREDITS} AI prijedloga uključeno u 7 dana`
+      "ručna beta aktivacija nakon dogovora",
+      `do ${FEATURED_ACTIVE_LISTING_LIMIT} aktivnih oglasa tijekom beta isticanja`,
+      `do ${FREE_DAILY_LISTING_LIMIT} nova obična oglasa dnevno`,
+      `${FEATURED_WEEK_AI_CREDITS} AI prijedloga za bolji naslov, opis i cijenu`,
+      "tekst za Facebook grupu"
     ],
     ctaLabel: "Zatraži isticanje",
-    ctaHref: "/kontakt",
+    ctaHref: "mailto:deweb.eu@gmail.com?subject=Zatraži isticanje oglasa na Buvljak.hr",
+    ctaNote:
+      "Online plaćanje još nije uključeno. U beta fazi isticanje se aktivira ručno nakon dogovora.",
     isPrimary: true
   }
 ];
