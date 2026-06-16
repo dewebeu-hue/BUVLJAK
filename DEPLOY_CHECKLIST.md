@@ -78,6 +78,7 @@ Rucno provjeri:
 ## Convex
 
 - Provjeri da Clerk JWT issuer konfiguracija odgovara produkcijskom Clerk projektu.
+- Nakon promjene `convex/schema.ts` ili Convex funkcija pokreni `npm run convex:dev` lokalno ili odgovarajući Convex deploy za produkciju; ne uređuj ručno `convex/_generated` datoteke.
 - Deployaj Convex funkcije na produkcijski deployment.
 - U Convex Dashboardu, na odgovarajucem deploymentu, postavi server-side tajne i flagove:
   `OPENAI_API_KEY`, `OPENAI_MODEL`, `AI_LISTING_ASSISTANT_ENABLED`, `AI_MAX_IMAGES`,

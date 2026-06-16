@@ -320,17 +320,16 @@ function ConnectedNewListingForm() {
       const category = categories.includes(suggestion.suggestedCategory)
         ? suggestion.suggestedCategory
         : "Ostalo";
+      const canUseSuggestedPrice =
+        suggestion.priceConfidence !== "low" && suggestion.recommendedPrice !== null;
       let price = current.price;
       let priceType = current.priceType;
       let acceptOffers = current.acceptOffers;
 
       if (current.type === "sell") {
-        price =
-          suggestion.recommendedPrice !== null
-            ? String(suggestion.recommendedPrice)
-            : current.price;
-        priceType = suggestion.shouldAllowOffers ? "negotiable" : "fixed";
-        acceptOffers = suggestion.shouldAllowOffers;
+        price = canUseSuggestedPrice ? String(suggestion.recommendedPrice) : current.price;
+        priceType = canUseSuggestedPrice && !suggestion.shouldAllowOffers ? "fixed" : "negotiable";
+        acceptOffers = canUseSuggestedPrice ? suggestion.shouldAllowOffers : true;
       }
 
       if (current.type === "give") {
@@ -346,10 +345,7 @@ function ConnectedNewListingForm() {
       }
 
       if (current.type === "want") {
-        price =
-          suggestion.recommendedPrice !== null
-            ? String(suggestion.recommendedPrice)
-            : current.price;
+        price = canUseSuggestedPrice ? String(suggestion.recommendedPrice) : current.price;
         priceType = "wanted";
         acceptOffers = false;
       }
@@ -858,6 +854,7 @@ function ConnectedNewListingForm() {
 
           {creationMode === "manual" ? (
             <AiListingAssistant
+              key={form.type}
               listingType={form.type}
               existingTitle={form.title}
               existingDescription={form.description}

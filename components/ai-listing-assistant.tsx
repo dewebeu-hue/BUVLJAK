@@ -115,12 +115,29 @@ function optionalText(value?: string) {
 
 function getFriendlyAiError(error: unknown) {
   const message = error instanceof Error ? error.message : "";
+  const normalizedMessage = message.toLowerCase();
 
-  if (message.toLowerCase().includes("prijavljen")) {
+  if (normalizedMessage.includes("prijavljen")) {
     return "Za AI prijedlog moraš biti prijavljen. Možeš nastaviti ručno.";
   }
 
-  if (message.toLowerCase().includes("nije dostupan")) {
+  if (normalizedMessage.includes("iskoristio/la besplatni ai prijedlog")) {
+    return "Danas si iskoristio/la besplatni AI prijedlog. Oglas možeš nastaviti ručno.";
+  }
+
+  if (normalizedMessage.includes("iskoristio/la besplatne ai prijedloge")) {
+    return "Ovaj tjedan si iskoristio/la besplatne AI prijedloge. Oglas možeš nastaviti ručno.";
+  }
+
+  if (normalizedMessage.includes("ai prijedlozi su danas iskorišteni")) {
+    return "AI prijedlozi su danas iskorišteni. Oglas možeš nastaviti ručno.";
+  }
+
+  if (normalizedMessage.includes("1 do 3 slike")) {
+    return "Dodaj 1 do 3 slike za AI prijedlog.";
+  }
+
+  if (normalizedMessage.includes("nije dostupan")) {
     return "AI prijedlog trenutno nije dostupan. Možeš nastaviti ručno.";
   }
 
@@ -132,8 +149,12 @@ function getPriceSummary(suggestion: AiListingDraftSuggestion, listingType: List
     return "Poklanjam";
   }
 
-  if (listingType === "swap" && suggestion.recommendedPrice === null) {
+  if (listingType === "swap") {
     return "Mijenjam";
+  }
+
+  if (suggestion.priceConfidence === "low") {
+    return listingType === "want" ? "Budžet po dogovoru" : "Cijena po dogovoru";
   }
 
   if (suggestion.priceLow !== null && suggestion.priceHigh !== null) {
@@ -153,7 +174,7 @@ function AiResultRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg bg-field p-3">
       <dt className="text-xs font-black uppercase tracking-[0.1em] text-ink/45">{label}</dt>
-      <dd className="mt-1 text-sm font-black leading-relaxed text-ink">{value}</dd>
+      <dd className="mt-1 break-words text-sm font-black leading-relaxed text-ink">{value}</dd>
     </div>
   );
 }
@@ -509,7 +530,7 @@ export function AiListingAssistant({
             <AiResultRow label="Cijena" value={getPriceSummary(draftSuggestion, listingType)} />
             <div className="rounded-lg bg-field p-3 sm:col-span-2">
               <dt className="text-xs font-black uppercase tracking-[0.1em] text-ink/45">Opis</dt>
-              <dd className="mt-1 whitespace-pre-line text-sm font-semibold leading-relaxed text-ink/72">
+              <dd className="mt-1 whitespace-pre-line break-words text-sm font-semibold leading-relaxed text-ink/72">
                 {draftSuggestion.suggestedDescription}
               </dd>
             </div>
@@ -517,7 +538,7 @@ export function AiListingAssistant({
               <dt className="text-xs font-black uppercase tracking-[0.1em] text-ink/45">
                 Zašto ova cijena
               </dt>
-              <dd className="mt-1 text-sm font-semibold leading-relaxed text-ink/72">
+              <dd className="mt-1 break-words text-sm font-semibold leading-relaxed text-ink/72">
                 {draftSuggestion.priceRationale}
               </dd>
               <p className="mt-2 text-xs font-black text-ink/50">
@@ -557,7 +578,7 @@ export function AiListingAssistant({
                 Kopiraj tekst
               </button>
             </div>
-            <div className="mt-3 whitespace-pre-line rounded-lg bg-white p-3 text-sm font-semibold leading-relaxed text-ink/74">
+            <div className="mt-3 whitespace-pre-line break-words rounded-lg bg-white p-3 text-sm font-semibold leading-relaxed text-ink/74">
               {draftSuggestion.facebookText}
             </div>
             {copyStatus === "copied" ? (
