@@ -19,6 +19,10 @@ CONTACT_FROM_EMAIL=
 OPENAI_API_KEY=
 OPENAI_MODEL=
 AI_LISTING_ASSISTANT_ENABLED=
+AI_MAX_IMAGES=3
+AI_DAILY_LIMIT_FREE=1
+AI_WEEKLY_LIMIT_FREE=5
+AI_GLOBAL_DAILY_LIMIT=100
 ```
 
 Admin pristup nije konfiguriran preko env varijable. Dopusten je samo za Clerk korisnika s emailom `deweb.eu@gmail.com`.
@@ -76,10 +80,15 @@ Rucno provjeri:
 - Provjeri da Clerk JWT issuer konfiguracija odgovara produkcijskom Clerk projektu.
 - Deployaj Convex funkcije na produkcijski deployment.
 - U Convex Dashboardu, na odgovarajucem deploymentu, postavi server-side tajne i flagove:
-  `OPENAI_API_KEY`, `OPENAI_MODEL`, `AI_LISTING_ASSISTANT_ENABLED`, `RESEND_API_KEY`, `CONTACT_FROM_EMAIL`.
+  `OPENAI_API_KEY`, `OPENAI_MODEL`, `AI_LISTING_ASSISTANT_ENABLED`, `AI_MAX_IMAGES`,
+  `AI_DAILY_LIMIT_FREE`, `AI_WEEKLY_LIMIT_FREE`, `AI_GLOBAL_DAILY_LIMIT`,
+  `RESEND_API_KEY`, `CONTACT_FROM_EMAIL`.
 - `OPENAI_API_KEY` nikad ne smije biti `NEXT_PUBLIC_` varijabla i ne smije biti dostupan frontend bundleu.
 - `AI_LISTING_ASSISTANT_ENABLED=false` ili `0` gasi AI prijedlog oglasa bez uklanjanja UI-ja.
-- Ako `OPENAI_MODEL` nije postavljen, Convex action koristi server-side fallback model.
+- `AI_MAX_IMAGES` treba ostati `3` za MVP. Convex action ne dopusta vise od 3 slike cak ni ako env greskom postavi veci broj.
+- Default limiti za zatvorenu betu: `AI_DAILY_LIMIT_FREE=1`, `AI_WEEKLY_LIMIT_FREE=5`, `AI_GLOBAL_DAILY_LIMIT=100`.
+- `OPENAI_MODEL` je preporuceno postaviti u Convex env. Ako nije postavljen, Convex action koristi server-side fallback model samo kao dev sigurnosnu mrezu.
+- AI usage log biljezi user token identifier, status, broj slika, model, error code i okvirne ulazne bajtove; ne biljezi raw prompt, raw AI output, kontakte ni privatne URL-ove.
 - Provjeri da public listing queryji ne vracaju privatne kontakt podatke.
 - Provjeri da contact resolver radi samo nakon korisnickog klika i rate limita.
 

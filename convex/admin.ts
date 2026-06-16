@@ -61,6 +61,11 @@ function clampLimit(limit?: number) {
   return Math.min(Math.max(Math.floor(limit ?? DEFAULT_LIMIT), 1), MAX_LIMIT);
 }
 
+function startOfUtcDay(timestamp: number) {
+  const date = new Date(timestamp);
+  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}
+
 function matchesText(value: string, search?: string) {
   const query = normalized(search);
   return !query || normalized(value).includes(query);
@@ -138,14 +143,50 @@ export const getAdminStats = query({
 
     const now = Date.now();
     const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
-    const [listings, reports, users, savedSearches, notificationEvents, contactEvents] =
+    const todayStart = startOfUtcDay(now);
+    const [
+      listings,
+      reports,
+      users,
+      savedSearches,
+      notificationEvents,
+      contactEvents,
+      aiSuccessToday,
+      aiSuccessLast7Days,
+      aiFailedToday,
+      aiRateLimitedToday
+    ] =
       await Promise.all([
         ctx.db.query("listings").collect(),
         ctx.db.query("reports").collect(),
         ctx.db.query("users").collect(),
         ctx.db.query("savedSearches").collect(),
         ctx.db.query("notificationEvents").collect(),
-        ctx.db.query("contactEvents").collect()
+        ctx.db.query("contactEvents").collect(),
+        ctx.db
+          .query("aiUsageEvents")
+          .withIndex("by_action_status_createdAt", (q) =>
+            q.eq("action", "listing_suggestion").eq("status", "success").gte("createdAt", todayStart)
+          )
+          .take(1_000),
+        ctx.db
+          .query("aiUsageEvents")
+          .withIndex("by_action_status_createdAt", (q) =>
+            q.eq("action", "listing_suggestion").eq("status", "success").gte("createdAt", sevenDaysAgo)
+          )
+          .take(5_000),
+        ctx.db
+          .query("aiUsageEvents")
+          .withIndex("by_action_status_createdAt", (q) =>
+            q.eq("action", "listing_suggestion").eq("status", "failed").gte("createdAt", todayStart)
+          )
+          .take(1_000),
+        ctx.db
+          .query("aiUsageEvents")
+          .withIndex("by_action_status_createdAt", (q) =>
+            q.eq("action", "listing_suggestion").eq("status", "rate_limited").gte("createdAt", todayStart)
+          )
+          .take(1_000)
       ]);
 
     return {
@@ -164,7 +205,11 @@ export const getAdminStats = query({
         (event) => event.status === "failed" || event.status === "skipped"
       ).length,
       listingsLast7Days: listings.filter((listing) => listing.createdAt >= sevenDaysAgo).length,
-      contactClicksLast7Days: contactEvents.filter((event) => event.createdAt >= sevenDaysAgo).length
+      contactClicksLast7Days: contactEvents.filter((event) => event.createdAt >= sevenDaysAgo).length,
+      aiSuggestionsToday: aiSuccessToday.length,
+      aiSuggestionsLast7Days: aiSuccessLast7Days.length,
+      aiFailedToday: aiFailedToday.length,
+      aiRateLimitedToday: aiRateLimitedToday.length
     };
   }
 });

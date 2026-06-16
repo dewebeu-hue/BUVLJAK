@@ -67,6 +67,15 @@ export const offerStatusValidator = v.union(
   v.literal("declined")
 );
 
+export const aiUsageActionValidator = v.literal("listing_suggestion");
+
+export const aiUsageStatusValidator = v.union(
+  v.literal("success"),
+  v.literal("failed"),
+  v.literal("rate_limited"),
+  v.literal("disabled")
+);
+
 export const reportStatusValidator = v.union(
   v.literal("new"),
   v.literal("reviewed"),

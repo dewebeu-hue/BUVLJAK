@@ -4,6 +4,8 @@ import {
   contactMethodValidator,
   contactSourceValidator,
   contactVisibilityValidator,
+  aiUsageActionValidator,
+  aiUsageStatusValidator,
   featuredLabelValidator,
   listingStatusValidator,
   listingTypeValidator,
@@ -131,6 +133,19 @@ export default defineSchema({
   })
     .index("by_userId_createdAt", ["userId", "createdAt"])
     .index("by_listingId_createdAt", ["listingId", "createdAt"]),
+
+  aiUsageEvents: defineTable({
+    userId: v.string(),
+    action: aiUsageActionValidator,
+    imageCount: v.number(),
+    status: aiUsageStatusValidator,
+    model: v.optional(v.string()),
+    errorCode: v.optional(v.string()),
+    approximateInputBytes: v.optional(v.number()),
+    createdAt: v.number()
+  })
+    .index("by_userId_action_status_createdAt", ["userId", "action", "status", "createdAt"])
+    .index("by_action_status_createdAt", ["action", "status", "createdAt"]),
 
   offers: defineTable({
     listingId: v.id("listings"),

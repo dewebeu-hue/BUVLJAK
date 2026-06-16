@@ -1,10 +1,14 @@
 import { ConvexError, v } from "convex/values";
-import { action } from "./_generated/server";
-import { listingTypeValidator } from "./validators";
+import { action, internalMutation } from "./_generated/server";
+import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
+import type { MutationCtx } from "./_generated/server";
+import { aiUsageActionValidator, aiUsageStatusValidator, listingTypeValidator } from "./validators";
 
 type ListingType = "sell" | "give" | "swap" | "want";
 type SuggestedCondition = "new" | "used" | "damaged" | "unknown";
 type Confidence = "low" | "medium" | "high";
+type AiUsageStatus = "success" | "failed" | "rate_limited" | "disabled";
 
 type AiListingDraftSuggestion = {
   suggestedTitle: string;
@@ -33,14 +37,33 @@ type ResponsesApiResponse = {
 };
 
 type JsonRecord = Record<string, unknown>;
+type PrepareAiListingSuggestionResult =
+  | {
+      ok: false;
+      displayMessage: string;
+    }
+  | {
+      ok: true;
+      userId: string;
+      imageCount: number;
+      approximateInputBytes?: number;
+    };
 
 const DEFAULT_LOCAL_CONTEXT = "Nova Gradiška i okolica";
 const DEFAULT_MODEL = "gpt-4o-mini";
-const AI_DISABLED_MESSAGE = "AI prijedlog trenutno nije dostupan.";
+const DEFAULT_AI_MAX_IMAGES = 3;
+const DEFAULT_AI_DAILY_LIMIT_FREE = 1;
+const DEFAULT_AI_WEEKLY_LIMIT_FREE = 5;
+const DEFAULT_AI_GLOBAL_DAILY_LIMIT = 100;
+const AI_DISABLED_MESSAGE = "AI prijedlog trenutno nije dostupan. Oglas možeš nastaviti ručno.";
 const AI_LOGIN_MESSAGE = "Za AI prijedlog moraš biti prijavljen.";
 const AI_INVALID_IMAGES_MESSAGE = "Dodaj 1 do 3 slike za AI prijedlog.";
 const AI_IMAGE_URL_MESSAGE = "Slike trenutno nije moguće pripremiti. Oglas možeš nastaviti ručno.";
 const AI_RESPONSE_MESSAGE = "AI prijedlog trenutno nije moguće pripremiti. Oglas možeš nastaviti ručno.";
+const AI_DAILY_LIMIT_MESSAGE = "Danas si iskoristio/la besplatni AI prijedlog. Oglas možeš nastaviti ručno.";
+const AI_WEEKLY_LIMIT_MESSAGE =
+  "Ovaj tjedan si iskoristio/la besplatne AI prijedloge. Oglas možeš nastaviti ručno.";
+const AI_GLOBAL_LIMIT_MESSAGE = "AI prijedlozi su danas iskorišteni. Oglas možeš nastaviti ručno.";
 const AI_TIMEOUT_MS = 30_000;
 
 const conditionValues: SuggestedCondition[] = ["new", "used", "damaged", "unknown"];
@@ -92,6 +115,103 @@ function isFeatureDisabled(value: string | undefined) {
   }
 
   return ["0", "false", "off", "no"].includes(value.trim().toLowerCase());
+}
+
+function integerEnv(name: string, fallback: number) {
+  const rawValue = process.env[name];
+
+  if (rawValue === undefined || !rawValue.trim()) {
+    return fallback;
+  }
+
+  const parsed = Number(rawValue);
+  return Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : fallback;
+}
+
+function getServerAiMaxImages() {
+  return Math.min(Math.max(integerEnv("AI_MAX_IMAGES", DEFAULT_AI_MAX_IMAGES), 1), DEFAULT_AI_MAX_IMAGES);
+}
+
+function getAiDailyLimitForUser(_userId: string) {
+  void _userId;
+  return integerEnv("AI_DAILY_LIMIT_FREE", DEFAULT_AI_DAILY_LIMIT_FREE);
+}
+
+function getAiWeeklyLimitForUser(_userId: string) {
+  void _userId;
+  // TODO: Featured listing entitlement can raise weekly AI credits to 5 during active 7-day highlight period.
+  return integerEnv("AI_WEEKLY_LIMIT_FREE", DEFAULT_AI_WEEKLY_LIMIT_FREE);
+}
+
+function getAiGlobalDailyLimit() {
+  return integerEnv("AI_GLOBAL_DAILY_LIMIT", DEFAULT_AI_GLOBAL_DAILY_LIMIT);
+}
+
+function startOfUtcDay(timestamp: number) {
+  const date = new Date(timestamp);
+  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}
+
+async function approximateStorageBytes(ctx: MutationCtx, imageStorageIds: Array<Id<"_storage">>) {
+  let total = 0;
+
+  for (const storageId of imageStorageIds) {
+    const metadata = await ctx.db.system.get("_storage", storageId);
+    if (metadata?.size) {
+      total += metadata.size;
+    }
+  }
+
+  return total > 0 ? total : undefined;
+}
+
+async function countUserAiEvents(
+  ctx: MutationCtx,
+  args: {
+    userId: string;
+    status: AiUsageStatus;
+    since: number;
+    limit: number;
+  }
+) {
+  if (args.limit <= 0) {
+    return 0;
+  }
+
+  const events = await ctx.db
+    .query("aiUsageEvents")
+    .withIndex("by_userId_action_status_createdAt", (q) =>
+      q
+        .eq("userId", args.userId)
+        .eq("action", "listing_suggestion")
+        .eq("status", args.status)
+        .gte("createdAt", args.since)
+    )
+    .take(args.limit);
+
+  return events.length;
+}
+
+async function countGlobalAiEvents(
+  ctx: MutationCtx,
+  args: {
+    status: AiUsageStatus;
+    since: number;
+    limit: number;
+  }
+) {
+  if (args.limit <= 0) {
+    return 0;
+  }
+
+  const events = await ctx.db
+    .query("aiUsageEvents")
+    .withIndex("by_action_status_createdAt", (q) =>
+      q.eq("action", "listing_suggestion").eq("status", args.status).gte("createdAt", args.since)
+    )
+    .take(args.limit);
+
+  return events.length;
 }
 
 function extractOutputText(data: ResponsesApiResponse) {
@@ -356,6 +476,158 @@ async function fetchOpenAiDraft(params: {
   }
 }
 
+export const prepareAiListingSuggestionRequest = internalMutation({
+  args: {
+    imageStorageIds: v.array(v.id("_storage")),
+    model: v.string()
+  },
+  handler: async (ctx, args): Promise<PrepareAiListingSuggestionResult> => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity?.tokenIdentifier) {
+      return {
+        ok: false as const,
+        displayMessage: AI_LOGIN_MESSAGE
+      };
+    }
+
+    const now = Date.now();
+    const userId = identity.tokenIdentifier;
+    const imageCount = args.imageStorageIds.length;
+    const maxImages = getServerAiMaxImages();
+    const approximateInputBytes = await approximateStorageBytes(ctx, args.imageStorageIds);
+
+    async function logBlocked(status: "failed" | "rate_limited" | "disabled", errorCode: string) {
+      await ctx.db.insert("aiUsageEvents", {
+        userId,
+        action: "listing_suggestion",
+        imageCount,
+        status,
+        model: args.model,
+        errorCode,
+        ...(approximateInputBytes !== undefined ? { approximateInputBytes } : {}),
+        createdAt: now
+      });
+    }
+
+    if (imageCount < 1 || imageCount > maxImages) {
+      await logBlocked("failed", "invalid_image_count");
+      return {
+        ok: false as const,
+        displayMessage: AI_INVALID_IMAGES_MESSAGE
+      };
+    }
+
+    if (isFeatureDisabled(process.env.AI_LISTING_ASSISTANT_ENABLED)) {
+      await logBlocked("disabled", "feature_disabled");
+      return {
+        ok: false as const,
+        displayMessage: AI_DISABLED_MESSAGE
+      };
+    }
+
+    if (!process.env.OPENAI_API_KEY?.trim()) {
+      await logBlocked("disabled", "missing_openai_api_key");
+      return {
+        ok: false as const,
+        displayMessage: AI_DISABLED_MESSAGE
+      };
+    }
+
+    const dayAgo = now - 24 * 60 * 60 * 1000;
+    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const todayStart = startOfUtcDay(now);
+    const dailyLimit = getAiDailyLimitForUser(userId);
+    const weeklyLimit = getAiWeeklyLimitForUser(userId);
+    const globalDailyLimit = getAiGlobalDailyLimit();
+
+    const [dailySuccessCount, dailyRateLimitedCount] = await Promise.all([
+      countUserAiEvents(ctx, {
+        userId,
+        status: "success",
+        since: dayAgo,
+        limit: dailyLimit
+      }),
+      countUserAiEvents(ctx, {
+        userId,
+        status: "rate_limited",
+        since: dayAgo,
+        limit: dailyLimit
+      })
+    ]);
+
+    if (dailySuccessCount + dailyRateLimitedCount >= dailyLimit) {
+      await logBlocked("rate_limited", "user_daily_limit");
+      return {
+        ok: false as const,
+        displayMessage: AI_DAILY_LIMIT_MESSAGE
+      };
+    }
+
+    const weeklySuccessCount = await countUserAiEvents(ctx, {
+      userId,
+      status: "success",
+      since: sevenDaysAgo,
+      limit: weeklyLimit
+    });
+
+    if (weeklySuccessCount >= weeklyLimit) {
+      await logBlocked("rate_limited", "user_weekly_limit");
+      return {
+        ok: false as const,
+        displayMessage: AI_WEEKLY_LIMIT_MESSAGE
+      };
+    }
+
+    const globalDailySuccessCount = await countGlobalAiEvents(ctx, {
+      status: "success",
+      since: todayStart,
+      limit: globalDailyLimit
+    });
+
+    if (globalDailySuccessCount >= globalDailyLimit) {
+      await logBlocked("rate_limited", "global_daily_limit");
+      return {
+        ok: false as const,
+        displayMessage: AI_GLOBAL_LIMIT_MESSAGE
+      };
+    }
+
+    return {
+      ok: true as const,
+      userId,
+      imageCount,
+      approximateInputBytes
+    };
+  }
+});
+
+export const recordAiUsageEvent = internalMutation({
+  args: {
+    userId: v.string(),
+    action: aiUsageActionValidator,
+    imageCount: v.number(),
+    status: aiUsageStatusValidator,
+    model: v.optional(v.string()),
+    errorCode: v.optional(v.string()),
+    approximateInputBytes: v.optional(v.number())
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.insert("aiUsageEvents", {
+      userId: args.userId,
+      action: args.action,
+      imageCount: args.imageCount,
+      status: args.status,
+      ...(args.model ? { model: args.model } : {}),
+      ...(args.errorCode ? { errorCode: args.errorCode } : {}),
+      ...(args.approximateInputBytes !== undefined
+        ? { approximateInputBytes: args.approximateInputBytes }
+        : {}),
+      createdAt: Date.now()
+    });
+  }
+});
+
 export const analyzeListingImagesForDraft = action({
   args: {
     imageStorageIds: v.array(v.id("_storage")),
@@ -366,48 +638,63 @@ export const analyzeListingImagesForDraft = action({
     localContext: v.optional(v.string())
   },
   handler: async (ctx, args): Promise<AiListingDraftSuggestion> => {
-    const identity = await ctx.auth.getUserIdentity();
+    const model = process.env.OPENAI_MODEL?.trim() || DEFAULT_MODEL;
+    const prepared = await ctx.runMutation(internal.aiListingAssistant.prepareAiListingSuggestionRequest, {
+      imageStorageIds: args.imageStorageIds,
+      model
+    });
 
-    if (!identity?.tokenIdentifier) {
-      throw new ConvexError(AI_LOGIN_MESSAGE);
+    if (!prepared.ok) {
+      throw new ConvexError(prepared.displayMessage);
     }
 
-    if (args.imageStorageIds.length < 1 || args.imageStorageIds.length > 3) {
-      throw new ConvexError(AI_INVALID_IMAGES_MESSAGE);
-    }
+    const usageUserId = prepared.userId;
+    const usageImageCount = prepared.imageCount;
+    const usageApproximateInputBytes = prepared.approximateInputBytes;
 
-    if (isFeatureDisabled(process.env.AI_LISTING_ASSISTANT_ENABLED)) {
-      throw new ConvexError(AI_DISABLED_MESSAGE);
+    async function recordUsage(status: AiUsageStatus, errorCode?: string) {
+      await ctx.runMutation(internal.aiListingAssistant.recordAiUsageEvent, {
+        userId: usageUserId,
+        action: "listing_suggestion",
+        imageCount: usageImageCount,
+        status,
+        model,
+        ...(errorCode ? { errorCode } : {}),
+        ...(usageApproximateInputBytes !== undefined
+          ? { approximateInputBytes: usageApproximateInputBytes }
+          : {})
+      });
     }
 
     const apiKey = process.env.OPENAI_API_KEY?.trim();
 
     if (!apiKey) {
+      await recordUsage("disabled", "missing_openai_api_key_after_prepare");
       throw new ConvexError(AI_DISABLED_MESSAGE);
     }
 
     const imageUrls: string[] = [];
 
-    for (const storageId of args.imageStorageIds) {
-      const imageUrl = await ctx.storage.getUrl(storageId);
+    try {
+      for (const storageId of args.imageStorageIds) {
+        const imageUrl = await ctx.storage.getUrl(storageId);
 
-      if (!imageUrl) {
-        throw new ConvexError(AI_IMAGE_URL_MESSAGE);
+        if (!imageUrl) {
+          await recordUsage("failed", "image_url_unavailable");
+          throw new ConvexError(AI_IMAGE_URL_MESSAGE);
+        }
+
+        imageUrls.push(imageUrl);
       }
 
-      imageUrls.push(imageUrl);
-    }
+      const prompt = buildPrompt({
+        listingType: args.listingType,
+        existingTitle: args.existingTitle,
+        existingDescription: args.existingDescription,
+        existingCategory: args.existingCategory,
+        localContext: cleanLine(args.localContext ?? DEFAULT_LOCAL_CONTEXT) || DEFAULT_LOCAL_CONTEXT
+      });
 
-    const model = process.env.OPENAI_MODEL?.trim() || DEFAULT_MODEL;
-    const prompt = buildPrompt({
-      listingType: args.listingType,
-      existingTitle: args.existingTitle,
-      existingDescription: args.existingDescription,
-      existingCategory: args.existingCategory,
-      localContext: cleanLine(args.localContext ?? DEFAULT_LOCAL_CONTEXT) || DEFAULT_LOCAL_CONTEXT
-    });
-
-    try {
       const response = await fetchOpenAiDraft({
         apiKey,
         model,
@@ -423,6 +710,7 @@ export const analyzeListingImagesForDraft = action({
           model,
           httpStatus: response.status
         });
+        await recordUsage("failed", "openai_http_error");
         throw new ConvexError(AI_RESPONSE_MESSAGE);
       }
 
@@ -436,6 +724,7 @@ export const analyzeListingImagesForDraft = action({
           imageCount: imageUrls.length,
           model
         });
+        await recordUsage("failed", "invalid_ai_json");
         throw new ConvexError(AI_RESPONSE_MESSAGE);
       }
 
@@ -452,18 +741,21 @@ export const analyzeListingImagesForDraft = action({
         model
       });
 
+      await recordUsage("success");
       return normalized;
     } catch (error) {
       if (error instanceof ConvexError) {
         throw error;
       }
 
+      const errorCode = error instanceof Error && error.name === "AbortError" ? "openai_timeout" : "openai_request_failed";
       console.warn("aiListingAssistant", {
         status: "failure",
-        errorCode: error instanceof Error && error.name === "AbortError" ? "openai_timeout" : "openai_request_failed",
+        errorCode,
         imageCount: imageUrls.length,
         model
       });
+      await recordUsage("failed", errorCode);
       throw new ConvexError(AI_RESPONSE_MESSAGE);
     }
   }
