@@ -22,8 +22,6 @@ import { FacebookAuthButton } from "@/components/facebook-auth-button";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import {
-  adminListings,
-  demoListings,
   formatListingStatus,
   formatListingPrice,
   fromConvexListing,
@@ -36,13 +34,6 @@ import {
 } from "@/lib/listings";
 
 const hasConvexUrl = Boolean(process.env.NEXT_PUBLIC_CONVEX_URL);
-
-const userDemoListings: Listing[] = [
-  demoListings[0],
-  { ...demoListings[1], status: "paused" },
-  { ...demoListings[2], status: "resolved" },
-  { ...adminListings[6], status: "removed" }
-];
 
 const ownerCardVisualTone: Record<Listing["type"], string> = {
   sell: "from-moss/24 via-skywash to-honey/28",
@@ -66,7 +57,7 @@ export function MyListingsPanel() {
   }
 
   if (!hasConvexUrl) {
-    return <LocalMyListingsFallback />;
+    return <MyListingsUnavailable />;
   }
 
   if (!convexAuth.isAuthenticated) {
@@ -207,30 +198,21 @@ function ConnectedMyListings() {
   );
 }
 
-function LocalMyListingsFallback() {
-  const [statusFilter, setStatusFilter] = useState<ListingStatus>("active");
-  const filteredListings = userDemoListings.filter((listing) => listing.status === statusFilter);
-
+function MyListingsUnavailable() {
   return (
     <>
       <section className="mt-7 rounded-lg border border-honey/30 bg-honey/16 p-5">
         <h2 className="text-xl font-black text-ink">Tvoji oglasi trenutno nisu dostupni</h2>
         <p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/68">
-          Kad se poveže stvarna baza oglasa, ovdje ćeš vidjeti svoje aktivne, pauzirane i riješene oglase.
+          Trenutno ne možemo dohvatiti tvoje oglase. Pokušaj ponovno za nekoliko trenutaka.
         </p>
-      </section>
-      <section className="mt-8">
-        <h2 className="text-2xl font-black text-ink">Privremeni prikaz</h2>
-        <StatusFilterBar value={statusFilter} onChange={setStatusFilter} />
-        {filteredListings.length > 0 ? (
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredListings.map((listing) => (
-              <MyListingCard key={listing.id} listing={listing} />
-            ))}
-          </div>
-        ) : (
-          <EmptyStatusState />
-        )}
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="focus-ring mt-4 inline-flex h-11 items-center justify-center rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
+        >
+          Pokušaj ponovno
+        </button>
       </section>
     </>
   );

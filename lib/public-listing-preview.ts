@@ -2,7 +2,6 @@ import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import {
-  demoListings,
   formatListingPrice,
   type ListingStatus,
   type ListingType,
@@ -32,39 +31,11 @@ export type PublicListingPreview = {
 export const fallbackOgDescription =
   "Lokalni oglas na Buvljaku - prodajem, poklanjam, mijenjam i tražim u svojoj blizini.";
 
-function demoListingToPublic(listingId: string): PublicListingPreview | null {
-  const listing = demoListings.find((item) => item.id === listingId);
-
-  if (!listing) {
-    return null;
-  }
-
-  return {
-    id: listing.id,
-    type: listing.type,
-    title: listing.title,
-    description: listing.description,
-    city: listing.city,
-    category: listing.category,
-    ...(listing.price !== null ? { price: listing.price } : {}),
-    priceType: listing.priceType,
-    status: listing.status,
-    allowOffers: listing.allowOffers,
-    images: listing.images,
-    imageUrls: listing.imageUrls,
-    viewCount: listing.viewCount,
-    shareCount: listing.shareCount,
-    saveCount: listing.saveCount,
-    createdAt: new Date(listing.createdAt).getTime(),
-    updatedAt: listing.updatedAt ? new Date(listing.updatedAt).getTime() : new Date(listing.createdAt).getTime()
-  };
-}
-
 export async function getPublicListingPreview(listingId: string) {
   const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
 
   if (!convexUrl) {
-    return demoListingToPublic(listingId);
+    return null;
   }
 
   try {
@@ -75,7 +46,7 @@ export async function getPublicListingPreview(listingId: string) {
 
     return listing as PublicListingPreview | null;
   } catch {
-    return demoListingToPublic(listingId);
+    return null;
   }
 }
 

@@ -68,6 +68,18 @@ npm run convex:seed
 
 Admin dashboard takoder ima akcije za seed, sakrivanje i brisanje oglasa oznacenih kao demo.
 
+## Demo/fallback content check
+
+- [ ] Production `/oglasi` s praznom bazom prikazuje: "Jos nema aktivnih oglasa u tvojoj blizini."
+- [ ] Production `/oglasi` bez dostupnog backenda prikazuje: "Trenutno ne mozemo dohvatiti oglase."
+- [ ] Production `/oglasi` ne koristi hardcoded `demoListings` kao javni fallback.
+- [ ] Production `/oglasi/[id]` za nedostupan, uklonjen ili nepostojeci oglas ne prikazuje demo oglas.
+- [ ] OG/share preview za nepostojeci ili nedostupan oglas koristi genericki Buvljak fallback, ne demo oglas.
+- [ ] Ako su demo oglasi seedani u Convexu, prije bete ih sakrij ili obrisi kroz admin dashboard.
+- [ ] Admin demo alati ostaju dostupni samo admin korisniku na `/admin-portal`.
+- [ ] `/pretplate` nema checkout, placanje ili lazni payment flow dok placanja nisu stvarno spojena.
+- [ ] AI Listing Assistant ne prikazuje fake rezultat ako AI action nije dostupan; korisnik dobiva jasno error stanje.
+
 ## Provjere prije deploya
 
 ```bash

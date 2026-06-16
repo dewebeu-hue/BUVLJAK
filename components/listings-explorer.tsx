@@ -11,7 +11,6 @@ import { LocalSponsorStrip, type PublicLocalSponsor } from "@/components/local-s
 import { useClientMounted } from "@/components/use-client-mounted";
 import { api } from "@/convex/_generated/api";
 import {
-  demoListings,
   fromConvexListing,
   listingTypeFilterOptions,
   type Listing,
@@ -500,15 +499,7 @@ function ListingsExplorerContent({
           {isServicesContent ? (
             <ServicesEmptyState />
           ) : !hasConvexUrl ? (
-            <ListingsResults
-              listings={demoListings}
-              filters={filters}
-              canLoadMore={false}
-              isLoading={false}
-              onLoadMore={() => undefined}
-              showFeatured={false}
-              feedSponsors={[]}
-            />
+            <ListingsUnavailableState />
           ) : null}
           {hasConvexUrl && !isServicesContent && !isMounted ? <ListingsSkeleton /> : null}
           {hasConvexUrl && !isServicesContent && isMounted ? (
@@ -705,7 +696,7 @@ function SavedSearchPrompt({ filters }: { filters: FeedFilters }) {
               <ConnectedSavedSearchForm key={filtersKey(filters)} filters={filters} />
             ) : (
               <div className="rounded-lg bg-honey/16 p-4 text-sm font-semibold text-ink/68">
-                Convex još nije povezan, pa spremanje potrage trenutno radi samo u pravoj bazi.
+                Spremanje potrage trenutno nije dostupno. Pokušaj ponovno kasnije.
               </div>
             )}
           </Show>
@@ -1082,7 +1073,7 @@ function EmptyListingsState() {
     <div className="mx-auto max-w-xl rounded-xl border border-dashed border-moss/24 bg-white p-7 text-center shadow-sm sm:p-8">
       <h2 className="text-xl font-black text-ink">Još nema aktivnih oglasa u tvojoj blizini.</h2>
       <p className="mx-auto mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/64">
-        Promijeni filtere ili objavi prvi oglas za svoju ulicu, kvart ili selo.
+        Buvljak.hr je u beta fazi za Novu Gradišku i okolicu. Objavi prvi oglas ili provjeri ponovno kasnije.
       </p>
       <Link
         href="/novi-oglas"
@@ -1091,6 +1082,24 @@ function EmptyListingsState() {
         <Plus aria-hidden="true" size={18} />
         Objavi prvi oglas
       </Link>
+    </div>
+  );
+}
+
+function ListingsUnavailableState() {
+  return (
+    <div className="mx-auto max-w-xl rounded-xl border border-dashed border-moss/24 bg-white p-7 text-center shadow-sm sm:p-8">
+      <h2 className="text-xl font-black text-ink">Trenutno ne možemo dohvatiti oglase.</h2>
+      <p className="mx-auto mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/64">
+        Pokušaj ponovno za nekoliko trenutaka.
+      </p>
+      <button
+        type="button"
+        onClick={() => window.location.reload()}
+        className="focus-ring mt-5 inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-moss px-5 text-sm font-black text-white transition hover:bg-mossDark"
+      >
+        Pokušaj ponovno
+      </button>
     </div>
   );
 }

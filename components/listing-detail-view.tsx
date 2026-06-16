@@ -29,7 +29,6 @@ import type { Id } from "@/convex/_generated/dataModel";
 import {
   actionLabelForListing,
   contactMethodHint,
-  demoListings,
   formatListingStatus,
   formatListingPrice,
   fromConvexListing,
@@ -1109,12 +1108,13 @@ function ReportDialog({
 }
 
 function LocalListingDetailView({ listingId }: { listingId: string }) {
+  void listingId;
   const [isSaved, setIsSaved] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
-  const listing = demoListings.find((item) => item.id === listingId);
+  const listing = null as Listing | null;
 
   if (!listing) {
-    return <MissingListingState />;
+    return <ListingBackendUnavailableState />;
   }
 
   const currentListing = listing;
@@ -1271,6 +1271,34 @@ function ListingDetailSkeleton() {
           <div className="h-48 animate-pulse rounded-lg bg-ink/8" />
         </div>
       </div>
+    </main>
+  );
+}
+
+function ListingBackendUnavailableState() {
+  return (
+    <main className="px-4 py-12 sm:px-6">
+      <section className="mx-auto max-w-2xl rounded-lg border border-dashed border-ink/18 bg-white p-6 text-center">
+        <h1 className="text-2xl font-black text-ink">Trenutno ne možemo dohvatiti ovaj oglas.</h1>
+        <p className="mx-auto mt-3 max-w-xl text-sm font-semibold leading-relaxed text-ink/64">
+          Pokušaj ponovno za nekoliko trenutaka.
+        </p>
+        <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="focus-ring inline-flex h-11 items-center justify-center rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
+          >
+            Pokušaj ponovno
+          </button>
+          <Link
+            href="/oglasi"
+            className="focus-ring inline-flex h-11 items-center justify-center rounded-lg border border-ink/12 bg-white px-4 text-sm font-black text-ink transition hover:bg-field"
+          >
+            Natrag na oglase
+          </Link>
+        </div>
+      </section>
     </main>
   );
 }

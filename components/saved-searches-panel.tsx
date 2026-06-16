@@ -215,9 +215,9 @@ function ConnectedSavedSearches() {
 function LocalSavedSearchesFallback() {
   return (
     <section className="mt-7 rounded-lg border border-honey/30 bg-honey/16 p-5">
-      <h2 className="text-xl font-black text-ink">Convex još nije povezan</h2>
+      <h2 className="text-xl font-black text-ink">Spremljene potrage trenutno nisu dostupne</h2>
       <p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/68">
-        Postavi `NEXT_PUBLIC_CONVEX_URL` da bi spremljene potrage bile vezane uz korisnički profil.
+        Pokušaj ponovno za nekoliko trenutaka.
       </p>
     </section>
   );

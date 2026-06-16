@@ -2,16 +2,17 @@
 
 import { Fragment } from "react";
 import { useQuery } from "convex/react";
+import Link from "next/link";
 import { ListingCard } from "@/components/listing-card";
 import { LocalSponsorStrip, type PublicLocalSponsor } from "@/components/local-sponsor-card";
 import { api } from "@/convex/_generated/api";
-import { demoListings, fromConvexListing, type Listing } from "@/lib/listings";
+import { fromConvexListing, type Listing } from "@/lib/listings";
 
 const hasConvexUrl = Boolean(process.env.NEXT_PUBLIC_CONVEX_URL);
 
 export function ListingsFeed() {
   if (!hasConvexUrl) {
-    return <ListingsGrid listings={demoListings} />;
+    return <ListingsUnavailableState />;
   }
 
   return <ConvexListingsFeed />;
@@ -53,14 +54,7 @@ function ConvexListingsFeed() {
   }
 
   if (listings.length === 0) {
-    return (
-      <div className="rounded-lg border border-dashed border-ink/18 bg-white p-6 text-center">
-        <h2 className="text-xl font-black text-ink">Još nema aktivnih oglasa</h2>
-        <p className="mt-2 text-sm font-semibold leading-relaxed text-ink/64">
-          Prvi oglasi će se pojaviti ovdje čim ih netko objavi u Novoj Gradiški i okolici.
-        </p>
-      </div>
-    );
+    return <EmptyListingsState />;
   }
 
   return (
@@ -69,6 +63,41 @@ function ConvexListingsFeed() {
       showFeatured={Boolean(monetizationSettings?.featuredListingsEnabled)}
       feedSponsors={feedSponsors ?? []}
     />
+  );
+}
+
+function EmptyListingsState() {
+  return (
+    <div className="rounded-lg border border-dashed border-ink/18 bg-white p-6 text-center">
+      <h2 className="text-xl font-black text-ink">Još nema aktivnih oglasa u tvojoj blizini.</h2>
+      <p className="mx-auto mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/64">
+        Buvljak.hr je u beta fazi za Novu Gradišku i okolicu. Objavi prvi oglas ili provjeri ponovno kasnije.
+      </p>
+      <Link
+        href="/novi-oglas"
+        className="focus-ring mt-5 inline-flex h-11 items-center justify-center rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
+      >
+        Objavi prvi oglas
+      </Link>
+    </div>
+  );
+}
+
+function ListingsUnavailableState() {
+  return (
+    <div className="rounded-lg border border-dashed border-ink/18 bg-white p-6 text-center">
+      <h2 className="text-xl font-black text-ink">Trenutno ne možemo dohvatiti oglase.</h2>
+      <p className="mx-auto mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-ink/64">
+        Pokušaj ponovno za nekoliko trenutaka.
+      </p>
+      <button
+        type="button"
+        onClick={() => window.location.reload()}
+        className="focus-ring mt-5 inline-flex h-11 items-center justify-center rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
+      >
+        Pokušaj ponovno
+      </button>
+    </div>
   );
 }
 
