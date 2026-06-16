@@ -80,6 +80,32 @@ Admin dashboard takoder ima akcije za seed, sakrivanje i brisanje oglasa oznacen
 - [ ] `/pretplate` nema checkout, placanje ili lazni payment flow dok placanja nisu stvarno spojena.
 - [ ] AI Listing Assistant ne prikazuje fake rezultat ako AI action nije dostupan; korisnik dobiva jasno error stanje.
 
+## Manual beta QA checklist
+
+- [ ] Landing `/` se otvara bez prijave, nema javni demo/test/placeholder tekst i CTA-ovi vode na `/oglasi` i `/novi-oglas`.
+- [ ] Auth: prijava, odjava i login-required stanja na zasticenim rutama imaju korisnicki razumljive poruke.
+- [ ] `/oglasi` radi bez prijave, search ne lomi stranicu, a filteri Stvari rade za Sve, Prodajem, Poklanjam, Mijenjam i Trazim.
+- [ ] URL query parametri na `/oglasi` ostaju stabilni nakon refresh-a i ne resetiraju krivo aktivni filter.
+- [ ] Kada je `servicesEnabled=false`, javni feed ne prikazuje Stvari/Usluge switch i `/oglasi?content=services` ne otvara javno usluge.
+- [ ] Kada je `servicesEnabled=true`, switch Stvari / Usluge i pomoc radi, usluge imaju zasebne filtere i friendly empty state.
+- [ ] `/novi-oglas` rucni flow radi za Prodajem, Poklanjam, Mijenjam i Trazim bez obaveznog AI koraka.
+- [ ] AI Listing Assistant: jedna slika radi, vise od tri slike se blokira, nepodrzan format ima jasnu poruku, AI greska ne blokira rucnu objavu.
+- [ ] AI prijedlog cijene je prikazan kao okvirni prijedlog, ne kao sluzbena procjena vrijednosti.
+- [ ] Detail page stvarnog oglasa radi, nepostojeci oglas ima friendly not-found, a demo/fallback oglas se ne prikazuje.
+- [ ] Kontakt resolver ne prikazuje telefon, email ili Facebook URL javno prije korisnickog klika/resolve flowa.
+- [ ] Spremanje oglasa, spremljeni oglasi i spremljene potrage imaju friendly empty/login/error stanja.
+- [ ] Moji oglasi prikazuju korisnikove oglase i status akcije, ukljucujuci "Oznaci kao rijeseno" ako oglas postoji.
+- [ ] Admin portal radi samo adminu; obicni korisnik nema pristup admin dashboardu.
+- [ ] Admin moderacija vidi oglase, mijenja status, upravlja prijavama i demo seed/hide/delete alati su admin-only.
+- [ ] Admin toggle "Prikazi Pretplate na landingu" ostaje spremljen nakon refresh-a i javni UI prati stanje.
+- [ ] Admin toggle "Prikazi Usluge i pomoc" ostaje spremljen nakon refresh-a i javni UI prati stanje.
+- [ ] Nema `FunctionPathNotFound` gresaka u konzoli tijekom admin toggle testova.
+- [ ] Ako je pricing toggle ukljucen, `/pretplate` prikazuje Besplatno i Beta isticanje oglasa, cijenu 4,99 EUR / 7 dana i nema checkout.
+- [ ] Ako je pricing toggle iskljucen, header/landing ne prikazuju Pretplate i `/pretplate` koristi friendly fallback.
+- [ ] Legal stranice `/uvjeti-koristenja`, `/pravila-privatnosti`, `/kolacici` i `/kontakt` rade iz footera.
+- [ ] Privacy copy sadrzi AI obradu, korisnicka GDPR prava i ne tvrdi da su dokumenti odvjetnicki verificirani.
+- [ ] Mobile 360/390: landing, `/oglasi`, `/novi-oglas`, AI box, listing card, detail page, hamburger, filter panel i sticky CTA nemaju horizontalni overflow.
+
 ## Provjere prije deploya
 
 ```bash
@@ -175,4 +201,4 @@ Rucno provjeri:
 - Dogovor, placanje, preuzimanje i zamjena odvijaju se izravno izmedju korisnika izvan aplikacije.
 - Nema internog chata, komentara, lajkova ni rating sustava.
 - Nema Facebook scrapinga ni automatskog objavljivanja u Facebook grupe.
-- TODO: dodati privacy-friendly analytics kasnije ako bude stvarne potrebe.
+- Privacy-friendly analytics razmotriti kasnije samo ako postoji stvarna potreba i uz odgovarajuci consent setup.

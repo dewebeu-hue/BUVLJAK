@@ -30,9 +30,9 @@ export function SavedListingsPanel() {
   if (!hasConvexUrl) {
     return (
       <section className="mt-8 rounded-lg border border-honey/30 bg-honey/16 p-5">
-        <h2 className="text-xl font-black text-ink">Spremljeni oglasi traže povezanu bazu.</h2>
+        <h2 className="text-xl font-black text-ink">Spremljeni oglasi trenutno nisu dostupni.</h2>
         <p className="mt-2 text-sm font-semibold leading-relaxed text-ink/66">
-          Kad je Convex povezan, ovdje će se prikazati oglasi koje spremiš za kasnije.
+          Pokušaj ponovno za nekoliko trenutaka.
         </p>
       </section>
     );
