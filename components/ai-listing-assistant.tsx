@@ -158,7 +158,7 @@ function getPriceSummary(suggestion: AiListingDraftSuggestion, listingType: List
   }
 
   if (suggestion.priceLow !== null && suggestion.priceHigh !== null) {
-    return `Okvirno ${formatEuro(suggestion.priceLow)} - ${formatEuro(suggestion.priceHigh)}`;
+    return `Okvirno ${formatEuro(suggestion.priceLow)} do ${formatEuro(suggestion.priceHigh)}`;
   }
 
   if (suggestion.recommendedPrice !== null) {
@@ -388,16 +388,16 @@ export function AiListingAssistant({
   }
 
   return (
-    <section className="rounded-lg border border-moss/16 bg-moss/8 p-4 sm:p-5">
+    <section className="rounded-xl border border-moss/14 bg-white p-4 shadow-sm sm:p-5">
       <div className="flex items-start gap-3">
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-white text-mossDark shadow-sm">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-moss/10 text-mossDark">
           <Sparkles aria-hidden="true" size={21} />
         </span>
         <div className="min-w-0">
           <p className="text-xs font-black uppercase tracking-[0.12em] text-mossDark/72">
             AI pomoćnik
           </p>
-          <h2 className="mt-1 text-2xl font-black leading-tight text-ink">
+          <h2 className="mt-1 text-xl font-black leading-tight text-ink sm:text-2xl">
             Slikaj predmet i predloži oglas
           </h2>
           <p className="mt-2 text-sm font-semibold leading-relaxed text-ink/68">
@@ -407,22 +407,21 @@ export function AiListingAssistant({
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 rounded-lg border border-honey/24 bg-white/74 p-4 text-sm font-bold leading-relaxed text-ink/72">
+      <div className="mt-4 rounded-lg border border-honey/24 bg-honey/12 p-3 text-sm font-bold leading-relaxed text-ink/72">
         <p className="flex gap-2">
           <AlertCircle aria-hidden="true" className="mt-0.5 shrink-0 text-[#72520d]" size={17} />
           <span>AI može pogriješiti. Prije objave provjeri opis, stanje i cijenu.</span>
         </p>
-        <p className="flex gap-2">
+        <p className="mt-2 flex gap-2 text-xs leading-relaxed text-ink/62">
           <AlertCircle aria-hidden="true" className="mt-0.5 shrink-0 text-[#72520d]" size={17} />
           <span>
-            Ne šalji osobne dokumente, lica, registarske oznake, telefonske brojeve, emailove,
-            Facebook profile ili druge privatne podatke kroz AI analizu.
+            Ne šalji dokumente, lica, registracije, telefone, emailove ili druge privatne podatke.
           </span>
         </p>
       </div>
 
       <div className="mt-5 grid gap-3">
-        <label className="focus-ring flex min-h-28 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-moss/38 bg-white px-4 text-center text-sm font-black text-mossDark transition hover:bg-field">
+        <label className="focus-ring flex min-h-24 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-moss/38 bg-field px-4 text-center text-sm font-black text-mossDark transition hover:bg-moss/8">
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp"
@@ -548,8 +547,7 @@ export function AiListingAssistant({
           </dl>
 
           <div className="mt-3 rounded-lg border border-honey/24 bg-honey/14 p-3 text-sm font-bold leading-relaxed text-ink/72">
-            Ovo je okvirni AI prijedlog, ne službena procjena vrijednosti ni jamstvo tržišne cijene.
-            Provjeri stanje predmeta i po potrebi prilagodi cijenu.
+            Ovo je okvirni AI prijedlog, ne službena procjena vrijednosti. Provjeri stanje i cijenu prije objave.
           </div>
 
           {draftSuggestion.warnings.length ? (

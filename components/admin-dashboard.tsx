@@ -200,7 +200,7 @@ function ConnectedAdminDashboard() {
           <span className="inline-flex rounded-full bg-ink px-3 py-1 text-sm font-black text-white">
             Admin
           </span>
-          <h1 className="mt-3 text-4xl font-black leading-tight text-ink">Beta kontrola</h1>
+          <h1 className="mt-3 text-3xl font-black leading-tight text-ink sm:text-4xl">Beta kontrola</h1>
           <p className="mt-2 max-w-3xl text-sm font-semibold leading-relaxed text-ink/64">
             Pregled, moderacija i spremnost Buvljaka za zatvorenu lokalnu betu.
           </p>

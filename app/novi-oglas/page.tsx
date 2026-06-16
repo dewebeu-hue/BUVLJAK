@@ -16,7 +16,7 @@ export default function NewListingPage() {
           <span className="inline-flex rounded-full bg-honey/24 px-3 py-1 text-sm font-black text-[#72520d]">
             Novi oglas
           </span>
-          <h1 className="mt-3 text-4xl font-black leading-tight text-ink">Objavi nešto za susjedstvo</h1>
+          <h1 className="mt-3 text-3xl font-black leading-tight text-ink sm:text-4xl">Objavi nešto za susjedstvo</h1>
 
           {!isLoaded ? <NewListingAuthLoading /> : null}
           {isLoaded && !isSignedIn ? <NewListingLoginRequired /> : null}

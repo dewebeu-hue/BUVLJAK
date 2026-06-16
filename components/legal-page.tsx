@@ -18,7 +18,7 @@ export function LegalPage({
           <span className="inline-flex rounded-full bg-moss/10 px-3 py-1 text-sm font-black text-mossDark">
             {eyebrow}
           </span>
-          <h1 className="mt-4 text-4xl font-black leading-tight text-ink sm:text-5xl">{title}</h1>
+          <h1 className="mt-4 text-3xl font-black leading-tight text-ink sm:text-5xl">{title}</h1>
           <p className="mt-4 max-w-3xl text-base font-semibold leading-relaxed text-ink/68 sm:text-lg">
             {subtitle}
           </p>

@@ -104,7 +104,7 @@ function LandingPage() {
           />
         </div>
 
-        <div className="relative z-10 mx-auto flex min-h-[500px] max-w-6xl items-start px-4 pb-28 pt-8 sm:px-6 md:min-h-[600px] md:items-center md:py-12 lg:min-h-[620px]">
+        <div className="relative z-10 mx-auto flex min-h-[460px] max-w-6xl items-start px-4 pb-20 pt-7 sm:px-6 sm:pt-8 md:min-h-[600px] md:items-center md:py-12 lg:min-h-[620px]">
           <div className="hero-copy max-w-xl text-ink">
             <span className="inline-flex rounded-full border border-moss/14 bg-white/76 px-3 py-1 text-sm font-black text-mossDark shadow-sm">
               Beta za Novu Gradišku i okolicu.

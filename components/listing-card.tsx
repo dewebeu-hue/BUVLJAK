@@ -137,7 +137,7 @@ function LocalListingCard({
   const [statusMessage, setStatusMessage] = useState("");
 
   async function handleSave() {
-    setStatusMessage("Spremanje oglasa radi nakon prijave i povezane baze.");
+    setStatusMessage("Prijavi se da možeš spremiti oglas.");
   }
 
   async function handleShare() {
@@ -268,7 +268,7 @@ function ListingCardSurface({
             <Handshake aria-hidden="true" size={16} />
             <span className="truncate">{primaryActionLabel}</span>
           </Link>
-          <div className="listing-card-secondary-actions grid grid-cols-3 gap-2" aria-label="Sekundarne akcije oglasa">
+          <div className="listing-card-secondary-actions grid grid-cols-2 gap-2 sm:grid-cols-3" aria-label="Sekundarne akcije oglasa">
             <button
               type="button"
               onClick={onSave}
@@ -292,7 +292,7 @@ function ListingCardSurface({
             </button>
             <Link
               href={detailsHref}
-              className="focus-ring inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border border-ink/12 bg-white px-2 text-xs font-black text-ink transition hover:bg-field"
+              className="focus-ring col-span-2 inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border border-ink/12 bg-white px-2 text-xs font-black text-ink transition hover:bg-field sm:col-span-1"
             >
               <Tag aria-hidden="true" size={15} />
               Detalji

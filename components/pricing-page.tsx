@@ -63,7 +63,7 @@ function ConnectedPricingPage() {
           </span>
           <div className="mt-4 grid gap-5 lg:grid-cols-[1fr_0.72fr] lg:items-end">
             <div>
-              <h1 className="text-4xl font-black leading-tight text-ink sm:text-5xl">
+              <h1 className="text-3xl font-black leading-tight text-ink sm:text-5xl">
                 Pretplate i isticanje oglasa
               </h1>
               <p className="mt-4 max-w-3xl text-base font-semibold leading-relaxed text-ink/70 sm:text-lg">
