@@ -394,8 +394,8 @@ export function AiListingAssistant({
         <p className="flex gap-2">
           <AlertCircle aria-hidden="true" className="mt-0.5 shrink-0 text-[#72520d]" size={17} />
           <span>
-            Ne šalji osobne dokumente, lica, registarske oznake, telefonske brojeve, emailove ili
-            privatne podatke kroz AI analizu.
+            Ne šalji osobne dokumente, lica, registarske oznake, telefonske brojeve, emailove,
+            Facebook profile ili druge privatne podatke kroz AI analizu.
           </span>
         </p>
       </div>
@@ -527,8 +527,8 @@ export function AiListingAssistant({
           </dl>
 
           <div className="mt-3 rounded-lg border border-honey/24 bg-honey/14 p-3 text-sm font-bold leading-relaxed text-ink/72">
-            Ovo je okvirni AI prijedlog, ne službena procjena vrijednosti. Provjeri stanje predmeta
-            i po potrebi prilagodi cijenu.
+            Ovo je okvirni AI prijedlog, ne službena procjena vrijednosti ni jamstvo tržišne cijene.
+            Provjeri stanje predmeta i po potrebi prilagodi cijenu.
           </div>
 
           {draftSuggestion.warnings.length ? (

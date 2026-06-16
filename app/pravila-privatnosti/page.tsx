@@ -37,6 +37,7 @@ export default function PrivacyPolicyPage() {
             "grad ili lokaciju koju korisnik unese, primjerice Nova Gradiška i okolica",
             "odabranu kontakt metodu, primjerice WhatsApp, email, Facebook link ili bez kontakta",
             "kontakt klikove, ponude i kratke poruke poslane kroz kontakt resolver",
+            "fotografije predmeta i draft podatke oglasa ako korisnik pokrene AI pomoćnika za oglase",
             "spremljene oglase i spremljene potrage ako korisnik koristi te funkcije",
             "prijave oglasa, razloge prijave i administrativne odluke vezane uz moderaciju",
             "tehničke podatke potrebne za sigurnost, rate limit, sprječavanje zloupotrebe i rad aplikacije"
@@ -50,6 +51,7 @@ export default function PrivacyPolicyPage() {
             "za prijavu, korisnički račun i povezivanje korisnika s oglasima",
             "za objavu, prikaz, uređivanje statusa i upravljanje oglasima",
             "za kontakt oko oglasa, slanje upita, ponuda ili prijedloga zamjene",
+            "za pripremu AI prijedloga oglasa ako korisnik sam pokrene AI pomoćnika",
             "za spremanje oglasa i potraga ako korisnik koristi te funkcije",
             "za email obavijesti o spremljenim potragama ako su uključene",
             "za moderaciju, prijave oglasa, sigurnost i sprječavanje spama ili zloupotrebe",
@@ -58,7 +60,35 @@ export default function PrivacyPolicyPage() {
         />
       </LegalSection>
 
-      <LegalSection title="4. Vanjski pružatelji">
+      <LegalSection title="4. AI pomoćnik za oglase" tone="notice">
+        <p>
+          Korisnik može koristiti AI pomoćnika za prijedlog naslova, opisa, kategorije, stanja
+          predmeta, okvirne cijene i teksta za dijeljenje oglasa. AI pomoćnik se koristi samo kada ga
+          korisnik sam pokrene.
+        </p>
+        <p>
+          AI može obraditi fotografije predmeta koje korisnik pošalje u AI analizu te tekstualne
+          podatke iz drafta oglasa, primjerice tip oglasa, naslov, opis, kategoriju i lokalni kontekst.
+          Buvljak.hr nastoji AI servisu slati samo podatke potrebne za pripremu prijedloga oglasa.
+        </p>
+        <p>
+          Ne šalji osobne dokumente, lica, registarske oznake, telefonske brojeve, emailove, Facebook
+          profile ili druge privatne podatke kroz AI analizu.
+        </p>
+        <p>
+          AI prijedlog je pomoćni alat i može pogriješiti. Korisnik mora provjeriti opis, stanje
+          predmeta, kategoriju i cijenu prije objave. Prijedlog cijene nije službena procjena vrijednosti
+          niti jamstvo tržišne cijene.
+        </p>
+        <p>
+          Radi sigurnosti, ograničenja troška i sprječavanja zloupotrebe Buvljak.hr može bilježiti
+          tehničke metapodatke o korištenju AI funkcije, poput broja slika, statusa zahtjeva, modela i
+          vremena zahtjeva. U usage logu ne bilježimo raw AI promptove, raw AI outpute ni privatne
+          kontakt podatke.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="5. Vanjski pružatelji">
         <p>Buvljak.hr koristi ili može koristiti ove pružatelje koji su pronađeni u stvarnom kodu ili konfiguraciji:</p>
         <LegalList
           items={[
@@ -66,14 +96,14 @@ export default function PrivacyPolicyPage() {
             "Convex za backend, bazu podataka, autorizirane funkcije i storage slika",
             "Vercel za hosting, build i tehničko posluživanje aplikacije",
             "Resend za slanje email upita i email obavijesti ako je email slanje uključeno",
-            "OpenAI za pomoć pri parsiranju ili generiranju teksta oglasa ako korisnik koristi AI funkciju",
+            "OpenAI za AI pomoć pri analizi fotografija predmeta te parsiranju ili generiranju teksta oglasa ako korisnik koristi AI funkciju",
             "Facebook/Meta samo kada korisnik odabere Facebook prijavu ili spremi/otvori Facebook kontakt link"
           ]}
         />
         <p>U kodu nisu pronađeni dodatni analitički ili marketinški alati za praćenje korisnika.</p>
       </LegalSection>
 
-      <LegalSection title="5. Kolačići i slične tehnologije" tone="notice">
+      <LegalSection title="6. Kolačići i slične tehnologije" tone="notice">
         <p>
           Buvljak.hr u beta verziji koristi samo nužne kolačiće i slične tehnologije potrebne za rad
           aplikacije, prijavu korisnika, sigurnost i spremanje osnovnih postavki. Za takve kolačiće nije
@@ -88,7 +118,7 @@ export default function PrivacyPolicyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="6. Javni dio oglasa">
+      <LegalSection title="7. Javni dio oglasa">
         <p>
           Javni dio oglasa, primjerice naslov, opis, fotografije, grad, kategorija, tip oglasa i cijena,
           mogu vidjeti drugi korisnici i tražilice ako stranica nije tehnički ograničena.
@@ -99,7 +129,7 @@ export default function PrivacyPolicyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="7. Plaćanja, dostava i chat">
+      <LegalSection title="8. Plaćanja, dostava i chat">
         <p>
           Buvljak.hr u MVP-u nema online plaćanja, obradu plaćanja, dostavu kroz platformu ni interni
           chat. Platforma ne prikuplja podatke o karticama, IBAN-u ni plaćanjima kroz aplikaciju.
@@ -107,7 +137,7 @@ export default function PrivacyPolicyPage() {
         <p>Buvljak.hr ne prodaje osobne podatke korisnika.</p>
       </LegalSection>
 
-      <LegalSection title="8. Kako ostvariti svoja prava">
+      <LegalSection title="9. Kako ostvariti svoja prava">
         <p>Korisnik može zatražiti:</p>
         <LegalList
           items={[
@@ -133,7 +163,7 @@ export default function PrivacyPolicyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="9. Brisanje i zadržavanje podataka">
+      <LegalSection title="10. Brisanje i zadržavanje podataka">
         <p>
           Korisnik može zatražiti brisanje računa ili svojih podataka slanjem zahtjeva na{" "}
           <a href="mailto:deweb.eu@gmail.com" className="font-black text-mossDark underline">
@@ -151,9 +181,9 @@ export default function PrivacyPolicyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="10. Beta napomena">
+      <LegalSection title="11. Beta napomena">
         <p>Ovo su početne beta informacije i mogu se dopuniti prije šire javne objave.</p>
-        <p>Zadnja izmjena: 14.06.2026.</p>
+        <p>Zadnja izmjena: 16.06.2026.</p>
       </LegalSection>
     </LegalPage>
   );

@@ -68,6 +68,10 @@ export default function CookiesPage() {
           Clarity, Hotjar, PostHog, Sentry ni drugi marketing ili tracking scriptovi.
         </p>
         <p>
+          AI pomoćnik za oglase nije marketinški kolačić i sam po sebi ne znači da je potreban cookie
+          banner. Obrada AI prijedloga opisana je u Pravilima privatnosti.
+        </p>
+        <p>
           Ako se kasnije uvedu analitički ili marketinški kolačići koji nisu nužni za rad aplikacije,
           Buvljak.hr će prije toga dodati jasnu obavijest i odgovarajuću kontrolu privole.
         </p>
@@ -99,7 +103,7 @@ export default function CookiesPage() {
 
       <LegalSection title="7. Beta napomena">
         <p>Ovo su početne beta informacije i mogu se dopuniti prije šire javne objave.</p>
-        <p>Zadnja izmjena: 14.06.2026.</p>
+        <p>Zadnja izmjena: 16.06.2026.</p>
       </LegalSection>
     </LegalPage>
   );

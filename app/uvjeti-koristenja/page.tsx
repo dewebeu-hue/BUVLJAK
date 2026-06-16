@@ -56,7 +56,23 @@ export default function TermsPage() {
         />
       </LegalSection>
 
-      <LegalSection title="5. Zabranjeni sadržaj">
+      <LegalSection title="5. AI prijedlozi oglasa" tone="notice">
+        <p>
+          AI prijedlozi oglasa su pomoćna funkcija. Korisnik je odgovoran provjeriti i urediti naslov,
+          opis, kategoriju, stanje predmeta, cijenu i tekst prije objave.
+        </p>
+        <p>
+          Buvljak.hr ne jamči točnost AI prijedloga. Predložena cijena je okvirna informacija, nije
+          službena procjena vrijednosti i nije jamstvo tržišne cijene.
+        </p>
+        <p>
+          Korisnik sam odlučuje koju cijenu, opis i uvjete objavljuje. Kroz AI analizu nije dopušteno
+          slati privatne podatke, osobne dokumente, fotografije koje nepotrebno otkrivaju lica,
+          registarske oznake ili sadržaj koji korisnik nema pravo koristiti.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="6. Zabranjeni sadržaj">
         <p>Na Buvljak.hr-u nije dopušteno objavljivati ili slati:</p>
         <LegalList
           items={[
@@ -72,7 +88,7 @@ export default function TermsPage() {
         />
       </LegalSection>
 
-      <LegalSection title="6. Moderacija i ograničenja">
+      <LegalSection title="7. Moderacija i ograničenja">
         <p>
           Buvljak.hr može odbiti, sakriti, pauzirati, urediti status ili ukloniti oglas ako krši ova
           pravila, ugrožava druge korisnike ili narušava kvalitetu platforme.
@@ -83,7 +99,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="7. Dogovor između korisnika" tone="notice">
+      <LegalSection title="8. Dogovor između korisnika" tone="notice">
         <p>
           Buvljak.hr nije kupac, prodavatelj, posrednik u plaćanju, dostavljač ni jamac
           transakcije.
@@ -98,7 +114,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="8. Kontakt funkcija">
+      <LegalSection title="9. Kontakt funkcija">
         <p>
           Kontakt gumbi smiju se koristiti samo za stvarni interes za oglas, potragu, poklanjanje ili
           razmjenu.
@@ -112,7 +128,7 @@ export default function TermsPage() {
         />
       </LegalSection>
 
-      <LegalSection title="9. Jamstva i odgovornost platforme">
+      <LegalSection title="10. Jamstva i odgovornost platforme">
         <p>
           Buvljak.hr ne jamči točnost oglasa, dostupnost predmeta, kvalitetu predmeta, ponašanje
           korisnika ni uspješnost dogovora.
@@ -122,12 +138,12 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="10. Promjene pravila">
+      <LegalSection title="11. Promjene pravila">
         <p>
           Pravila se mogu mijenjati tijekom beta faze kako bi platforma ostala sigurnija, jasnija i
           korisnija lokalnoj zajednici.
         </p>
-        <p>Zadnja izmjena: 13.06.2026.</p>
+        <p>Zadnja izmjena: 16.06.2026.</p>
       </LegalSection>
     </LegalPage>
   );
