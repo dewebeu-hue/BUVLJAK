@@ -77,8 +77,13 @@ export function AccountPage() {
     );
   }
 
-  const displayName = user?.fullName || user?.firstName || user?.username || "Nije dostupno";
-  const email = user?.primaryEmailAddress?.emailAddress || "Nije dostupno";
+  const displayName = user?.fullName || user?.firstName || user?.username;
+  const email = user?.primaryEmailAddress?.emailAddress;
+  const accountFields = [
+    ...(displayName ? [{ label: "Ime", value: displayName }] : []),
+    ...(email ? [{ label: "Email", value: email }] : []),
+    { label: "Status prijave", value: "Prijavljen/a" }
+  ];
 
   return (
     <main className="px-4 py-8 sm:px-6">
@@ -87,9 +92,9 @@ export function AccountPage() {
           Moj račun
         </span>
         <div className="mt-3">
-          <h1 className="text-4xl font-black leading-tight text-ink">Moj račun</h1>
+          <h1 className="text-3xl font-black leading-tight text-ink sm:text-4xl">Moj račun</h1>
           <p className="mt-3 max-w-2xl text-base font-semibold leading-relaxed text-ink/66">
-            Osnovni podaci, privatnost i linkovi za upravljanje tvojim Buvljak.hr računom.
+            Ovdje upravljaš osnovnim podacima, privatnošću i zahtjevima vezanim uz račun.
           </p>
         </div>
 
@@ -107,10 +112,9 @@ export function AccountPage() {
           </div>
 
           <dl className="mt-5 grid gap-3 sm:grid-cols-2">
-            <AccountField label="Ime" value={displayName} />
-            <AccountField label="Email" value={email} />
-            <AccountField label="Status računa" value="Prijavljen/a" />
-            <AccountField label="Područje bete" value="Nova Gradiška i okolica" />
+            {accountFields.map((field) => (
+              <AccountField key={field.label} label={field.label} value={field.value} />
+            ))}
           </dl>
         </section>
 

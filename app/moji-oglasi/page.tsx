@@ -11,7 +11,7 @@ export default function MyListingsPage() {
         </span>
         <div className="mt-3 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <h1 className="text-4xl font-black leading-tight text-ink">Moji oglasi</h1>
+            <h1 className="text-3xl font-black leading-tight text-ink sm:text-4xl">Moji oglasi</h1>
             <p className="mt-3 max-w-2xl text-base font-semibold leading-relaxed text-ink/66">
               Upravljaj svojim aktivnim, pauziranim i riješenim oglasima.
             </p>
@@ -21,7 +21,7 @@ export default function MyListingsPage() {
             className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-moss px-4 text-sm font-black text-white transition hover:bg-mossDark"
           >
             <PlusCircle aria-hidden="true" size={18} />
-            Objavi prvi oglas
+            Objavi oglas
           </Link>
         </div>
 
