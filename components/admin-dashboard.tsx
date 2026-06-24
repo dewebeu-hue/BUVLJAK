@@ -284,6 +284,8 @@ function AdminOverview() {
     { label: "Uklonjeni", value: stats?.removedListings, icon: Trash2 },
     { label: "Prijavljeni", value: stats?.reportedListings, icon: Flag },
     { label: "Korisnici", value: stats?.users, icon: Users },
+    { label: "Podaci dopunjeni", value: stats?.advertiserProfilesCompleted, icon: ShieldCheck },
+    { label: "Podaci nedostaju", value: stats?.advertiserProfilesMissing, icon: AlertTriangle },
     { label: "Kontakt klikovi", value: stats?.contactClicks, icon: Eye },
     { label: "AI danas", value: stats?.aiSuggestionsToday, icon: Sparkles },
     { label: "AI 7 dana", value: stats?.aiSuggestionsLast7Days, icon: Sparkles },

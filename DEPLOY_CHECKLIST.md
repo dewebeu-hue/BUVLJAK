@@ -80,6 +80,17 @@ Admin dashboard takoder ima akcije za seed, sakrivanje i brisanje oglasa oznacen
 - [ ] `/pretplate` nema checkout, placanje ili lazni payment flow dok placanja nisu stvarno spojena.
 - [ ] AI Listing Assistant ne prikazuje fake rezultat ako AI action nije dostupan; korisnik dobiva jasno error stanje.
 
+## Podaci za predaju oglasa
+
+- [ ] Convex schema i funkcije za `advertiserProfiles` su deployani na produkcijski Convex deployment.
+- [ ] Prije prve javne objave novi korisnik mora dopuniti ime, prezime, OIB, drzavu, adresu, mjesto, postanski broj, zupaniju i telefon.
+- [ ] `/novi-oglas` blokira objavu prije uploada/slanja oglasa ako Podaci za predaju oglasa nisu dopunjeni.
+- [ ] Server-side `createListing` blokira direktan pokusaj kreiranja oglasa bez dopunjenih podataka.
+- [ ] `/moj-racun` prikazuje status "Dopunjeno" ili "Nedostaje" i omogucuje uredjivanje podataka.
+- [ ] OIB, puna adresa i telefon nisu dio javnog listing payload-a, share teksta, feeda ni AI Listing Assistant zahtjeva.
+- [ ] Admin pregled prikazuje koliko korisnika ima dopunjene podatke i koliko ih jos nedostaje.
+- [ ] Postojeci korisnici i postojeci oglasi nisu automatski brisani ni migrirani bez zasebne odluke; za vec postojece aktivne oglase provjeriti rucno treba li traziti dopunu podataka prije daljnje javne promocije.
+
 ## Manual beta QA checklist
 
 - [ ] Landing `/` se otvara bez prijave, nema javni demo/test/placeholder tekst i CTA-ovi vode na `/oglasi` i `/novi-oglas`.
@@ -89,6 +100,7 @@ Admin dashboard takoder ima akcije za seed, sakrivanje i brisanje oglasa oznacen
 - [ ] Kada je `servicesEnabled=false`, javni feed ne prikazuje Stvari/Usluge switch i `/oglasi?content=services` ne otvara javno usluge.
 - [ ] Kada je `servicesEnabled=true`, switch Stvari / Usluge i pomoc radi, usluge imaju zasebne filtere i friendly empty state.
 - [ ] `/novi-oglas` rucni flow radi za Prodajem, Poklanjam, Mijenjam i Trazim bez obaveznog AI koraka.
+- [ ] Prva objava oglasa trazi Podatke za predaju oglasa; nakon spremanja podataka korisnik moze dovrsiti objavu.
 - [ ] AI Listing Assistant: jedna slika radi, vise od tri slike se blokira, nepodrzan format ima jasnu poruku, AI greska ne blokira rucnu objavu.
 - [ ] AI prijedlog cijene je prikazan kao okvirni prijedlog, ne kao sluzbena procjena vrijednosti.
 - [ ] Detail page stvarnog oglasa radi, nepostojeci oglas ima friendly not-found, a demo/fallback oglas se ne prikazuje.

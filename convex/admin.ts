@@ -9,6 +9,7 @@ import {
   userRoleValidator
 } from "./validators";
 import { getAdminStatus, requireAdmin } from "./adminAuth";
+import { isAdvertiserProfileComplete } from "./advertiserProfiles";
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
@@ -148,6 +149,7 @@ export const getAdminStats = query({
       listings,
       reports,
       users,
+      advertiserProfiles,
       savedSearches,
       notificationEvents,
       contactEvents,
@@ -160,6 +162,7 @@ export const getAdminStats = query({
         ctx.db.query("listings").collect(),
         ctx.db.query("reports").collect(),
         ctx.db.query("users").collect(),
+        ctx.db.query("advertiserProfiles").take(10_000),
         ctx.db.query("savedSearches").collect(),
         ctx.db.query("notificationEvents").collect(),
         ctx.db.query("contactEvents").collect(),
@@ -197,6 +200,13 @@ export const getAdminStats = query({
       removedListings: listings.filter((listing) => listing.status === "removed").length,
       reportedListings: new Set(reports.map((report) => report.listingId)).size,
       users: users.length,
+      advertiserProfilesCompleted: advertiserProfiles.filter((profile) =>
+        isAdvertiserProfileComplete(profile)
+      ).length,
+      advertiserProfilesMissing: Math.max(
+        users.length - advertiserProfiles.filter((profile) => isAdvertiserProfileComplete(profile)).length,
+        0
+      ),
       contactClicks: listings.reduce((sum, listing) => sum + listing.contactClickCount, 0),
       shares: listings.reduce((sum, listing) => sum + listing.shareCount, 0),
       savedSearches: savedSearches.length,
@@ -545,6 +555,7 @@ export const getBetaReadiness = query({
       { label: "Clerk auth aktivan", status: "pass" as const },
       { label: "Admin guard aktivan", status: "pass" as const },
       { label: "Kreiranje oglasa radi", status: "manual" as const },
+      { label: "Podaci za predaju oglasa blokiraju objavu dok nisu dopunjeni", status: "pass" as const },
       { label: "Feed aktivnih oglasa radi", status: "pass" as const },
       { label: "Kontakt resolver radi", status: "manual" as const },
       { label: "Rate limit kontakt upita aktivan", status: "pass" as const },

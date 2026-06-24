@@ -54,6 +54,16 @@ export default function TermsPage() {
             "korisnik treba pauzirati, označiti kao riješeno ili ukloniti oglas kada više nije aktualan"
           ]}
         />
+        <p>
+          Prije prve javne objave oglasa korisnik mora dopuniti Podatke za predaju oglasa. Korisnik
+          jamči da su uneseni ime, prezime, OIB, adresa, mjesto, županija i telefon točni, ažurni i da
+          pripadaju stvarnom korisniku računa.
+        </p>
+        <p>
+          Buvljak.hr može odbiti, pauzirati, ukloniti oglas ili ograničiti račun ako obavezni podaci
+          nedostaju, izgledaju netočno ili postoji sumnja na zloupotrebu, prijevaru ili objavu tuđih
+          podataka bez prava.
+        </p>
       </LegalSection>
 
       <LegalSection title="5. AI prijedlozi oglasa" tone="notice">

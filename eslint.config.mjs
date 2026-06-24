@@ -7,8 +7,10 @@ export default defineConfig([
   ...nextTypescript,
   globalIgnores([
     ".next/**",
+    ".codex-tmp/**",
     "out/**",
     "build/**",
+    "convex/_generated/**",
     "next-env.d.ts"
   ])
 ]);

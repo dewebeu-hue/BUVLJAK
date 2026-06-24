@@ -10,6 +10,7 @@ import {
   priceTypeValidator
 } from "./validators";
 import { isAdminEmail, requireAdmin } from "./adminAuth";
+import { isAdvertiserProfileComplete } from "./advertiserProfiles";
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
@@ -164,6 +165,23 @@ async function getOrCreateCurrentUser(ctx: GenericMutationCtx<DataModel>) {
   });
 
   return await ctx.db.get(userId);
+}
+
+async function requireCompletedAdvertiserProfile(ctx: GenericMutationCtx<DataModel>) {
+  const identity = await ctx.auth.getUserIdentity();
+
+  if (!identity) {
+    throw new ConvexError("Prijavi se kako bi objavio oglas.");
+  }
+
+  const profile = await ctx.db
+    .query("advertiserProfiles")
+    .withIndex("by_userId", (q) => q.eq("userId", identity.tokenIdentifier))
+    .first();
+
+  if (!isAdvertiserProfileComplete(profile)) {
+    throw new ConvexError("Prije objave oglasa dopuni Podatke za predaju oglasa u Moj račun.");
+  }
 }
 
 async function getCurrentUser(ctx: GenericQueryCtx<DataModel>) {
@@ -460,6 +478,8 @@ export const createListing = mutation({
     if (currentUser.isBlocked) {
       throw new ConvexError("Tvoj korisnički račun je blokiran za objavu oglasa.");
     }
+
+    await requireCompletedAdvertiserProfile(ctx);
 
     if (args.price !== undefined && args.price < 0) {
       throw new ConvexError("Price cannot be negative.");

@@ -13,6 +13,8 @@ import {
   UserRound
 } from "lucide-react";
 
+import { AdvertiserProfileForm } from "@/components/advertiser-profile-form";
+
 const privacyMailHref =
   "mailto:deweb.eu@gmail.com?subject=Zahtjev%20za%20privatnost%20i%20podatke%20-%20Buvljak.hr";
 const deleteAccountHref =
@@ -117,6 +119,10 @@ export function AccountPage() {
             ))}
           </dl>
         </section>
+
+        <div className="mt-5">
+          <AdvertiserProfileForm />
+        </div>
 
         <section className="mt-5 rounded-lg border border-ink/10 bg-white p-5 shadow-sm sm:p-6">
           <div className="flex items-start gap-3">

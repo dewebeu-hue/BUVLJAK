@@ -32,6 +32,7 @@ export default function PrivacyPolicyPage() {
           items={[
             "email i osnovni identitet iz Clerk prijave",
             "ime, prikazano ime i profilne podatke ako ih korisnik unese ili ih prijava pošalje aplikaciji",
+            "podatke za predaju oglasa prije prve javne objave: ime, prezime, OIB, adresa, mjesto, poštanski broj, županija i telefon",
             "sadržaj oglasa: naslov, opis, cijenu, kategoriju, tip oglasa i status",
             "slike oglasa koje korisnik prenese",
             "grad ili lokaciju koju korisnik unese, primjerice Nova Gradiška i okolica",
@@ -49,6 +50,7 @@ export default function PrivacyPolicyPage() {
         <LegalList
           items={[
             "za prijavu, korisnički račun i povezivanje korisnika s oglasima",
+            "za provjeru minimalnih podataka predavatelja oglasa prije javne objave i radi zaštite od zloupotrebe",
             "za objavu, prikaz, uređivanje statusa i upravljanje oglasima",
             "za kontakt oko oglasa, slanje upita, ponuda ili prijedloga zamjene",
             "za pripremu AI prijedloga oglasa ako korisnik sam pokrene AI pomoćnika",
@@ -127,6 +129,11 @@ export default function PrivacyPolicyPage() {
           Privatni kontakt podaci ne prikazuju se javno u feedu oglasa. Koriste se kroz postojeći kontakt
           flow ovisno o odabiru korisnika.
         </p>
+        <p>
+          Podaci za predaju oglasa, uključujući OIB, punu adresu, kućni broj i telefon, nisu dio javnog
+          oglasa. Koriste se za sigurnost, moderaciju, sprječavanje zloupotrebe i zakonsku usklađenost.
+          Ne koriste se za marketing i ne šalju se AI pomoćniku za oglase.
+        </p>
       </LegalSection>
 
       <LegalSection title="8. Plaćanja, dostava i chat">
@@ -174,6 +181,10 @@ export default function PrivacyPolicyPage() {
         <p>
           Neki podaci mogu ostati sačuvani ako su potrebni za sigurnost, sprječavanje zloupotrebe,
           rješavanje prijava, administrativnu evidenciju ili zakonske obveze.
+        </p>
+        <p>
+          Pristup podacima za predaju oglasa ograničen je na ovlaštene administrativne i sigurnosne
+          potrebe. Ti podaci nisu dostupni drugim korisnicima preko javnog oglasa.
         </p>
         <p>
           Javno objavljeni oglasi koje su indeksirale tražilice ili podijelili drugi korisnici mogu neko

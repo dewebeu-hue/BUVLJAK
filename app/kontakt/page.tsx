@@ -59,6 +59,10 @@ export default function ContactPage() {
           Za brisanje računa ili podataka može biti potrebna dodatna provjera identiteta prije obrade
           zahtjeva.
         </p>
+        <p>
+          Podatke za predaju oglasa možeš urediti u stranici Moj račun. Ako trebaš pomoć oko ispravka
+          ili brisanja tih podataka, pošalji zahtjev s email adrese kojom koristiš Buvljak.hr.
+        </p>
       </LegalSection>
 
       <LegalSection title="Hitne i ozbiljne situacije" tone="notice">

@@ -36,6 +36,11 @@ export const contactMethodValidator = v.union(
   v.literal("none")
 );
 
+export const advertiserAccountTypeValidator = v.union(
+  v.literal("individual"),
+  v.literal("business")
+);
+
 export const priceTypeValidator = v.union(
   v.literal("fixed"),
   v.literal("negotiable"),

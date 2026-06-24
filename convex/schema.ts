@@ -1,6 +1,7 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import {
+  advertiserAccountTypeValidator,
   contactMethodValidator,
   contactSourceValidator,
   contactVisibilityValidator,
@@ -35,6 +36,26 @@ export default defineSchema({
   })
     .index("by_clerkUserId", ["clerkUserId"])
     .index("by_role", ["role"]),
+
+  advertiserProfiles: defineTable({
+    userId: v.string(),
+    accountType: advertiserAccountTypeValidator,
+    firstName: v.string(),
+    lastName: v.string(),
+    oib: v.string(),
+    country: v.string(),
+    street: v.string(),
+    houseNumber: v.string(),
+    postalCode: v.string(),
+    city: v.string(),
+    county: v.string(),
+    phone: v.string(),
+    publicCityEnabled: v.boolean(),
+    publicPhoneEnabled: v.boolean(),
+    completedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number()
+  }).index("by_userId", ["userId"]),
 
   listings: defineTable({
     ownerId: v.optional(v.id("users")),

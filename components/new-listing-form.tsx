@@ -20,7 +20,9 @@ import {
   AiListingAssistant,
   type AiListingDraftSuggestion
 } from "@/components/ai-listing-assistant";
+import { AdvertiserProfileForm } from "@/components/advertiser-profile-form";
 import { api } from "@/convex/_generated/api";
+import { getMyAdvertiserProfileStatusRef } from "@/lib/advertiser-profile-refs";
 import { formatImageBytes, uploadListingImageToConvexStorage } from "@/lib/listing-images";
 import {
   contactMethodLabels,
@@ -195,6 +197,10 @@ function ConnectedNewListingForm() {
   const { isLoaded: isClerkLoaded, isSignedIn, user } = useUser();
   const convexAuth = useConvexAuth();
   const authDebug = useQuery(api.authDebug.getCurrentIdentity, isDevelopment ? {} : "skip");
+  const advertiserProfileStatus = useQuery(
+    getMyAdvertiserProfileStatusRef,
+    isSignedIn ? {} : "skip"
+  );
   const parseImportedListingText = useAction(api.facebookImports.parseImportedListingText);
   const createListing = useMutation(api.listings.createListing);
   const generateUploadUrl = useMutation(api.listings.generateListingImageUploadUrl);
@@ -212,6 +218,8 @@ function ConnectedNewListingForm() {
   const [importError, setImportError] = useState<string | null>(null);
   const [isParsingImport, setIsParsingImport] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAdvertiserProfileGateOpen, setIsAdvertiserProfileGateOpen] = useState(false);
+  const [advertiserProfileNotice, setAdvertiserProfileNotice] = useState<string | null>(null);
   const [clerkConvexTokenStatus, setClerkConvexTokenStatus] =
     useState<ClerkConvexTokenStatus>("checking");
   const [currentStep, setCurrentStep] = useState(0);
@@ -538,6 +546,7 @@ function ConnectedNewListingForm() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setAdvertiserProfileNotice(null);
 
     if (!isFinalStep) {
       handleNextStep();
@@ -559,6 +568,15 @@ function ConnectedNewListingForm() {
 
       if (!convexAuth.isAuthenticated) {
         throw new Error("Prijavi se da možeš objaviti oglas.");
+      }
+
+      if (advertiserProfileStatus === undefined) {
+        throw new Error("Još provjeravamo Podatke za predaju oglasa. Pokušaj ponovno za trenutak.");
+      }
+
+      if (!advertiserProfileStatus.isComplete) {
+        setIsAdvertiserProfileGateOpen(true);
+        throw new Error("Prije prve objave dopuni Podatke za predaju oglasa.");
       }
 
       const price = parsePrice(form.price);
@@ -789,6 +807,24 @@ function ConnectedNewListingForm() {
             />
           </label>
         </section>
+      ) : null}
+
+      {isAdvertiserProfileGateOpen ? (
+        <AdvertiserProfileForm
+          mode="gate"
+          onCancel={() => setIsAdvertiserProfileGateOpen(false)}
+          onSaved={() => {
+            setIsAdvertiserProfileGateOpen(false);
+            setAdvertiserProfileNotice("Podaci su spremljeni. Klikni Objavi oglas za dovršetak objave.");
+          }}
+        />
+      ) : null}
+
+      {advertiserProfileNotice ? (
+        <div className="flex gap-3 rounded-lg border border-moss/20 bg-moss/8 p-4 text-mossDark">
+          <CheckCircle2 aria-hidden="true" className="mt-0.5 shrink-0" size={20} />
+          <p className="text-sm font-black leading-relaxed">{advertiserProfileNotice}</p>
+        </div>
       ) : null}
 
       {error ? (
