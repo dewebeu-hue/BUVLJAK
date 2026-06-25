@@ -93,7 +93,7 @@ function LandingPage() {
       <section className="hero-image">
         <div className="hero-visual" aria-hidden="true" />
 
-        <div className="relative z-10 mx-auto flex max-w-6xl items-start px-4 pb-10 pt-6 sm:px-6 sm:pb-12 sm:pt-8 md:min-h-[600px] md:items-center md:py-12 lg:min-h-[620px]">
+        <div className="hero-shell relative z-10 mx-auto flex max-w-6xl items-start px-4 pb-8 pt-6 sm:px-6 sm:pb-10 sm:pt-8 md:py-10">
           <div className="hero-copy max-w-xl text-ink">
             <span className="inline-flex rounded-full border border-moss/14 bg-white/76 px-3 py-1 text-sm font-black text-mossDark shadow-sm">
               Beta za Novu Gradišku i okolicu.
@@ -116,7 +116,7 @@ function LandingPage() {
             <p className="mt-5 max-w-xl text-lg font-bold leading-relaxed text-ink/72 sm:text-xl">
               Složi oglas, podijeli ga u grupu ili pronađi nešto zanimljivo u blizini.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <div className="hero-cta-row mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/oglasi"
                 className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-moss px-5 text-base font-black text-white shadow-sm transition hover:bg-mossDark"
@@ -134,7 +134,7 @@ function LandingPage() {
             </div>
 
             <div
-              className="mt-5 grid grid-cols-2 gap-2 sm:hidden"
+              className="hero-action-grid mt-5 grid grid-cols-2 gap-2 sm:hidden"
               aria-label="Osnovne radnje na Buvljak.hr"
             >
               {actionCards.map((card) => {
