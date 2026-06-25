@@ -3,6 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { Camera, FileText } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 import { FacebookAuthButton } from "@/components/facebook-auth-button";
 import { NewListingForm } from "@/components/new-listing-form";
 
@@ -20,7 +21,11 @@ export default function NewListingPage() {
 
           {!isLoaded ? <NewListingAuthLoading /> : null}
           {isLoaded && !isSignedIn ? <NewListingLoginRequired /> : null}
-          {isLoaded && isSignedIn ? <NewListingForm /> : null}
+          {isLoaded && isSignedIn ? (
+            <Suspense fallback={<NewListingAuthLoading />}>
+              <NewListingForm />
+            </Suspense>
+          ) : null}
         </section>
 
         <aside className="space-y-4 lg:sticky lg:top-24">

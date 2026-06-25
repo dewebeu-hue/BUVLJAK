@@ -14,7 +14,7 @@ import {
   Send,
   X
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import {
   AiListingAssistant,
@@ -130,6 +130,14 @@ function defaultPriceType(type: ListingType): PriceType {
   return "negotiable";
 }
 
+function parseListingTypeParam(value: string | null): ListingType | null {
+  if (value === "sell" || value === "give" || value === "swap" || value === "want") {
+    return value;
+  }
+
+  return null;
+}
+
 function allowOffersFor(type: ListingType, priceType: PriceType, acceptOffers = true) {
   if (type === "give" || type === "want") return false;
   if (type === "swap") return true;
@@ -193,6 +201,8 @@ export function NewListingForm() {
 
 function ConnectedNewListingForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedListingType = parseListingTypeParam(searchParams.get("type")) ?? initialFormState.type;
   const { getToken } = useAuth();
   const { isLoaded: isClerkLoaded, isSignedIn, user } = useUser();
   const convexAuth = useConvexAuth();
@@ -212,7 +222,13 @@ function ConnectedNewListingForm() {
   const [importWarnings, setImportWarnings] = useState<string[]>([]);
   const [importParserLabel, setImportParserLabel] = useState("");
   const [importParsedAt, setImportParsedAt] = useState<number | null>(null);
-  const [form, setForm] = useState<FormState>(initialFormState);
+  const [form, setForm] = useState<FormState>(() => ({
+    ...initialFormState,
+    type: preselectedListingType,
+    priceType: defaultPriceType(preselectedListingType),
+    acceptOffers: preselectedListingType === "sell" ? initialFormState.acceptOffers : preselectedListingType === "swap",
+    pickupByAgreement: preselectedListingType === "give" ? true : initialFormState.pickupByAgreement
+  }));
   const [images, setImages] = useState<SelectedImage[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);

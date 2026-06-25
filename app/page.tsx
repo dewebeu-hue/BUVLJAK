@@ -19,7 +19,7 @@ const actionCards = [
     cta: "Objavi prodaju",
     icon: CircleDollarSign,
     tone: "border-moss/16 bg-moss/12 text-mossDark",
-    href: "/novi-oglas"
+    href: "/novi-oglas?type=sell"
   },
   {
     title: "Poklanjam",
@@ -27,7 +27,7 @@ const actionCards = [
     cta: "Pokloni stvar",
     icon: Gift,
     tone: "border-honey/34 bg-honey/22 text-ink",
-    href: "/novi-oglas"
+    href: "/novi-oglas?type=give"
   },
   {
     title: "Mijenjam",
@@ -35,7 +35,7 @@ const actionCards = [
     cta: "Predloži zamjenu",
     icon: Repeat2,
     tone: "border-plum/16 bg-plum/12 text-plum",
-    href: "/novi-oglas"
+    href: "/novi-oglas?type=swap"
   },
   {
     title: "Tražim",
@@ -43,7 +43,7 @@ const actionCards = [
     cta: "Dodaj potragu",
     icon: Search,
     tone: "border-clay/16 bg-clay/12 text-clay",
-    href: "/novi-oglas"
+    href: "/novi-oglas?type=want"
   }
 ];
 
@@ -141,13 +141,15 @@ function LandingPage() {
                 const Icon = card.icon;
 
                 return (
-                  <span
+                  <Link
                     key={card.title}
-                    className={`inline-flex min-h-10 items-center gap-2 rounded-lg border px-3 py-2 text-sm font-black shadow-sm ${card.tone}`}
+                    href={card.href}
+                    aria-label={`${card.cta} na Buvljak.hr`}
+                    className={`focus-ring inline-flex min-h-11 items-center gap-2 rounded-lg border px-3 py-2 text-sm font-black shadow-sm transition hover:-translate-y-0.5 hover:border-moss/24 active:translate-y-0 ${card.tone}`}
                   >
                     <Icon aria-hidden="true" size={16} />
                     {card.title}
-                  </span>
+                  </Link>
                 );
               })}
             </div>
@@ -160,30 +162,31 @@ function LandingPage() {
           <div className="max-w-2xl">
             <h2 className="text-2xl font-black text-ink sm:text-3xl">Što želiš napraviti?</h2>
             <p className="mt-3 text-base font-bold leading-relaxed text-ink/66">
-              Odaberi najbližu radnju i složi oglas bez osjećaja velikog oglasnika.
+              Odaberi radnju i složi oglas bez osjećaja velikog oglasnika.
             </p>
           </div>
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {actionCards.map((card) => {
-            const Icon = card.icon;
-            return (
-              <Link
-                key={card.title}
-                href={card.href}
-                className="focus-ring group flex h-full flex-col rounded-lg border border-ink/10 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-moss/24 hover:shadow-soft"
-              >
-                <span className={`grid h-12 w-12 place-items-center rounded-lg border ${card.tone}`}>
-                  <Icon aria-hidden="true" size={23} />
-                </span>
-                <h2 className="mt-5 text-xl font-black text-ink">{card.title}</h2>
-                <p className="mt-2 min-h-11 text-sm font-bold leading-relaxed text-ink/66">{card.text}</p>
-                <span className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-moss/16 bg-field px-3 text-sm font-black text-mossDark transition group-hover:border-moss/34 group-hover:bg-moss group-hover:text-white">
-                  {card.cta}
-                  <ArrowRight aria-hidden="true" size={16} className="transition group-hover:translate-x-0.5" />
-                </span>
-              </Link>
-            );
-          })}
+            {actionCards.map((card) => {
+              const Icon = card.icon;
+              return (
+                <Link
+                  key={card.title}
+                  href={card.href}
+                  aria-label={`${card.cta} na Buvljak.hr`}
+                  className="focus-ring group flex h-full flex-col rounded-lg border border-ink/10 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-moss/24 hover:shadow-soft active:translate-y-0"
+                >
+                  <span className={`grid h-12 w-12 place-items-center rounded-lg border ${card.tone}`}>
+                    <Icon aria-hidden="true" size={23} />
+                  </span>
+                  <h2 className="mt-5 text-xl font-black text-ink">{card.title}</h2>
+                  <p className="mt-2 min-h-11 text-sm font-bold leading-relaxed text-ink/66">{card.text}</p>
+                  <span className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-moss/16 bg-field px-3 text-sm font-black text-mossDark transition group-hover:border-moss/34 group-hover:bg-moss group-hover:text-white">
+                    {card.cta}
+                    <ArrowRight aria-hidden="true" size={16} className="transition group-hover:translate-x-0.5" />
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
