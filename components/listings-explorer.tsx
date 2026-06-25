@@ -380,7 +380,7 @@ function ListingsExplorerContent({
               </div>
             ) : null}
 
-            <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-2 touch-pan-x sm:mx-0 sm:px-0" aria-label="Brzi filteri">
+            <div className="no-scrollbar -mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 touch-pan-x sm:mx-0 sm:px-0" aria-label="Brzi filteri">
               {activeQuickFilterOptions.map((filter) => {
                 const isActive = filter.value === quickFilter;
 
@@ -515,10 +515,10 @@ function ListingsExplorerContent({
 
       <Link
         href="/novi-oglas"
-        className="focus-ring fixed bottom-[calc(0.875rem+env(safe-area-inset-bottom))] left-4 right-4 z-30 inline-flex h-13 items-center justify-center gap-2 rounded-xl bg-moss px-5 text-base font-black text-white shadow-soft transition hover:bg-mossDark md:hidden"
+        className="focus-ring fixed bottom-[calc(0.875rem+env(safe-area-inset-bottom))] left-4 right-4 z-30 mx-auto inline-flex h-12 max-w-sm items-center justify-center gap-2 rounded-xl bg-moss px-5 text-base font-black text-white shadow-sm transition hover:bg-mossDark md:hidden"
       >
         <Plus aria-hidden="true" size={20} />
-        + Objavi oglas
+        Objavi oglas
       </Link>
     </main>
   );

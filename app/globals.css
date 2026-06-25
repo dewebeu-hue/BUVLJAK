@@ -43,6 +43,15 @@ select {
   background: rgba(244, 185, 66, 0.45);
 }
 
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 .mobile-menu-trigger-close,
 .mobile-menu-shell {
   display: none;
