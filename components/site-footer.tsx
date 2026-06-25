@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "@/lib/contact";
 
 export function SiteFooter() {
   return (
@@ -31,8 +32,8 @@ export function SiteFooter() {
         <div className="flex flex-col gap-1 lg:items-end">
           <p>
             Kontakt:{" "}
-            <a href="mailto:deweb.eu@gmail.com" className="transition hover:text-mossDark">
-              deweb.eu@gmail.com
+            <a href={SUPPORT_MAILTO} className="transition hover:text-mossDark">
+              {SUPPORT_EMAIL}
             </a>
           </p>
           <p className="text-xs font-bold text-ink/45">

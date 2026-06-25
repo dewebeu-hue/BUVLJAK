@@ -19,7 +19,7 @@ The admin area is intentionally not linked from the public UI. Open it manually 
 /admin-portal
 ```
 
-Access is allowed only for the Clerk user whose email is exactly `deweb.eu@gmail.com`. The old `/admin` route should remain unavailable and must not redirect to the portal.
+Access is allowed only for the Clerk user whose email matches the configured `ADMIN_EMAIL` environment variable. The old `/admin` route should remain unavailable and must not redirect to the portal.
 
 ## Clerk auth
 
@@ -32,6 +32,7 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
 CLERK_SECRET_KEY=
 CLERK_JWT_ISSUER_DOMAIN=
 NEXT_PUBLIC_CONVEX_URL=
+ADMIN_EMAIL=
 ```
 
 Facebook login must also be enabled in Clerk Dashboard:

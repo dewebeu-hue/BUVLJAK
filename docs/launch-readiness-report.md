@@ -24,7 +24,7 @@ Najveci rizici:
 | Clerk auth | NEEDS MANUAL PROD CHECK | Provider tree izgleda ispravno: `ClerkProvider` u root layoutu i `ConvexProviderWithClerk` unutar njega. Produkcijski dashboard mora biti uskladen. |
 | Convex backend | PASS WITH NOTES | Auth config koristi `CLERK_JWT_ISSUER_DOMAIN` i `applicationID: "convex"`. Protected funkcije deriviraju korisnika server-side. |
 | Public listings/feed | PASS WITH NOTES | Javne liste ne iznose privatne kontakt podatke. Saved listings flow je odvojen od saved searches. |
-| Admin security | PASS | `/admin-portal` je zasticen email guardom za `deweb.eu@gmail.com`; `/admin` ne otkriva portal. Nema vidljivih admin linkova u javnom UI-u. |
+| Admin security | PASS | `/admin-portal` je zasticen email guardom preko `ADMIN_EMAIL`; `/admin` ne otkriva portal. Nema vidljivih admin linkova u javnom UI-u. |
 | Contact/privacy | PASS WITH NOTES | Kontakt ide kroz gated flow; privatni email/telefon/Facebook nisu dio javnog listing payload-a. |
 | Facebook import/share | PASS WITH NOTES | Import ne scrapea Facebook URL; korisnik lijepi tekst. Owner-only Facebook copy tool je sakriven od javnih posjetitelja. |
 | Facebook login | NEEDS MANUAL PROD CHECK | UI i fallback postoje, ali stvarna uspjesnost ovisi o Facebook app live statusu, callback URL-ovima i Clerk Social Connections postavkama. |
@@ -77,7 +77,7 @@ P0 uvjet za produkciju: ako produkcijski env nije pravilno postavljen, app moze 
 - Root layout koristi Clerk provider, a Convex client provider koristi `ConvexProviderWithClerk` i `useAuth`.
 - `convex/auth.config.ts` koristi `process.env.CLERK_JWT_ISSUER_DOMAIN` i `applicationID: "convex"`.
 - Protected Convex funkcije ne primaju user id iz klijenta za autorizaciju, nego korisnika izvode iz `ctx.auth.getUserIdentity()`.
-- Admin pristup nije baziran samo na role flagu: mora se poklopiti email `deweb.eu@gmail.com`.
+- Admin pristup nije baziran samo na role flagu: mora se poklopiti email postavljen u `ADMIN_EMAIL`.
 
 ### Env and secret hygiene
 
@@ -151,7 +151,7 @@ P0 uvjet za produkciju: ako produkcijski env nije pravilno postavljen, app moze 
 
 - Logged-out `/admin-portal` ne smije prikazati admin podatke.
 - Non-admin logged-in korisnik ne smije pristupiti.
-- Samo `deweb.eu@gmail.com` smije vidjeti admin portal.
+- Samo email postavljen u `ADMIN_EMAIL` smije vidjeti admin portal.
 - `/admin` ne smije redirectati na `/admin-portal`.
 
 ### Production deploy

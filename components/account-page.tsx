@@ -14,13 +14,11 @@ import {
 } from "lucide-react";
 
 import { AdvertiserProfileForm } from "@/components/advertiser-profile-form";
+import { supportMailtoHref } from "@/lib/contact";
 
-const privacyMailHref =
-  "mailto:deweb.eu@gmail.com?subject=Zahtjev%20za%20privatnost%20i%20podatke%20-%20Buvljak.hr";
-const deleteAccountHref =
-  "mailto:deweb.eu@gmail.com?subject=Zahtjev%20za%20brisanje%20racuna%20-%20Buvljak.hr";
-const exportDataHref =
-  "mailto:deweb.eu@gmail.com?subject=Zahtjev%20za%20izvoz%20podataka%20-%20Buvljak.hr";
+const privacyMailHref = supportMailtoHref("Zahtjev za privatnost i podatke - Buvljak.hr");
+const deleteAccountHref = supportMailtoHref("Zahtjev za brisanje racuna - Buvljak.hr");
+const exportDataHref = supportMailtoHref("Zahtjev za izvoz podataka - Buvljak.hr");
 
 const legalLinks = [
   { href: "/pravila-privatnosti", label: "Pravila privatnosti" },

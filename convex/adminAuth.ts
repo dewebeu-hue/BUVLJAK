@@ -1,10 +1,9 @@
 import { ConvexError } from "convex/values";
 import type { GenericMutationCtx, GenericQueryCtx } from "convex/server";
 import type { DataModel, Doc } from "./_generated/dataModel";
+import { isConfiguredAdminEmail } from "../lib/admin";
 
 type ConvexCtx = GenericQueryCtx<DataModel> | GenericMutationCtx<DataModel>;
-
-const ADMIN_EMAIL = "deweb.eu@gmail.com";
 
 function optionalString(value: unknown) {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
@@ -15,9 +14,7 @@ function normalizedEmail(value?: string) {
 }
 
 export function isAdminEmail(email?: string) {
-  const currentEmail = normalizedEmail(email);
-
-  return currentEmail === ADMIN_EMAIL;
+  return isConfiguredAdminEmail(normalizedEmail(email));
 }
 
 export async function getAdminStatus(ctx: ConvexCtx) {

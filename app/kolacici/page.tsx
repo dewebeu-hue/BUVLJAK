@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LegalList, LegalPage, LegalSection } from "@/components/legal-page";
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "@/lib/contact";
 
 export const metadata: Metadata = {
   title: "Kolačići | Buvljak.hr",
@@ -94,8 +95,8 @@ export default function CookiesPage() {
       <LegalSection title="6. Kontakt">
         <p>
           Za pitanja o kolačićima, privatnosti ili obradi podataka možeš se javiti na{" "}
-          <a href="mailto:deweb.eu@gmail.com" className="font-black text-mossDark underline">
-            deweb.eu@gmail.com
+          <a href={SUPPORT_MAILTO} className="font-black text-mossDark underline">
+            {SUPPORT_EMAIL}
           </a>
           .
         </p>

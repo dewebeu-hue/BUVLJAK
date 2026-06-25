@@ -1,3 +1,5 @@
+import { supportMailtoHref } from "@/lib/contact";
+
 export const FREE_DAILY_LISTING_LIMIT = 3;
 export const FREE_ACTIVE_LISTING_LIMIT = 10;
 export const FREE_AI_DAILY_LIMIT = 1;
@@ -61,7 +63,7 @@ export const pricingPlans: PricingPlan[] = [
       "tekst za Facebook grupu"
     ],
     ctaLabel: "Zatraži isticanje",
-    ctaHref: "mailto:deweb.eu@gmail.com?subject=Zatraži isticanje oglasa na Buvljak.hr",
+    ctaHref: supportMailtoHref("Zatraži isticanje oglasa na Buvljak.hr"),
     ctaNote:
       "Online plaćanje još nije uključeno. U beta fazi isticanje se aktivira ručno nakon dogovora.",
     isPrimary: true

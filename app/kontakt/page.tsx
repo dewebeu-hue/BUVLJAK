@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Mail, MapPin, ShieldAlert } from "lucide-react";
 import { LegalPage, LegalSection } from "@/components/legal-page";
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "@/lib/contact";
 
 export const metadata: Metadata = {
   title: "Kontakt | Buvljak.hr",
@@ -22,8 +23,8 @@ export default function ContactPage() {
           <p className="flex flex-wrap items-center gap-2">
             <Mail aria-hidden="true" size={18} className="text-mossDark" />
             <strong>Email:</strong>{" "}
-            <a href="mailto:deweb.eu@gmail.com" className="font-black text-mossDark underline">
-              deweb.eu@gmail.com
+            <a href={SUPPORT_MAILTO} className="font-black text-mossDark underline">
+              {SUPPORT_EMAIL}
             </a>
           </p>
           <p className="flex flex-wrap items-center gap-2">
@@ -40,8 +41,8 @@ export default function ContactPage() {
         </p>
         <p>
           Ako ne možeš koristiti prijavu u aplikaciji, pošalji email na{" "}
-          <a href="mailto:deweb.eu@gmail.com" className="font-black text-mossDark underline">
-            deweb.eu@gmail.com
+          <a href={SUPPORT_MAILTO} className="font-black text-mossDark underline">
+            {SUPPORT_EMAIL}
           </a>{" "}
           i uključi link oglasa, kratak opis problema i dostupne dokaze.
         </p>
@@ -50,8 +51,8 @@ export default function ContactPage() {
       <LegalSection title="Zahtjev za privatnost i podatke">
         <p>
           Za pristup, ispravak ili brisanje svojih podataka pošalji zahtjev na{" "}
-          <a href="mailto:deweb.eu@gmail.com" className="font-black text-mossDark underline">
-            deweb.eu@gmail.com
+          <a href={SUPPORT_MAILTO} className="font-black text-mossDark underline">
+            {SUPPORT_EMAIL}
           </a>{" "}
           s email adrese kojom koristiš Buvljak.hr.
         </p>

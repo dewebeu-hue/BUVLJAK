@@ -18,6 +18,7 @@ CLERK_SECRET_KEY=
 CLERK_JWT_ISSUER_DOMAIN=
 RESEND_API_KEY=
 CONTACT_FROM_EMAIL=
+ADMIN_EMAIL=
 OPENAI_API_KEY=
 OPENAI_MODEL=
 AI_LISTING_ASSISTANT_ENABLED=
@@ -27,7 +28,7 @@ AI_WEEKLY_LIMIT_FREE=5
 AI_GLOBAL_DAILY_LIMIT=100
 ```
 
-Admin pristup nije konfiguriran preko env varijable. Dopusten je samo za Clerk korisnika s emailom `deweb.eu@gmail.com`.
+Admin pristup se konfigurira preko `ADMIN_EMAIL`. Istu vrijednost postavi u Vercel i Convex env.
 
 ## Production env matrix
 
@@ -48,6 +49,7 @@ Admin pristup nije konfiguriran preko env varijable. Dopusten je samo za Clerk k
 | `AI_GLOBAL_DAILY_LIMIT` | Convex | Secret/server | Ne | `100` kao globalni dnevni guardrail za betu. |
 | `RESEND_API_KEY` | Convex | Secret | Ne | Potrebno samo ako se salju email upiti ili email obavijesti. |
 | `CONTACT_FROM_EMAIL` | Convex | Secret/server | Ne | Verificirani Resend sender, npr. domena/email odobren u Resendu. |
+| `ADMIN_EMAIL` | Vercel + Convex | Secret/server | Da | Email Clerk korisnika koji smije otvoriti `/admin-portal` i admin funkcije. Ne smije biti `NEXT_PUBLIC_`. |
 | `CONVEX_DEPLOYMENT` | Convex/local runtime | System | Ne | Convex runtime/CLI vrijednost; ne dodavati rucno u `.env.example` osim ako Convex CLI to sam napravi lokalno. |
 
 U kodu nije pronadjena posebna `FACEBOOK_*` env varijabla. Facebook login ide preko Clerk OAuth konfiguracije, pa se produkcijski Facebook provider i redirect URL-ovi provjeravaju u Clerk dashboardu.
@@ -151,7 +153,7 @@ Rucno provjeri:
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` i `CLERK_SECRET_KEY` moraju biti production kljucevi; development/test kljucevi ne smiju ostati u production environmentu.
 - Provjeri Convex production deployment i `NEXT_PUBLIC_CONVEX_URL`.
 - Provjeri Resend sender domenu ili sender email ako se koriste email obavijesti.
-- Provjeri da admin pristup radi samo za `deweb.eu@gmail.com`.
+- Provjeri da admin pristup radi samo za email postavljen u `ADMIN_EMAIL`.
 
 ## Convex
 
@@ -161,7 +163,7 @@ Rucno provjeri:
 - U Convex Dashboardu, na odgovarajucem deploymentu, postavi server-side tajne i flagove:
   `OPENAI_API_KEY`, `OPENAI_MODEL`, `AI_LISTING_ASSISTANT_ENABLED`, `AI_MAX_IMAGES`,
   `AI_DAILY_LIMIT_FREE`, `AI_WEEKLY_LIMIT_FREE`, `AI_GLOBAL_DAILY_LIMIT`,
-  `RESEND_API_KEY`, `CONTACT_FROM_EMAIL`.
+  `RESEND_API_KEY`, `CONTACT_FROM_EMAIL`, `ADMIN_EMAIL`.
 - `OPENAI_API_KEY` nikad ne smije biti `NEXT_PUBLIC_` varijabla i ne smije biti dostupan frontend bundleu.
 - Ne postavljati `NEXT_PUBLIC_OPENAI_API_KEY`, `NEXT_PUBLIC_OPENAI_MODEL` ni slicne public OpenAI varijable.
 - `NEXT_PUBLIC_APP_URL` postavi i u Convex env na `https://buvljak.hr` jer Convex email funkcije generiraju javne linkove.
@@ -187,6 +189,7 @@ Rucno provjeri:
 - [ ] Convex production ima AI guardrail vrijednosti: `AI_MAX_IMAGES=3`, `AI_DAILY_LIMIT_FREE=1`, `AI_WEEKLY_LIMIT_FREE=5`, `AI_GLOBAL_DAILY_LIMIT=100`.
 - [ ] Nigdje ne postoji `NEXT_PUBLIC_OPENAI_API_KEY` ili drugi public OpenAI secret.
 - [ ] Ako se koriste email obavijesti, Convex production ima `RESEND_API_KEY` i `CONTACT_FROM_EMAIL`.
+- [ ] Vercel i Convex production imaju isti `ADMIN_EMAIL` za admin pristup.
 - [ ] Nakon promjene Convex funkcija ili schema, pokrenut je `npm run convex:dev` lokalno ili odgovarajuci Convex production deploy.
 - [ ] Nakon promjene Vercel env varijabli napravljen je novi production deploy.
 

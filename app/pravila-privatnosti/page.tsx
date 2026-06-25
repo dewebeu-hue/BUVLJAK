@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalList, LegalPage, LegalSection } from "@/components/legal-page";
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "@/lib/contact";
 
 export const metadata: Metadata = {
   title: "Pravila privatnosti | Buvljak.hr",
@@ -19,8 +20,8 @@ export default function PrivacyPolicyPage() {
         <p>Voditelj obrade osobnih podataka je deweb j.d.o.o.</p>
         <p>
           Kontakt za pitanja i zahtjeve vezane uz privatnost je{" "}
-          <a href="mailto:deweb.eu@gmail.com" className="font-black text-mossDark underline">
-            deweb.eu@gmail.com
+          <a href={SUPPORT_MAILTO} className="font-black text-mossDark underline">
+            {SUPPORT_EMAIL}
           </a>
           .
         </p>
@@ -158,8 +159,8 @@ export default function PrivacyPolicyPage() {
         />
         <p>
           Zahtjev se šalje na{" "}
-          <a href="mailto:deweb.eu@gmail.com" className="font-black text-mossDark underline">
-            deweb.eu@gmail.com
+          <a href={SUPPORT_MAILTO} className="font-black text-mossDark underline">
+            {SUPPORT_EMAIL}
           </a>{" "}
           s email adrese kojom koristiš Buvljak.hr, kako bismo lakše provjerili da zahtjev dolazi od
           stvarnog korisnika računa.
@@ -173,8 +174,8 @@ export default function PrivacyPolicyPage() {
       <LegalSection title="10. Brisanje i zadržavanje podataka">
         <p>
           Korisnik može zatražiti brisanje računa ili svojih podataka slanjem zahtjeva na{" "}
-          <a href="mailto:deweb.eu@gmail.com" className="font-black text-mossDark underline">
-            deweb.eu@gmail.com
+          <a href={SUPPORT_MAILTO} className="font-black text-mossDark underline">
+            {SUPPORT_EMAIL}
           </a>
           .
         </p>
