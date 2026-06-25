@@ -144,8 +144,8 @@ select {
   position: relative;
   display: inline-block;
   box-sizing: content-box;
-  width: 9.65ch;
-  min-width: 9.65ch;
+  width: 8.6ch;
+  min-width: 8.6ch;
   max-width: 100%;
   height: var(--hero-rolodex-step);
   overflow: hidden;
@@ -160,7 +160,7 @@ select {
 .hero-rolodex-track {
   display: block;
   width: 100%;
-  animation: hero-rolodex-track 10s cubic-bezier(0.68, 0, 0.22, 1) infinite;
+  animation: hero-rolodex-track 13.2s cubic-bezier(0.2, 0, 0.1, 1) infinite;
   transform: translate3d(0, 0, 0);
   will-change: transform;
 }
@@ -196,26 +196,25 @@ select {
 
 @keyframes hero-rolodex-track {
   0%,
-  14% {
+  18% {
     transform: translate3d(0, 0, 0);
   }
 
-  20%,
-  34% {
+  25%,
+  43% {
     transform: translate3d(0, calc(var(--hero-rolodex-step) * -1), 0);
   }
 
-  40%,
-  54% {
+  50%,
+  68% {
     transform: translate3d(0, calc(var(--hero-rolodex-step) * -2), 0);
   }
 
-  60%,
-  74% {
+  75%,
+  93% {
     transform: translate3d(0, calc(var(--hero-rolodex-step) * -3), 0);
   }
 
-  80%,
   100% {
     transform: translate3d(0, calc(var(--hero-rolodex-step) * -4), 0);
   }

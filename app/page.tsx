@@ -10,6 +10,7 @@ import {
   Repeat2,
   Search
 } from "lucide-react";
+import { HomeLatestListings } from "@/components/home-latest-listings";
 import { ListingsExplorer } from "@/components/listings-explorer";
 
 const actionCards = [
@@ -93,35 +94,35 @@ function LandingPage() {
       <section className="hero-image">
         <div className="hero-visual" aria-hidden="true" />
 
-        <div className="hero-shell relative z-10 mx-auto flex max-w-6xl items-start px-4 pb-8 pt-6 sm:px-6 sm:pb-10 sm:pt-8 md:py-10">
+        <div className="hero-shell relative z-10 mx-auto flex max-w-6xl items-start px-4 pb-6 pt-5 sm:px-6 sm:pb-10 sm:pt-8 md:py-10">
           <div className="hero-copy max-w-xl text-ink">
             <span className="inline-flex rounded-full border border-moss/14 bg-white/76 px-3 py-1 text-sm font-black text-mossDark shadow-sm">
               Beta za Novu Gradišku i okolicu.
             </span>
-            <h1 className="mt-5 max-w-xl text-4xl font-black leading-[1.05] text-[#1F2933] sm:text-5xl">
-              <span className="sr-only">Prodajem, poklanjam, mijenjam i tražim u tvojoj blizini</span>
+            <h1 className="mt-4 max-w-xl text-4xl font-black leading-[1.05] text-[#1F2933] sm:text-5xl">
+              <span className="sr-only">Prodaj, pokloni, zamijeni i pronađi u Novoj Gradiški i okolici</span>
               <span className="hero-rolodex-heading" aria-hidden="true">
                 <span className="hero-rolodex-word">
                   <span className="hero-rolodex-track">
-                    <span className="hero-rolodex-item">Prodajem</span>
-                    <span className="hero-rolodex-item">Poklanjam</span>
-                    <span className="hero-rolodex-item">Mijenjam</span>
-                    <span className="hero-rolodex-item">Tražim</span>
-                    <span className="hero-rolodex-item">Prodajem</span>
+                    <span className="hero-rolodex-item">Prodaj</span>
+                    <span className="hero-rolodex-item">Pokloni</span>
+                    <span className="hero-rolodex-item">Zamijeni</span>
+                    <span className="hero-rolodex-item">Pronađi</span>
+                    <span className="hero-rolodex-item">Prodaj</span>
                   </span>
                 </span>
-                <span className="hero-rolodex-static">u tvojoj blizini</span>
+                <span className="hero-rolodex-static">u Novoj Gradiški i okolici</span>
               </span>
             </h1>
-            <p className="mt-5 max-w-xl text-lg font-bold leading-relaxed text-ink/72 sm:text-xl">
-              Složi oglas, podijeli ga u grupu ili pronađi nešto zanimljivo u blizini.
+            <p className="mt-4 max-w-xl text-base font-bold leading-relaxed text-ink/72 sm:text-xl">
+              Objavi oglas za minutu, podijeli ga u grupu i dogovori se direktno — bez provizije.
             </p>
-            <div className="hero-cta-row mt-8 flex flex-col gap-3 sm:flex-row">
+            <div className="hero-cta-row mt-6 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/oglasi"
                 className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-moss px-5 text-base font-black text-white shadow-sm transition hover:bg-mossDark"
               >
-                Vidi što se nudi
+                Vidi najnovije oglase
                 <ArrowRight aria-hidden="true" size={19} />
               </Link>
               <Link
@@ -134,7 +135,7 @@ function LandingPage() {
             </div>
 
             <div
-              className="hero-action-grid mt-5 grid grid-cols-2 gap-2 sm:hidden"
+              className="hero-action-grid mt-4 grid grid-cols-2 gap-2 sm:hidden"
               aria-label="Osnovne radnje na Buvljak.hr"
             >
               {actionCards.map((card) => {
@@ -157,39 +158,7 @@ function LandingPage() {
         </div>
       </section>
 
-      <section className="bg-[#fbfcf7] px-4 py-12 sm:px-6">
-        <div className="mx-auto max-w-6xl">
-          <div className="max-w-2xl">
-            <h2 className="text-2xl font-black text-ink sm:text-3xl">Što želiš napraviti?</h2>
-            <p className="mt-3 text-base font-bold leading-relaxed text-ink/66">
-              Odaberi radnju i složi oglas bez osjećaja velikog oglasnika.
-            </p>
-          </div>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {actionCards.map((card) => {
-              const Icon = card.icon;
-              return (
-                <Link
-                  key={card.title}
-                  href={card.href}
-                  aria-label={`${card.cta} na Buvljak.hr`}
-                  className="focus-ring group flex h-full flex-col rounded-lg border border-ink/10 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-moss/24 hover:shadow-soft active:translate-y-0"
-                >
-                  <span className={`grid h-12 w-12 place-items-center rounded-lg border ${card.tone}`}>
-                    <Icon aria-hidden="true" size={23} />
-                  </span>
-                  <h2 className="mt-5 text-xl font-black text-ink">{card.title}</h2>
-                  <p className="mt-2 min-h-11 text-sm font-bold leading-relaxed text-ink/66">{card.text}</p>
-                  <span className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-moss/16 bg-field px-3 text-sm font-black text-mossDark transition group-hover:border-moss/34 group-hover:bg-moss group-hover:text-white">
-                    {card.cta}
-                    <ArrowRight aria-hidden="true" size={16} className="transition group-hover:translate-x-0.5" />
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      <HomeLatestListings />
 
       <section className="border-y border-ink/8 bg-skywash/55 px-4 py-14 sm:px-6">
         <div className="mx-auto max-w-6xl">

@@ -87,9 +87,6 @@ export function SiteHeader() {
               priority
               className="block h-10 w-auto max-w-[132px] sm:h-11 sm:max-w-[190px]"
             />
-            <span className="block max-w-[132px] truncate text-xs font-semibold text-ink/62 sm:max-w-none">
-              Beta · Nova Gradiška i okolica
-            </span>
           </span>
         </Link>
 
