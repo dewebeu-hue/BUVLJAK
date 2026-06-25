@@ -118,7 +118,7 @@ select {
 
 @media (min-width: 1024px) and (min-height: 820px) {
   .hero-shell {
-    min-height: 620px;
+    min-height: 540px;
     align-items: center;
     padding-top: 3rem;
     padding-bottom: 3rem;

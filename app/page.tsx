@@ -10,6 +10,7 @@ import {
   Repeat2,
   Search
 } from "lucide-react";
+import { HomeHeroMarketplacePreview } from "@/components/home-hero-marketplace-preview";
 import { HomeLatestListings } from "@/components/home-latest-listings";
 import { ListingsExplorer } from "@/components/listings-explorer";
 
@@ -92,14 +93,12 @@ function LandingPage() {
   return (
     <main>
       <section className="hero-image">
-        <div className="hero-visual" aria-hidden="true" />
-
-        <div className="hero-shell relative z-10 mx-auto flex max-w-6xl items-start px-4 pb-6 pt-5 sm:px-6 sm:pb-10 sm:pt-8 md:py-10">
-          <div className="hero-copy max-w-xl text-ink">
+        <div className="hero-shell relative z-10 mx-auto grid max-w-6xl gap-8 px-4 pb-6 pt-5 sm:px-6 sm:pb-9 sm:pt-8 md:py-9 lg:grid-cols-[minmax(0,1fr)_minmax(330px,380px)] lg:items-center lg:gap-10 lg:py-12 xl:max-w-7xl xl:grid-cols-[minmax(0,0.95fr)_minmax(380px,430px)]">
+          <div className="hero-copy max-w-xl text-ink lg:max-w-[40rem]">
             <span className="inline-flex rounded-full border border-moss/14 bg-white/76 px-3 py-1 text-sm font-black text-mossDark shadow-sm">
               Beta za Novu Gradišku i okolicu.
             </span>
-            <h1 className="mt-4 max-w-xl text-4xl font-black leading-[1.05] text-[#1F2933] sm:text-5xl">
+            <h1 className="mt-4 max-w-xl text-4xl font-black leading-[1.05] text-[#1F2933] sm:text-5xl lg:text-[4rem] xl:text-[4.45rem]">
               <span className="sr-only">Prodaj, pokloni, zamijeni i pronađi u Novoj Gradiški i okolici</span>
               <span className="hero-rolodex-heading" aria-hidden="true">
                 <span className="hero-rolodex-word">
@@ -117,7 +116,7 @@ function LandingPage() {
             <p className="mt-4 max-w-xl text-base font-bold leading-relaxed text-ink/72 sm:text-xl">
               Objavi oglas za minutu, podijeli ga u grupu i dogovori se direktno — bez provizije.
             </p>
-            <div className="hero-cta-row mt-6 flex flex-col gap-3 sm:flex-row">
+            <div className="hero-cta-row mt-5 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/oglasi"
                 className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-moss px-5 text-base font-black text-white shadow-sm transition hover:bg-mossDark"
@@ -132,6 +131,12 @@ function LandingPage() {
                 <Megaphone aria-hidden="true" size={19} />
                 Objavi za 1 minutu
               </Link>
+            </div>
+
+            <div className="mt-5 hidden max-w-xl grid-cols-3 gap-2 text-sm font-black text-ink/64 sm:grid">
+              <span className="rounded-lg border border-ink/8 bg-white/62 px-3 py-2">Lokalni oglasi</span>
+              <span className="rounded-lg border border-ink/8 bg-white/62 px-3 py-2">Direktan kontakt</span>
+              <span className="rounded-lg border border-ink/8 bg-white/62 px-3 py-2">Bez provizije</span>
             </div>
 
             <div
@@ -155,6 +160,8 @@ function LandingPage() {
               })}
             </div>
           </div>
+
+          <HomeHeroMarketplacePreview />
         </div>
       </section>
 
