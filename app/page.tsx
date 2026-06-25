@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { currentUser } from "@clerk/nextjs/server";
 import {
@@ -92,19 +91,9 @@ function LandingPage() {
   return (
     <main>
       <section className="hero-image">
-        <div className="hero-visual" aria-hidden="true">
-          <Image
-            src="/buvljak-hero-landing.png"
-            alt=""
-            fill
-            priority
-            quality={90}
-            unoptimized
-            sizes="(max-width: 767px) 100vw, 58vw"
-          />
-        </div>
+        <div className="hero-visual" aria-hidden="true" />
 
-        <div className="relative z-10 mx-auto flex min-h-[460px] max-w-6xl items-start px-4 pb-20 pt-7 sm:px-6 sm:pt-8 md:min-h-[600px] md:items-center md:py-12 lg:min-h-[620px]">
+        <div className="relative z-10 mx-auto flex max-w-6xl items-start px-4 pb-10 pt-6 sm:px-6 sm:pb-12 sm:pt-8 md:min-h-[600px] md:items-center md:py-12 lg:min-h-[620px]">
           <div className="hero-copy max-w-xl text-ink">
             <span className="inline-flex rounded-full border border-moss/14 bg-white/76 px-3 py-1 text-sm font-black text-mossDark shadow-sm">
               Beta za Novu Gradišku i okolicu.
@@ -142,6 +131,25 @@ function LandingPage() {
                 <Megaphone aria-hidden="true" size={19} />
                 Objavi za 1 minutu
               </Link>
+            </div>
+
+            <div
+              className="mt-5 grid grid-cols-2 gap-2 sm:hidden"
+              aria-label="Osnovne radnje na Buvljak.hr"
+            >
+              {actionCards.map((card) => {
+                const Icon = card.icon;
+
+                return (
+                  <span
+                    key={card.title}
+                    className={`inline-flex min-h-10 items-center gap-2 rounded-lg border px-3 py-2 text-sm font-black shadow-sm ${card.tone}`}
+                  >
+                    <Icon aria-hidden="true" size={16} />
+                    {card.title}
+                  </span>
+                );
+              })}
             </div>
           </div>
         </div>
