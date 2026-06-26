@@ -109,6 +109,25 @@ function optionalClippedText(value: string | undefined, maxLength: number) {
   return cleaned ? cleaned.slice(0, maxLength) : undefined;
 }
 
+function redactPrivateTextForAi(value: string) {
+  return value
+    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, "[email uklonjen]")
+    .replace(/\b(?:https?:\/\/)?(?:www\.)?(?:facebook\.com|fb\.com|m\.facebook\.com|wa\.me|api\.whatsapp\.com)\/[^\s]+/gi, "[privatni link uklonjen]")
+    .replace(/\b(?:OIB\s*[:#-]?\s*)?\d{11}\b/gi, "[OIB uklonjen]")
+    .replace(/(?:\+|00)?385[\s./-]*(?:\d[\s./-]*){8,11}/g, "[telefon uklonjen]")
+    .replace(/\b0\d{1,2}[\s./-]*(?:\d[\s./-]*){6,8}\b/g, "[telefon uklonjen]")
+    .replace(/\b(?:adresa|ulica|ul\.|trg|cesta|put|prilaz)\s*[:.-]\s*[^\n.;]{3,120}/gi, "[adresa uklonjena]")
+    .replace(/\b(?:ul\.?|ulica|trg|cesta|put|prilaz)\s+[^\n.;]{3,100}/gi, "[adresa uklonjena]");
+}
+
+function optionalSanitizedClippedText(value: string | undefined, maxLength: number) {
+  if (!value) {
+    return undefined;
+  }
+
+  return optionalClippedText(redactPrivateTextForAi(value), maxLength);
+}
+
 function isFeatureDisabled(value: string | undefined) {
   if (value === undefined) {
     return false;
@@ -399,9 +418,9 @@ function buildPrompt(args: {
       "Na temelju 1 do 3 fotografije predmeta pripremi prijedlog oglasa i okvirni prijedlog cijene. Vrati isključivo JSON objekt bez markdowna.",
     localContext: args.localContext,
     listingType: args.listingType ?? null,
-    existingTitle: optionalClippedText(args.existingTitle, 120) ?? null,
-    existingDescription: optionalClippedText(args.existingDescription, 600) ?? null,
-    existingCategory: optionalClippedText(args.existingCategory, 80) ?? null,
+    existingTitle: optionalSanitizedClippedText(args.existingTitle, 120) ?? null,
+    existingDescription: optionalSanitizedClippedText(args.existingDescription, 600) ?? null,
+    existingCategory: optionalSanitizedClippedText(args.existingCategory, 80) ?? null,
     outputSchema: {
       suggestedTitle: "string",
       suggestedDescription: "string",
@@ -730,9 +749,9 @@ export const analyzeListingImagesForDraft = action({
 
       const normalized = normalizeAiDraft(parsed, {
         listingType: args.listingType,
-        existingTitle: optionalClippedText(args.existingTitle, 90),
-        existingDescription: args.existingDescription?.slice(0, 900),
-        existingCategory: optionalClippedText(args.existingCategory, 60)
+        existingTitle: optionalSanitizedClippedText(args.existingTitle, 90),
+        existingDescription: optionalSanitizedClippedText(args.existingDescription, 900),
+        existingCategory: optionalSanitizedClippedText(args.existingCategory, 60)
       });
 
       console.info("aiListingAssistant", {

@@ -9,7 +9,7 @@ npm run convex:dev
 npm run convex:seed
 ```
 
-The listings feed uses Convex when `NEXT_PUBLIC_CONVEX_URL` is available. Otherwise it falls back to local demo listings.
+The listings feed uses Convex when `NEXT_PUBLIC_CONVEX_URL` is available. Without it, the public UI shows a safe unavailable/empty beta state instead of listing cards.
 
 ## Admin portal
 
